@@ -2,6 +2,26 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+---
+
+## 📋 For managers — what is this, and is it legit?
+
+**What this document is.** A step-by-step *construction recipe* that developers follow to build the first slice of the new Studio: the part that lets staff **log in securely**. Think blueprint, not brochure.
+
+**Why is it so technical?** For the same reason a building's electrical plans look nothing like the real-estate listing. This is the actual wiring diagram engineers work from — exact files, the code to write, and how to test it. The detail isn't padding; it's what lets any qualified developer build it correctly and lets a reviewer confirm it was built right.
+
+**Is this real, or just IT gobbledygook?** It's real, and it's ordinary professional practice:
+
+- Each small step **writes a test first, then the code to pass it** (a standard method called Test-Driven Development) — a decades-old way to keep software correct.
+- Every step ends with a **save point** (a version-control "commit") so nothing is lost and every change is traceable and reversible.
+- It uses current, mainstream, well-supported tools — the same ones behind countless apps people use every day.
+
+**What you get when *this* plan is finished.** A working, secure **login** for the Studio: a staff member signs in, the app remembers them for the session, and only the right people (admins) see the "Publish" controls. Writing articles, handling images, and publishing arrive in the plans that follow.
+
+**Bottom line.** This is a legitimate, careful build plan — written in detail so the work is correct, reviewable, and safe. It is not jargon for its own sake.
+
+---
+
 **Goal:** Stand up the Nuxt 4 SPA with Nuxt UI 4, Pinia, and TypeScript, and implement working authentication against the live Strapi 5 Users & Permissions API — login, persisted JWT session, role retrieval, route guards, and logout.
 
 **Architecture:** A client-only Nuxt 4 app (`ssr: false`). A single configured `ofetch` instance (provided as `$api`) attaches the JWT and handles 401s. Auth state lives in a persisted Pinia store. Pure, dependency-injected functions (`buildAuthHeaders`, `loginRequest`, `fetchMe`, `resolveAuthRedirect`) hold the logic so everything is unit-testable; composables/plugins/pages are thin wiring.

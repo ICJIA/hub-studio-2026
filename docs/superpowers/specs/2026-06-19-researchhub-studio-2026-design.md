@@ -298,7 +298,8 @@ Reusable component backing every media field (`splash`, `thumbnail`, app `image`
   - app `image`: jpg/png · article `splash`: jpg/png ~0.5 MB · article figures: jpg/png ~0.1 MB (multiple) · `mainfile`: pdf ~5 MB · `extrafile`: any ~10 MB · `datafile`: csv ~100 MB.
 
 ### 7.3 Inline article figures (`images` JSON + markdown)
-- The editor's **Insert Image** action → eager upload **or** Media-Library pick → inserts `![alt](url)` into the markdown body **and** appends `{ title, src: url }` to the `images` JSON array (kept for public-site parity).
+- **Image dropzone + click-to-insert (primary author flow):** an always-available **dropzone** (drag-and-drop, plus click-to-browse) uploads dropped images straight to the Strapi Media Library via `/api/upload` (eager upload — never base64). Uploaded images render as a **clickable thumbnail gallery**; **clicking a thumbnail inserts that image's Media Library URL** into the markdown body as `![alt](url)` at the cursor (and copies the URL to the clipboard for manual paste). Previously-uploaded images can be picked from the Media Library the same way.
+- Each insertion also appends `{ title, src: url }` to the `images` JSON array (kept for public-site parity).
 - `images[].src` is **always** a Media Library URL.
 - **thumbnail:** prefer deriving from `splash`'s Strapi-generated `formats` (drop v1's canvas thumbnail generation). Confirm whether the public site needs a distinct `thumbnail` media id or can read a `splash` format (§14).
 

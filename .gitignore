@@ -10,6 +10,7 @@ node_modules
 
 # Nuxt build & dev artifacts
 .nuxt
+.nuxtrc
 .output
 .nitro
 .cache

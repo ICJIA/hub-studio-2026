@@ -1,0 +1,6095 @@
+Directory structure:
+└── icjia-researchhub-studio/
+    ├── README.md
+    ├── babel.config.js
+    ├── LICENSE
+    ├── package.json
+    ├── vue.config.js
+    ├── .eslintrc.js
+    ├── .prettierrc.js
+    ├── public/
+    │   ├── _redirects
+    │   └── index.html
+    ├── src/
+    │   ├── App.vue
+    │   ├── config.js
+    │   ├── entry.js
+    │   ├── main.js
+    │   ├── components/
+    │   │   ├── AuthorGuideButton.vue
+    │   │   ├── BaseButtonDialog.vue
+    │   │   ├── BaseDropzone.vue
+    │   │   ├── BaseForm.vue
+    │   │   ├── BaseStepper.vue
+    │   │   ├── BaseViewLayout.vue
+    │   │   ├── BaseViewTitle.vue
+    │   │   ├── ContentTypeSelector.vue
+    │   │   ├── CreateForm.vue
+    │   │   ├── CreateFormAppFields.vue
+    │   │   ├── CreateFormArticleFields.vue
+    │   │   ├── CreateFormDatasetFields.vue
+    │   │   ├── CreateFormExistingAuthors.vue
+    │   │   ├── CreateFormExistingTags.vue
+    │   │   ├── CreateStepper.vue
+    │   │   ├── DatePicker.vue
+    │   │   ├── HomeTaskCard.vue
+    │   │   ├── ItemTable.vue
+    │   │   ├── LoginForm.vue
+    │   │   ├── ManageStepper.vue
+    │   │   ├── MarkdownEditor.vue
+    │   │   ├── MyDropzone.vue
+    │   │   ├── PostForm.vue
+    │   │   ├── PostStepper.vue
+    │   │   ├── PreviewDialog.vue
+    │   │   ├── PreviewDialogApp.vue
+    │   │   ├── PreviewDialogArticle.vue
+    │   │   ├── PreviewDialogDataset.vue
+    │   │   ├── ServerError.vue
+    │   │   ├── TheFooter.vue
+    │   │   ├── TheToolbar.vue
+    │   │   └── UpdateStepper.vue
+    │   ├── consts/
+    │   │   ├── contentTypes.js
+    │   │   ├── dropzoneMsgs.js
+    │   │   ├── emptyItem.js
+    │   │   ├── fieldOptions.js
+    │   │   ├── queryFields.js
+    │   │   ├── tasks.js
+    │   │   └── temporaryFields.js
+    │   ├── plugins/
+    │   │   └── vuetify.js
+    │   ├── router/
+    │   │   ├── index.js
+    │   │   └── routes.js
+    │   ├── services/
+    │   │   ├── client.apps.js
+    │   │   ├── client.articles.js
+    │   │   ├── client.auth.js
+    │   │   ├── client.authors.js
+    │   │   ├── client.datasets.js
+    │   │   ├── client.jobs.js
+    │   │   ├── client.js
+    │   │   ├── client.tags.js
+    │   │   └── client.utils.js
+    │   ├── store/
+    │   │   ├── index.js
+    │   │   └── modules/
+    │   │       ├── auth.js
+    │   │       └── content.js
+    │   ├── utils/
+    │   │   ├── addDropzoneFiles.js
+    │   │   ├── getDropzoneFilelist.js
+    │   │   ├── getDropzoneList.js
+    │   │   ├── parseItem.js
+    │   │   ├── prepareItem.js
+    │   │   ├── removeDropzoneFiles.js
+    │   │   ├── resetItem.js
+    │   │   ├── setupStepper.js
+    │   │   └── submitForm.js
+    │   └── views/
+    │       ├── 404.vue
+    │       ├── Create.vue
+    │       ├── Home.vue
+    │       ├── Login.vue
+    │       ├── Manage.vue
+    │       ├── PostNew.vue
+    │       ├── PostUpdate.vue
+    │       └── Update.vue
+    └── .github/
+        ├── ISSUE_TEMPLATE/
+        │   ├── bug_report.md
+        │   └── feature_request.md
+        └── workflows/
+            └── codeql-analysis.yml
+
+================================================
+FILE: README.md
+================================================
+# ICJIA Research Hub Studio
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
+> This Web site is funded through a grant from the Bureau of Justice Statistics, Office of Justice Programs, U.S. Department of Justice. Neither the U.S. Department of Justice nor any of its components operate, control, are responsible for, or necessarily endorse, this Web site (including, without limitation, its content, technical infrastructure, and policies, and any services or tools provided).
+
+Internal app for managing ICJIA Research Hub contents.
+
+**Powered by** [<img alt="Vue.js logo" src="https://camo.githubusercontent.com/728ce9f78c3139e76fa69925ad7cc502e32795d2/68747470733a2f2f7675656a732e6f72672f696d616765732f6c6f676f2e706e67" height="25">](https://vuejs.org/) [<img alt="Vuetify.js logo" src="https://camo.githubusercontent.com/41759602ad091b02adf7b4986b55b0a870471b98/68747470733a2f2f63646e2e767565746966796a732e636f6d2f696d616765732f6c6f676f732f6c6f676f2e737667" height="25" />](https://vuetifyjs.com/)
+
+## Project Setup
+
+```
+npm install
+```
+
+### Compiles and hot-reloads for development
+
+```
+npm run serve
+```
+
+### Compiles and minifies for production
+
+```
+npm run build
+```
+
+
+
+
+
+================================================
+FILE: babel.config.js
+================================================
+module.exports = {
+  presets: ['@vue/cli-plugin-babel/preset'],
+}
+
+
+
+================================================
+FILE: LICENSE
+================================================
+MIT License
+
+Copyright (c) 2019 Illinois Criminal Justice Information Authority
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+================================================
+FILE: package.json
+================================================
+{
+  "name": "researchhub-studio",
+  "version": "1.1.6",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "core-js": "^3.6.5",
+    "dropzone": "^5.7.2",
+    "markdown-it": "^10.0.0",
+    "markdown-it-footnote": "^3.0.2",
+    "markdown-it-link-attributes": "^3.0.0",
+    "markdown-it-multimd-table": "^4.0.3",
+    "nprogress": "^0.2.0",
+    "researchhub-lib": "github:icjia/researchhub-lib#v1.1.6",
+    "vue": "^2.6.12",
+    "vue-router": "^3.4.7",
+    "vuetify": "^2.3.14",
+    "vuex": "^3.5.1"
+  },
+  "devDependencies": {
+    "@gfx/zopfli": "^1.0.15",
+    "@mdi/js": "^4.9.95",
+    "@vue/cli-plugin-babel": "^4.5.7",
+    "@vue/cli-plugin-eslint": "^4.5.7",
+    "@vue/cli-plugin-router": "^4.5.7",
+    "@vue/cli-plugin-vuex": "^4.5.7",
+    "@vue/cli-service": "^4.5.7",
+    "@vue/eslint-config-prettier": "^6.0.0",
+    "babel-eslint": "^10.1.0",
+    "brotli-webpack-plugin": "^1.1.0",
+    "compression-webpack-plugin": "^3.1.0",
+    "deepmerge": "^4.2.2",
+    "eslint": "^6.8.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-vue": "^6.2.2",
+    "eslint-plugin-vuetify": "^1.0.0-beta.7",
+    "fibers": "^4.0.3",
+    "sass": "^1.27.0",
+    "sass-loader": "^8.0.2",
+    "vue-cli-plugin-vuetify": "^2.0.7",
+    "vue-template-compiler": "^2.6.12",
+    "vuetify-loader": "^1.6.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}
+
+
+
+================================================
+FILE: vue.config.js
+================================================
+const { publicPath } = require('./src/config')
+
+/* compression */
+const BrotliPlugin = require('brotli-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
+const zopfli = require('@gfx/zopfli')
+
+const compressionTest = /\.(js|css|json|txt|html|ico|svg)(\?.*)?$/i
+const compressionPlugins = [
+  new CompressionPlugin({
+    algorithm(input, compressionOptions, callback) {
+      return zopfli.gzip(input, compressionOptions, callback)
+    },
+    compressionOptions: {
+      numiterations: 15,
+    },
+    minRatio: 0.99,
+    test: compressionTest,
+  }),
+  new BrotliPlugin({
+    test: compressionTest,
+    minRatio: 0.99,
+  }),
+]
+
+module.exports = {
+  publicPath: process.env.NODE_ENV === `production` ? publicPath : '/',
+  configureWebpack: (config) => {
+    config.entry.app = './src/entry.js'
+
+    if (process.env.NODE_ENV === `production`) {
+      config.optimization.splitChunks.chunks = 'all'
+      config.optimization.splitChunks.minSize = 0
+      config.optimization.splitChunks.maxSize = 250000
+      config.plugins.push(...compressionPlugins)
+    }
+  },
+  transpileDependencies: ['researchhub-lib', 'vuetify'],
+}
+
+
+
+================================================
+FILE: .eslintrc.js
+================================================
+module.exports = {
+  root: true,
+  env: {
+    node: true,
+  },
+  extends: [
+    'plugin:vue/recommended',
+    'plugin:prettier/recommended',
+    '@vue/prettier',
+  ],
+  plugins: ['vuetify'],
+  rules: {
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    'vuetify/no-deprecated-classes': 'error',
+    'vuetify/grid-unknown-attributes': 'error',
+    'vuetify/no-legacy-grid': 'error',
+  },
+  parserOptions: {
+    parser: 'babel-eslint',
+  },
+}
+
+
+
+================================================
+FILE: .prettierrc.js
+================================================
+module.exports = {
+  singleQuote: true,
+  semi: false,
+}
+
+
+
+================================================
+FILE: public/_redirects
+================================================
+/*    /index.html   200
+
+
+================================================
+FILE: public/index.html
+================================================
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Gentium+Book+Basic&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Lato:300,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Oswald&display=swap"
+      rel="stylesheet"
+    />
+    <base href="<%= BASE_URL %>" />
+    <title>Studio | ICJIA Research Hub</title>
+  </head>
+  <body>
+    <noscript>
+      <strong
+        >We're sorry but this website doesn't work properly without JavaScript
+        enabled. Please enable it to continue.</strong
+      >
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  </body>
+</html>
+
+
+
+================================================
+FILE: src/App.vue
+================================================
+<template>
+  <v-app>
+    <TheToolbar />
+
+    <v-content>
+      <AlertCOVID ref="alert" />
+      <router-view v-if="alive" />
+      <ServerError v-else />
+    </v-content>
+
+    <TheFooter v-if="loggedIn" />
+  </v-app>
+</template>
+
+<script>
+import { healthCheck } from '@/services/client.utils'
+import TheToolbar from './components/TheToolbar'
+const AlertCOVID = () => import('researchhub-lib').then((m) => m.AlertCOVID)
+const ServerError = () => import('./components/ServerError')
+const TheFooter = () => import('./components/TheFooter')
+
+export default {
+  name: 'App',
+  components: {
+    AlertCOVID,
+    ServerError,
+    TheToolbar,
+    TheFooter,
+  },
+  data() {
+    return {
+      alive: true,
+    }
+  },
+  computed: {
+    loggedIn() {
+      return this.$store.state.auth.isLoggedIn
+    },
+  },
+  watch: {
+    $route() {
+      if (this.$refs.alert) this.$refs.alert.reset()
+    },
+  },
+  async created() {
+    this.alive = await healthCheck()
+  },
+}
+</script>
+
+<style>
+.error-page {
+  font-size: 1.25rem;
+  font-family: 'Lato';
+  text-align: center;
+  margin-top: 5%;
+}
+
+.error-page h1 {
+  font-family: 'Lato', sans-serif;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.wide {
+  letter-spacing: 0.05em;
+}
+</style>
+
+
+
+================================================
+FILE: src/config.js
+================================================
+module.exports = {
+  apiBaseURL:
+    process.env.VUE_APP_API_BASE_URL || 'https://researchhub.icjia-api.cloud',
+  github: 'https://github.com/icjia/researchhub-studio',
+  main: {
+    baseURL:
+      process.env.VUE_APP_MAIN_BASE_URL ||
+      'https://icjia.illinois.gov/researchhub',
+    buildHook: process.env.VUE_APP_MAIN_BUILD_HOOK,
+  },
+  publicPath: process.env.VUE_APP_PUBLIC_PATH || '/researchhub/studio/',
+}
+
+
+
+================================================
+FILE: src/entry.js
+================================================
+if (isIE(window.navigator.userAgent))
+  document.querySelector('#app').innerHTML = createBanner('ICJIA Research Hub')
+else require('./main')
+
+function isIE(ua) {
+  const isIE10orLess = ua.indexOf('MSIE') > -1
+  const isIE11 = ua.indexOf('Trident/') > -1
+  return isIE10orLess || isIE11
+}
+
+function createBanner(name) {
+  const baseURL = process.env.BASE_URL
+
+  return `
+  <div style="text-align: center; font-size: 0.7em;">
+    <img src="${baseURL}icjia-logo.png" alt="ICJIA Logo" style="height: 100px; margin-top: 50px">
+    <h1 style='font-family: Lato, sans-serif; margin-top: 50px; padding-top: 20px; padding-bottom:20px; background: #eee;'>
+      <a href='${baseURL}'>${name}</a> does not support Internet Explorer.
+      <br><br>
+      Please upgrade to a modern, secure browser such as
+      <a href='https://www.google.com/chrome/'>Chrome</a>,
+      <a href='https://www.mozilla.org/en-US/firefox/new/'>Firefox</a>, or
+      <a href='https://www.microsoft.com/en-us/windows/microsoft-edge'>MS Edge</a>.
+    </h1>
+  </div>`
+}
+
+
+
+================================================
+FILE: src/main.js
+================================================
+import Vue from 'vue'
+import vuetify from './plugins/vuetify'
+
+import 'researchhub-lib/style.css'
+import 'nprogress/nprogress.css'
+
+import App from './App.vue'
+import router from './router'
+import store from './store/index'
+
+Vue.config.productionTip = false
+
+new Vue({
+  router,
+  store,
+  vuetify,
+  render: (h) => h(App),
+}).$mount('#app')
+
+
+
+================================================
+FILE: src/components/AuthorGuideButton.vue
+================================================
+<template>
+  <v-btn :href="href" text target="_blank">
+    <v-icon class="small" color="warning">{{
+      $options.static.mdiHelpCircle
+    }}</v-icon>
+    <span class="px-1 small">{{ text }}</span>
+  </v-btn>
+</template>
+
+<script>
+import { mdiHelpCircle } from '@mdi/js'
+import { main } from '@/config'
+
+export default {
+  props: {
+    path: {
+      type: String,
+      default: '',
+    },
+    text: {
+      type: String,
+      default: 'Go to Author Guide',
+    },
+  },
+  computed: {
+    href() {
+      return `${main.baseURL}/docs/auth-guide/${this.path}`
+    },
+  },
+  static: {
+    mdiHelpCircle,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/BaseButtonDialog.vue
+================================================
+<template>
+  <v-dialog v-model="dialog" width="500" :disabled="!btnCondition">
+    <template #activator="{ on }">
+      <v-btn
+        outlined
+        class="mx-2"
+        :color="btnType"
+        :disabled="!btnCondition"
+        v-on="on"
+      >
+        <template>{{ btnName }}</template>
+      </v-btn>
+    </template>
+
+    <v-card class="font-lato">
+      <v-card-title>
+        <slot name="title"></slot>
+      </v-card-title>
+
+      <v-card-text style="font-size: 1em">
+        <slot name="main"></slot>
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="dialog = false">back</v-btn>
+        <v-btn :color="btnType" text @click="onClick">{{ btnName }}</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script>
+export default {
+  props: {
+    btnName: {
+      type: String,
+      default: '',
+    },
+    btnType: {
+      type: String,
+      default: '',
+    },
+    btnCondition: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      dialog: false,
+    }
+  },
+  methods: {
+    onClick() {
+      this.$emit('base-event')
+      this.dialog = false
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/BaseDropzone.vue
+================================================
+<template>
+  <div
+    :id="id"
+    ref="dropzoneElement"
+    :class="{ 'base-dropzone dropzone': includeStyling }"
+  >
+    <div class="dz-message">
+      <slot>Drop files here to upload</slot>
+    </div>
+  </div>
+</template>
+
+<script>
+import Dropzone from 'dropzone'
+
+Dropzone.autoDiscover = false
+
+export default {
+  props: {
+    id: {
+      type: String,
+      required: true,
+      default: 'dropzone',
+    },
+    options: {
+      type: Object,
+      required: true,
+    },
+    includeStyling: {
+      type: Boolean,
+      default: true,
+      required: false,
+    },
+    destroyDropzone: {
+      type: Boolean,
+      default: true,
+      required: false,
+    },
+    duplicateCheck: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+    useCustomSlot: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
+  },
+  computed: {
+    dropzoneSettings() {
+      let defaultValues = {
+        thumbnailWidth: 200,
+        thumbnailHeight: 200,
+      }
+      Object.keys(this.options).forEach(function (key) {
+        defaultValues[key] = this.options[key]
+      }, this)
+      return defaultValues
+    },
+  },
+  mounted() {
+    if (this.$isServer && this.hasBeenMounted) {
+      return
+    }
+    this.hasBeenMounted = true
+    this.dropzone = new Dropzone(
+      this.$refs.dropzoneElement,
+      this.dropzoneSettings
+    )
+    let vm = this
+    this.dropzone.on('thumbnail', function (file, dataUrl) {
+      vm.$emit('vdropzone-thumbnail', file, dataUrl)
+    })
+    this.dropzone.on('addedfile', function (file) {
+      if (vm.duplicateCheck && this.files.length) {
+        let _i, _len
+        for (
+          _i = 0, _len = this.files.length;
+          _i < _len - 1;
+          _i++ // -1 to exclude current file
+        ) {
+          if (
+            this.files[_i].name === file.name &&
+            this.files[_i].size === file.size &&
+            this.files[_i].lastModifiedDate.toString() ===
+              file.lastModifiedDate.toString()
+          ) {
+            this.removeFile(file)
+            vm.$emit('vdropzone-duplicate-file', file)
+          }
+        }
+      }
+      vm.$emit('vdropzone-file-added', file)
+    })
+    this.dropzone.on('addedfiles', function (files) {
+      vm.$emit('vdropzone-files-added', files)
+    })
+    this.dropzone.on('removedfile', function (file) {
+      vm.$emit('vdropzone-removed-file', file)
+      if (file.manuallyAdded) vm.dropzone.options.maxFiles++
+    })
+    this.dropzone.on('success', function (file, response) {
+      vm.$emit('vdropzone-success', file, response)
+    })
+    this.dropzone.on('successmultiple', function (file, response) {
+      vm.$emit('vdropzone-success-multiple', file, response)
+    })
+    this.dropzone.on('error', function (file, message, xhr) {
+      vm.$emit('vdropzone-error', file, message, xhr)
+    })
+    this.dropzone.on('errormultiple', function (files, message, xhr) {
+      vm.$emit('vdropzone-error-multiple', files, message, xhr)
+    })
+    this.dropzone.on('sending', function (file, xhr, formData) {
+      vm.$emit('vdropzone-sending', file, xhr, formData)
+    })
+    this.dropzone.on('sendingmultiple', function (file, xhr, formData) {
+      vm.$emit('vdropzone-sending-multiple', file, xhr, formData)
+    })
+    this.dropzone.on('complete', function (file) {
+      vm.$emit('vdropzone-complete', file)
+    })
+    this.dropzone.on('completemultiple', function (files) {
+      vm.$emit('vdropzone-complete-multiple', files)
+    })
+    this.dropzone.on('canceled', function (file) {
+      vm.$emit('vdropzone-canceled', file)
+    })
+    this.dropzone.on('canceledmultiple', function (files) {
+      vm.$emit('vdropzone-canceled-multiple', files)
+    })
+    this.dropzone.on('maxfilesreached', function (files) {
+      vm.$emit('vdropzone-max-files-reached', files)
+    })
+    this.dropzone.on('maxfilesexceeded', function (file) {
+      vm.$emit('vdropzone-max-files-exceeded', file)
+    })
+    this.dropzone.on('processing', function (file) {
+      vm.$emit('vdropzone-processing', file)
+    })
+    this.dropzone.on('processingmultiple', function (files) {
+      vm.$emit('vdropzone-processing-multiple', files)
+    })
+    this.dropzone.on('uploadprogress', function (file, progress, bytesSent) {
+      vm.$emit('vdropzone-upload-progress', file, progress, bytesSent)
+    })
+    this.dropzone.on(
+      'totaluploadprogress',
+      function (totaluploadprogress, totalBytes, totalBytesSent) {
+        vm.$emit(
+          'vdropzone-total-upload-progress',
+          totaluploadprogress,
+          totalBytes,
+          totalBytesSent
+        )
+      }
+    )
+    this.dropzone.on('reset', function () {
+      vm.$emit('vdropzone-reset')
+    })
+    this.dropzone.on('queuecomplete', function () {
+      vm.$emit('vdropzone-queue-complete')
+    })
+    this.dropzone.on('drop', function (event) {
+      vm.$emit('vdropzone-drop', event)
+    })
+    this.dropzone.on('dragstart', function (event) {
+      vm.$emit('vdropzone-drag-start', event)
+    })
+    this.dropzone.on('dragend', function (event) {
+      vm.$emit('vdropzone-drag-end', event)
+    })
+    this.dropzone.on('dragenter', function (event) {
+      vm.$emit('vdropzone-drag-enter', event)
+    })
+    this.dropzone.on('dragover', function (event) {
+      vm.$emit('vdropzone-drag-over', event)
+    })
+    this.dropzone.on('dragleave', function (event) {
+      vm.$emit('vdropzone-drag-leave', event)
+    })
+    vm.$emit('vdropzone-mounted')
+  },
+  beforeDestroy() {
+    if (this.destroyDropzone) this.dropzone.destroy()
+  },
+  methods: {
+    manuallyAddFile: function (file, fileUrl) {
+      file.manuallyAdded = true
+      this.dropzone.emit('addedfile', file)
+      let containsImageFileType = false
+      if (
+        fileUrl.indexOf('.png') > -1 ||
+        fileUrl.indexOf('.jpg') > -1 ||
+        fileUrl.indexOf('.jpeg') > -1
+      )
+        containsImageFileType = true
+      if (
+        this.dropzone.options.createImageThumbnails &&
+        containsImageFileType &&
+        file.size <= this.dropzone.options.maxThumbnailFilesize * 1024 * 1024
+      ) {
+        fileUrl && this.dropzone.emit('thumbnail', file, fileUrl)
+        var thumbnails = file.previewElement.querySelectorAll(
+          '[data-dz-thumbnail]'
+        )
+        for (var i = 0; i < thumbnails.length; i++) {
+          thumbnails[i].style.width =
+            this.dropzoneSettings.thumbnailWidth + 'px'
+          thumbnails[i].style.height =
+            this.dropzoneSettings.thumbnailHeight + 'px'
+          thumbnails[i].style['object-fit'] = 'contain'
+        }
+      }
+      this.dropzone.emit('complete', file)
+      if (this.dropzone.options.maxFiles) this.dropzone.options.maxFiles--
+      this.dropzone.files.push(file)
+      this.$emit('vdropzone-file-added-manually', file)
+    },
+    setOption: function (option, value) {
+      this.dropzone.options[option] = value
+    },
+    removeAllFiles: function (bool) {
+      this.dropzone.removeAllFiles(bool)
+    },
+    processQueue: function () {
+      let dropzoneEle = this.dropzone
+      this.dropzone.processQueue()
+      this.dropzone.on('success', function () {
+        dropzoneEle.options.autoProcessQueue = true
+      })
+      this.dropzone.on('queuecomplete', function () {
+        dropzoneEle.options.autoProcessQueue = false
+      })
+    },
+    init: function () {
+      return this.dropzone.init()
+    },
+    destroy: function () {
+      return this.dropzone.destroy()
+    },
+    updateTotalUploadProgress: function () {
+      return this.dropzone.updateTotalUploadProgress()
+    },
+    getFallbackForm: function () {
+      return this.dropzone.getFallbackForm()
+    },
+    getExistingFallback: function () {
+      return this.dropzone.getExistingFallback()
+    },
+    setupEventListeners: function () {
+      return this.dropzone.setupEventListeners()
+    },
+    removeEventListeners: function () {
+      return this.dropzone.removeEventListeners()
+    },
+    disable: function () {
+      return this.dropzone.disable()
+    },
+    enable: function () {
+      return this.dropzone.enable()
+    },
+    filesize: function (size) {
+      return this.dropzone.filesize(size)
+    },
+    accept: function (file, done) {
+      return this.dropzone.accept(file, done)
+    },
+    addFile: function (file) {
+      return this.dropzone.addFile(file)
+    },
+    removeFile: function (file) {
+      this.dropzone.removeFile(file)
+    },
+    getAcceptedFiles: function () {
+      return this.dropzone.getAcceptedFiles()
+    },
+    getRejectedFiles: function () {
+      return this.dropzone.getRejectedFiles()
+    },
+    getFilesWithStatus: function () {
+      return this.dropzone.getFilesWithStatus()
+    },
+    getQueuedFiles: function () {
+      return this.dropzone.getQueuedFiles()
+    },
+    getUploadingFiles: function () {
+      return this.dropzone.getUploadingFiles()
+    },
+    getAddedFiles: function () {
+      return this.dropzone.getAddedFiles()
+    },
+    getActiveFiles: function () {
+      return this.dropzone.getActiveFiles()
+    },
+  },
+}
+</script>
+
+<style scoped>
+@import '../../node_modules/dropzone/dist/dropzone.css';
+
+.base-dropzone {
+  border: 1px solid #ccc;
+  font-family: 'Lato', sans-serif;
+  letter-spacing: 0.2px;
+  color: #777;
+  transition: background-color 0.2s linear;
+}
+
+.base-dropzone:hover {
+  background-color: #f9f9f9;
+}
+
+.base-dropzone i {
+  color: #ccc;
+}
+
+.base-dropzone .dz-preview .dz-image {
+  border-radius: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.base-dropzone .dz-preview .dz-image img:not([src]) {
+  width: 200px;
+  height: 200px;
+}
+
+.base-dropzone .dz-preview .dz-image:hover img {
+  transform: none;
+  filter: none;
+  -webkit-filter: none;
+}
+
+.base-dropzone .dz-preview .dz-details {
+  bottom: 0;
+  top: 0;
+  color: white;
+  background-color: rgba(33, 150, 243, 0.8);
+  transition: opacity 0.2s linear;
+  text-align: left;
+}
+
+.base-dropzone .dz-preview .dz-details .dz-filename {
+  overflow: hidden;
+}
+
+.base-dropzone .dz-preview .dz-details .dz-filename span,
+.base-dropzone .dz-preview .dz-details .dz-size span {
+  background-color: transparent;
+}
+
+.base-dropzone .dz-preview .dz-details .dz-filename:not(:hover) span {
+  border: none;
+}
+.base-dropzone .dz-preview .dz-details .dz-filename:hover span {
+  background-color: transparent;
+  border: none;
+}
+.base-dropzone .dz-preview .dz-remove {
+  position: absolute;
+  z-index: 30;
+  color: white;
+  margin-left: 15px;
+  padding: 10px;
+  top: inherit;
+  bottom: 15px;
+  border: 2px white solid;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  opacity: 0;
+}
+
+.base-dropzone .dz-preview:hover .dz-remove {
+  opacity: 1;
+}
+
+.base-dropzone .dz-preview .dz-success-mark,
+.base-dropzone .dz-preview .dz-error-mark {
+  margin-left: auto;
+  margin-top: auto;
+  width: 100%;
+  top: 35%;
+  left: 0;
+}
+
+.base-dropzone .dz-preview .dz-success-mark svg,
+.base-dropzone .dz-preview .dz-error-mark svg {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.base-dropzone .dz-preview .dz-error-message {
+  top: calc(20%);
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  width: 100%;
+}
+
+.base-dropzone .dz-preview .dz-error-message:after {
+  bottom: -6px;
+  top: initial;
+  border-top: 6px solid #a92222;
+  border-bottom: none;
+}
+/* 
+.base-dropzone .dz-progress {
+  display: none !important;
+} */
+</style>
+
+
+
+================================================
+FILE: src/components/BaseForm.vue
+================================================
+<template>
+  <div class="font-lato pa-4">
+    <v-row class="mb-4">
+      <div class="greycolor">
+        <template>{{ 'Content type: ' }}</template>
+        <span class="text-capitalize">{{ contentType }}</span>
+      </div>
+
+      <v-spacer></v-spacer>
+
+      <BaseButtonDialog
+        btn-name="reset"
+        btn-type="error"
+        @base-event="$emit('form-reset')"
+      >
+        <template #title>{{ 'Are you sure?' }}</template>
+
+        <template #main>{{ $options.static.msgWarning }}</template>
+      </BaseButtonDialog>
+
+      <BaseButtonDialog
+        :btn-condition="itemReady"
+        :btn-name="formType"
+        btn-type="primary"
+        @base-event="$emit('form-main')"
+      >
+        <template #title>
+          <h3>Ready to {{ formType }}?</h3>
+        </template>
+
+        <template #main>
+          <template>{{ msgMain }}</template>
+          <br />
+          <template v-if="formType === 'create'">{{
+            $options.static.msgCreate
+          }}</template>
+        </template>
+      </BaseButtonDialog>
+    </v-row>
+
+    <slot></slot>
+  </div>
+</template>
+
+<script>
+const BaseButtonDialog = () => import('@/components/BaseButtonDialog')
+
+export default {
+  components: {
+    BaseButtonDialog,
+  },
+  props: {
+    contentType: {
+      type: String,
+      default: '',
+    },
+    formType: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      stepNum: 1,
+    }
+  },
+  computed: {
+    itemReady() {
+      return Object.keys(this.$store.state.content.item).length !== 0
+    },
+    msgMain() {
+      return `Make sure to preview the content before you ${this.formType} it!`
+    },
+  },
+  static: {
+    msgCreate:
+      'You will be able to update or submit this draft later.' +
+      ' When you submit a draft, your submission will get a preview link.' +
+      ' You may publish your submission once approved.',
+    msgWarning:
+      'You will lose the saved work. Are you sure to proceed and reset?',
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/BaseStepper.vue
+================================================
+<template>
+  <v-stepper v-model="stepNum" class="font-lato mb-12">
+    <v-stepper-header>
+      <template v-for="step in stepNumTotal">
+        <v-stepper-step
+          :key="`step${step}`"
+          :complete="stepNum > step"
+          :step="step"
+        >
+          <slot :name="`stepHeader${step}`"></slot>
+        </v-stepper-step>
+
+        <v-divider
+          v-if="step < stepNumTotal"
+          :key="`divider${step}`"
+        ></v-divider>
+      </template>
+    </v-stepper-header>
+
+    <v-stepper-items>
+      <template v-for="step in stepNumTotal">
+        <v-stepper-content :key="`content${step}`" :step="step">
+          <v-row align="center">
+            <v-btn v-if="stepNum > 1" icon @click="navigateBefore">
+              <v-icon>{{ $options.static.mdiChevronLeft }}</v-icon>
+            </v-btn>
+
+            <v-col class="pa-0 mx-12">
+              <slot :name="`stepItem${step}`"></slot>
+            </v-col>
+
+            <v-btn
+              v-if="stepNum < stepNumTotal"
+              icon
+              :disabled="itemNotSelected"
+              @click="navigateNext"
+            >
+              <v-icon>{{ $options.static.mdiChevronRight }}</v-icon>
+            </v-btn>
+          </v-row>
+        </v-stepper-content>
+      </template>
+    </v-stepper-items>
+  </v-stepper>
+</template>
+
+<script>
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+
+export default {
+  props: {
+    stepNumTotal: {
+      type: Number,
+      default: 1,
+    },
+  },
+  data() {
+    return {
+      stepNum: 1,
+    }
+  },
+  computed: {
+    itemNotSelected() {
+      const item = this.$store.state.content.item
+      return (
+        this.stepNumTotal === 3 &&
+        this.stepNum == 2 &&
+        !Object.keys(item).length
+      )
+    },
+  },
+  methods: {
+    navigateBefore() {
+      const from = this.stepNum
+      this.stepNum--
+      const to = this.stepNum
+
+      this.$emit('stepper-navigate-before', {
+        from,
+        to,
+      })
+    },
+    navigateNext() {
+      const from = this.stepNum
+      this.stepNum++
+      const to = this.stepNum
+
+      this.$emit('stepper-navigate-next', {
+        from,
+        to,
+      })
+    },
+  },
+  static: {
+    mdiChevronLeft,
+    mdiChevronRight,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/BaseViewLayout.vue
+================================================
+<template>
+  <div>
+    <BaseViewTitle :page="page" />
+
+    <v-col class="mx-auto font-lato" cols="12" sm="10" lg="8" xl="7">
+      <template v-if="page">
+        <v-row justify="space-between" no-gutters>
+          <h2 class="font-weight-bold"><slot name="title"></slot></h2>
+
+          <AuthorGuideButton
+            v-if="isAuthor"
+            :path="`tutorials/${page.toLowerCase()}-article.html`"
+            text="Go to tutorial page"
+          />
+        </v-row>
+
+        <p class="py-2"><slot name="description"></slot></p>
+      </template>
+
+      <slot></slot>
+    </v-col>
+  </div>
+</template>
+
+<script>
+const AuthorGuideButton = () => import('@/components/AuthorGuideButton')
+const BaseViewTitle = () => import('@/components/BaseViewTitle')
+
+export default {
+  components: {
+    AuthorGuideButton,
+    BaseViewTitle,
+  },
+  computed: {
+    page() {
+      const name = this.$route.name
+      return name === 'home' ? '' : name
+    },
+    isAuthor() {
+      return this.$store.state.auth.role === 'Author'
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/BaseViewTitle.vue
+================================================
+<template>
+  <div class="view-title font-lato">
+    <v-col class="mx-auto py-2" cols="12" sm="10" lg="8" xl="7">
+      <h4 class="font-weight-light text-capitalize">
+        <template>{{ 'ICJIA Research Hub' }}</template>
+        <v-icon color="white">{{ $options.static.mdiChevronRight }}</v-icon>
+        <template>{{ 'studio' }}</template>
+        <template v-if="page">
+          <v-icon color="white">{{ $options.static.mdiChevronRight }}</v-icon>
+          <template>{{ page }}</template>
+        </template>
+      </h4>
+    </v-col>
+  </div>
+</template>
+
+<script>
+import { mdiChevronRight } from '@mdi/js'
+
+export default {
+  props: {
+    page: {
+      type: String,
+      default: null,
+    },
+  },
+  static: {
+    mdiChevronRight,
+  },
+}
+</script>
+
+<style scoped>
+.view-title {
+  background-color: #466c8c;
+  color: white;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/ContentTypeSelector.vue
+================================================
+<template>
+  <v-col class="mx-auto pa-0" cols="2">
+    <v-radio-group v-model="selected" @change="updateContentType">
+      <v-radio
+        v-for="contentType in contentTypes"
+        :key="contentType"
+        class="text-capitalize"
+        :label="contentType"
+        :value="contentType"
+      ></v-radio>
+    </v-radio-group>
+  </v-col>
+</template>
+
+<script>
+export default {
+  props: {
+    contentTypes: {
+      type: Array,
+      default: null,
+    },
+  },
+  data() {
+    return {
+      selected: this.contentTypes[0],
+    }
+  },
+  methods: {
+    updateContentType() {
+      this.$emit('update:contentType', this.selected)
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateForm.vue
+================================================
+<template>
+  <BaseForm
+    :key="formKey"
+    :content-type="contentType"
+    :form-type="update ? 'update' : 'create'"
+    @form-main="onMain"
+    @form-reset="onReset"
+  >
+    <v-form ref="form" v-model="valid" lazy-validation>
+      <!-- common fields input 1 -->
+      <v-row>
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <v-text-field
+            v-model="item.title"
+            label="Title"
+            counter
+            :rules="[
+              rules.noLeadingWhitespace,
+              rules.noTrailingWhitespace,
+              rules.required,
+            ]"
+            @keyup="titleToSlug"
+          />
+        </v-col>
+
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <v-text-field
+            v-model="item.slug"
+            label="Slug"
+            counter
+            :hint="update ? '' : 'Automatically generated from title'"
+            :readonly="!update"
+            :disabled="update"
+            :rules="[rules.required]"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <DatePicker :date.sync="item.date" />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <v-select
+            v-model="item.categories"
+            label="Categories"
+            clearable
+            multiple
+            :items="$options.static.categoryOptions"
+            :rules="[rules.required]"
+          />
+        </v-col>
+
+        <v-col class="pl-1 pr-4" cols="10" sm="8" lg="4">
+          <v-row no-gutters>
+            <CreateFormExistingTags @useExistingTags="useExistingTags" />
+            <v-text-field
+              v-model="item.tagString"
+              label="Tags"
+              hint="Separate tags with commas"
+            />
+          </v-row>
+        </v-col>
+      </v-row>
+
+      <!-- content type specific fields input  -->
+      <CreateFormAppFields
+        v-if="contentType === 'apps'"
+        v-model="item"
+        :rules="rules"
+      >
+        <template #image>
+          <MyDropzone
+            ref="DropzoneImage"
+            key="DropzoneImage"
+            file-types=".jpg, .jpeg, .png"
+            :update="update"
+          >
+            <template #title>{{ 'Image' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgImage }}</template>
+          </MyDropzone>
+        </template>
+      </CreateFormAppFields>
+
+      <CreateFormArticleFields
+        v-if="contentType === 'articles'"
+        v-model="item"
+        :rules="rules"
+        :update="update"
+        @useExistingAuthors="useExistingAuthors"
+      >
+        <template #mainfile>
+          <MyDropzone
+            ref="DropzoneMainfile"
+            key="DropzoneMainfile"
+            file-types=".pdf"
+            :max-filesize="5"
+            :update="update"
+          >
+            <template #title>{{ 'Main file' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgPDF }}</template>
+          </MyDropzone>
+        </template>
+
+        <template #extrafile>
+          <MyDropzone
+            ref="DropzoneExtrafile"
+            key="DropzoneExtrafile"
+            :max-filesize="10"
+            :update="update"
+          >
+            <template #title>{{ 'Extra file' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgFile }}</template>
+          </MyDropzone>
+        </template>
+
+        <template #splash>
+          <MyDropzone
+            ref="DropzoneSplash"
+            key="DropzoneSplash"
+            file-types=".jpg, .jpeg, .png"
+            :max-filesize="0.5"
+            :update="update"
+          >
+            <template #title>{{ 'Splash image' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgImage }}</template>
+          </MyDropzone>
+        </template>
+
+        <template #figures>
+          <MyDropzone
+            ref="DropzoneImages"
+            key="DropzoneImages"
+            file-types=".jpg, .jpeg, .png"
+            :max-filesize="0.1"
+            :multiple-files="true"
+            :update="update"
+          >
+            <template #title>{{ 'Figures' }}</template>
+            <template #message>{{
+              $options.static.dropzoneMsgImages
+            }}</template>
+          </MyDropzone>
+        </template>
+
+        <template #articlebody>
+          <MarkdownEditor
+            :markdown.sync="item.markdown"
+            :rules="[rules.required]"
+          />
+        </template>
+      </CreateFormArticleFields>
+
+      <CreateFormDatasetFields
+        v-if="contentType === 'datasets'"
+        v-model="item"
+        :rules="rules"
+        :update="update"
+      >
+        <template #datafile>
+          <MyDropzone
+            ref="DropzoneDatafile"
+            key="DropzoneDatafile"
+            file-types=".csv"
+            :max-filesize="100"
+            :update="update"
+          >
+            <template #title>{{ 'Data file' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgCsv }}</template>
+          </MyDropzone>
+        </template>
+      </CreateFormDatasetFields>
+
+      <!-- common fields input 2 -->
+      <v-row class="pb-12">
+        <v-col class="px-4" cols="10" sm="8" lg="5">
+          <v-textarea
+            v-model="item.citation"
+            label="Suggested citation"
+            auto-grow
+          />
+        </v-col>
+
+        <v-col class="px-4" cols="10" sm="8" lg="5">
+          <v-textarea
+            v-model="item.funding"
+            label="Funding acknowledgement"
+            auto-grow
+          />
+        </v-col>
+
+        <v-col v-if="contentType === 'articles'" class="px-4" cols="12">
+          <v-col class="pa-0" cols="10" sm="8" lg="4">
+            <v-text-field v-model="item.doi" label="DOI" />
+          </v-col>
+        </v-col>
+
+        <v-col v-if="contentType !== 'apps'" class="px-4" cols="12">
+          <v-col class="pa-0" cols="10" sm="8" lg="4">
+            <v-select
+              v-model="item.apps"
+              item-text="title"
+              label="Related apps"
+              clearable
+              multiple
+              return-object
+              :items="appOptions"
+            />
+          </v-col>
+        </v-col>
+
+        <v-col v-if="contentType !== 'articles'" class="px-4" cols="12">
+          <v-col class="pa-0" cols="10" sm="8" lg="4">
+            <v-select
+              v-model="item.articles"
+              item-text="title"
+              label="Related articles"
+              clearable
+              multiple
+              return-object
+              :items="articleOptions"
+            />
+          </v-col>
+        </v-col>
+
+        <v-col v-if="contentType !== 'datasets'" class="px-4" cols="12">
+          <v-col class="pa-0" cols="10" sm="8" lg="4">
+            <v-select
+              v-model="item.datasets"
+              item-text="title"
+              label="Related datasets"
+              clearable
+              multiple
+              return-object
+              :items="datasetOptions"
+            />
+          </v-col>
+        </v-col>
+      </v-row>
+
+      <v-btn class="mx-2" outlined @click="onSave">Save</v-btn>
+      <PreviewDialog
+        v-if="saved"
+        :key="previewKey"
+        :content-type="contentType"
+        :icon="false"
+        :local="true"
+        status="created"
+      />
+      <v-btn v-else class="mx-2" outlined disabled>Preview</v-btn>
+    </v-form>
+  </BaseForm>
+</template>
+
+<script>
+import { mapState } from 'vuex'
+
+import dropzoneMsgs from '@/consts/dropzoneMsgs'
+import emptyItem from '@/consts/emptyItem'
+import { categoryOptions } from '@/consts/fieldOptions'
+
+import { fetchItemsList as fetchAppsList } from '@/services/client.apps'
+import { fetchItemsList as fetchArticlesList } from '@/services/client.articles'
+import { fetchItemsList as fetchDatasetsList } from '@/services/client.datasets'
+
+import addDropzoneFiles from '@/utils/addDropzoneFiles'
+import getDropzoneFilelist from '@/utils/getDropzoneFilelist'
+import getDropzoneList from '@/utils/getDropzoneList'
+import parseItem from '@/utils/parseItem'
+import prepareItem from '@/utils/prepareItem'
+import removeDropzoneFiles from '@/utils/removeDropzoneFiles'
+import submitForm from '@/utils/submitForm'
+
+const BaseForm = () => import('@/components/BaseForm')
+const CreateFormAppFields = () => import('@/components/CreateFormAppFields')
+const CreateFormArticleFields = () =>
+  import('@/components/CreateFormArticleFields')
+const CreateFormDatasetFields = () =>
+  import('@/components/CreateFormDatasetFields')
+const CreateFormExistingTags = () =>
+  import('@/components/CreateFormExistingTags')
+const DatePicker = () => import('@/components/DatePicker')
+const MarkdownEditor = () => import('@/components/MarkdownEditor')
+const MyDropzone = () => import('@/components/MyDropzone')
+const PreviewDialog = () => import('@/components/PreviewDialog')
+
+const initItem = { ...emptyItem }
+
+export default {
+  name: 'Createform',
+  components: {
+    BaseForm,
+    CreateFormAppFields,
+    CreateFormArticleFields,
+    CreateFormDatasetFields,
+    CreateFormExistingTags,
+    DatePicker,
+    MarkdownEditor,
+    MyDropzone,
+    PreviewDialog,
+  },
+  props: {
+    contentType: {
+      type: String,
+      default: '',
+    },
+    update: Boolean,
+  },
+  data() {
+    return {
+      appOptions: [],
+      articleOptions: [],
+      datasetOptions: [],
+      dropzoneList: {},
+      formKey: 0,
+      item: { ...initItem },
+      previewKey: 0,
+      rules: {
+        noLeadingWhitespace: (value) =>
+          value.charAt(0) !== ' ' || 'Delete leading whitespace.',
+        noTrailingWhitespace: (value) =>
+          value.slice(-1) !== ' ' || 'Delete trailing whitespace.',
+        required: (value) => !!value || 'Required.',
+        timeperiod: (value) =>
+          /^\d{4}-\d{4}$/g.test(value) || 'Correct format: yyyy-yyyy',
+      },
+      saved: false,
+      valid: false,
+    }
+  },
+  computed: {
+    ...mapState('content', {
+      content: 'item',
+      contentId: 'itemId',
+    }),
+  },
+  watch: {
+    // eslint-disable-next-line no-unused-vars
+    content(newContent, _) {
+      if (this.update && newContent && Object.keys(newContent).length) {
+        this.item = prepareItem(newContent)
+        this.saved = true
+      }
+    },
+  },
+  async created() {
+    this.appOptions = (await fetchAppsList('published')).data
+    this.articleOptions = (await fetchArticlesList('published')).data
+    this.datasetOptions = (await fetchDatasetsList('published')).data
+  },
+  mounted() {
+    this.dropzoneList = getDropzoneList(this.$refs)
+  },
+  updated() {
+    this.dropzoneList = getDropzoneList(this.$refs)
+  },
+  methods: {
+    async onMain() {
+      await submitForm({
+        contentType: this.contentType,
+        router: this.$router,
+        store: this.$store,
+        update: this.update,
+      })
+    },
+    async onReset() {
+      if (this.update) {
+        await this.$store.dispatch('content/fetchItem', {
+          contentType: this.contentType,
+          id: this.contentId,
+        })
+      } else {
+        this.$store.dispatch('content/setItem', {})
+        this.item = { ...initItem }
+      }
+
+      removeDropzoneFiles(this.dropzoneList)
+      this.rerenderForm()
+      this.saved = false
+    },
+    async onSave() {
+      await this.saveItem()
+      if (this.saved) {
+        if (this.update) this.saveFiles()
+        alert('✔️Changes saved. Try preview.')
+      } else {
+        alert('⚠️Missing required information!')
+      }
+    },
+    rerenderForm() {
+      this.formKey += 1
+    },
+    rerenderPreview() {
+      this.previewKey += 1
+    },
+    saveFiles() {
+      if (this.$refs.form.validate()) {
+        const filelist = getDropzoneFilelist(this.dropzoneList)
+        this.$store.dispatch('content/setFilelist', filelist)
+      }
+    },
+    async saveItem() {
+      if (this.$refs.form.validate()) {
+        const item = {
+          ...parseItem(this.item),
+          ...(await addDropzoneFiles(this.dropzoneList)),
+        }
+        this.$store.dispatch('content/setItem', item)
+        await this.$nextTick()
+        this.saved = true
+        this.rerenderPreview()
+      }
+    },
+    titleToSlug() {
+      if (!this.update) {
+        this.item.slug = this.item.title
+          .replace(/[\s/]/gi, '-')
+          .replace(/[^\w-]/gi, '')
+          .toLowerCase()
+      }
+    },
+    useExistingTags(e) {
+      this.item.tagString += this.item.tagString ? `, ${e}` : e
+    },
+    useExistingAuthors(e) {
+      const { authorString } = this.item
+      this.item.authorString = authorString ? `${authorString}\n${e}` : e
+    },
+  },
+  static: {
+    categoryOptions,
+    ...dropzoneMsgs,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateFormAppFields.vue
+================================================
+<template>
+  <v-row>
+    <v-col class="px-4" cols="10" sm="8" lg="4">
+      <v-text-field v-model="item.url" label="URL" :rules="[rules.required]" />
+    </v-col>
+
+    <v-col class="px-4 pt-4" cols="10">
+      <slot name="image"></slot>
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="5">
+      <v-textarea
+        v-model="item.description"
+        auto-grow
+        label="Description"
+        :rules="[rules.required]"
+      />
+    </v-col>
+  </v-row>
+</template>
+
+<script>
+export default {
+  model: {
+    prop: 'item',
+    event: 'change',
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    rules: {
+      type: Object,
+      default: null,
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateFormArticleFields.vue
+================================================
+<template>
+  <v-row>
+    <v-col class="pl-1 pr-4" cols="10" sm="8" lg="5">
+      <v-row no-gutters>
+        <v-col class="shrink">
+          <CreateFormExistingAuthors @useExistingAuthors="useExistingAuthors" />
+        </v-col>
+        <v-col>
+          <v-textarea
+            v-model="item.authorString"
+            label="Authors"
+            auto-grow
+            hint="Format: full name | brief description; Separate authors with new lines"
+            :rules="[rules.required]"
+          />
+        </v-col>
+      </v-row>
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="5">
+      <v-textarea
+        v-model="item.abstract"
+        label="Abstract"
+        auto-grow
+        :rules="[rules.required]"
+      />
+    </v-col>
+
+    <template v-if="update">
+      <v-col class="px-4" cols="5">
+        <p class="pt-2 greycolor">Attach files?</p>
+        <v-checkbox
+          v-model="hasFiles"
+          :label="hasFiles ? 'Yes' : 'No'"
+        ></v-checkbox>
+      </v-col>
+
+      <v-col v-show="hasFiles" class="px-4" cols="10" sm="8" lg="5">
+        <p class="pt-2 greycolor">Main file type</p>
+        <v-radio-group v-model="item.mainfiletype" row>
+          <v-radio
+            v-for="option in $options.static.mainfiletypeOptions"
+            :key="option"
+            :label="option"
+            :value="option"
+          ></v-radio>
+        </v-radio-group>
+      </v-col>
+
+      <v-col v-show="hasFiles" cols="12">
+        <v-row>
+          <v-col class="px-4 pt-4" cols="10" sm="8" lg="5">
+            <slot name="mainfile"></slot>
+          </v-col>
+
+          <v-col class="px-4 pt-4" cols="10" sm="8" lg="5">
+            <slot name="extrafile"></slot>
+          </v-col>
+        </v-row>
+      </v-col>
+    </template>
+
+    <v-col cols="12">
+      <v-row>
+        <v-col class="px-4 pt-4" cols="10" sm="8" lg="5">
+          <slot name="splash"></slot>
+        </v-col>
+
+        <v-col class="px-4 pt-4" cols="10" sm="8" lg="5">
+          <slot name="figures"></slot>
+        </v-col>
+      </v-row>
+    </v-col>
+
+    <v-col class="px-4 pt-4" cols="10" sm="8" lg="10">
+      <p class="pt-2 greycolor">Article body</p>
+      <slot name="articlebody"></slot>
+    </v-col>
+  </v-row>
+</template>
+
+<script>
+import { mainfiletypeOptions } from '@/consts/fieldOptions'
+
+const CreateFormExistingAuthors = () =>
+  import('@/components/CreateFormExistingAuthors')
+
+export default {
+  components: {
+    CreateFormExistingAuthors,
+  },
+  model: {
+    prop: 'item',
+    event: 'change',
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    rules: {
+      type: Object,
+      default: null,
+    },
+    update: Boolean,
+  },
+  data() {
+    return {
+      hasFiles: this.mainfiletype !== null,
+    }
+  },
+  methods: {
+    useExistingAuthors(e) {
+      this.$emit('useExistingAuthors', e)
+    },
+  },
+  static: {
+    mainfiletypeOptions,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateFormDatasetFields.vue
+================================================
+<template>
+  <v-row>
+    <v-col class="px-4" cols="10" sm="8" lg="4">
+      <v-checkbox
+        v-model="item.project"
+        :disabled="!isAdmin"
+        label="Project data?"
+      />
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="4">
+      <v-textarea
+        v-model="item.sourceString"
+        auto-grow
+        hint="Format: title | url; Separate sources with new lines"
+        label="Sources"
+        rows="3"
+        :rules="[rules.required]"
+      />
+    </v-col>
+
+    <v-col cols="12">
+      <v-row>
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <v-text-field
+            v-model="item.timeperiodString"
+            hint="Format: yyyy-yyyy"
+            label="Time period"
+            :rules="[rules.timeperiod]"
+          />
+        </v-col>
+
+        <v-col class="px-4" cols="10" sm="8" lg="4">
+          <v-select
+            v-model="item.timeperiodType"
+            clearable
+            :items="$options.static.timeperiodOptions"
+            label="Time period type"
+          />
+        </v-col>
+      </v-row>
+    </v-col>
+
+    <v-col cols="12" class="px-0">
+      <v-col class="px-4" cols="10" sm="8" lg="4">
+        <v-select
+          v-model="item.unit"
+          clearable
+          :items="$options.static.unitOptions"
+          label="Unit"
+        />
+      </v-col>
+    </v-col>
+
+    <v-col v-if="update" class="px-4 pt-4" cols="10" sm="8">
+      <slot name="datafile"></slot>
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="5">
+      <v-textarea
+        v-model="item.description"
+        auto-grow
+        label="Description"
+        :rules="[rules.required]"
+      />
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="5">
+      <v-textarea
+        v-model="item.noteString"
+        auto-grow
+        hint="Separate notes with new lines"
+        label="Notes"
+      />
+    </v-col>
+
+    <v-col class="px-4" cols="10" sm="8" lg="5">
+      <v-textarea
+        v-model="item.variableString"
+        auto-grow
+        hint="Format: name | type | definition | values; Separate rows with new lines"
+        label="Variables"
+        :rules="[rules.required]"
+      />
+    </v-col>
+  </v-row>
+</template>
+
+<script>
+import { timeperiodOptions, unitOptions } from '@/consts/fieldOptions'
+
+export default {
+  model: {
+    prop: 'item',
+    event: 'change',
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    rules: {
+      type: Object,
+      default: null,
+    },
+    update: Boolean,
+  },
+  data() {
+    return {
+      isAdmin: this.$store.state.auth.role === 'Administrator',
+    }
+  },
+  created() {
+    this.item.project = this.$store.state.auth.role === 'Author'
+  },
+  static: {
+    timeperiodOptions,
+    unitOptions,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateFormExistingAuthors.vue
+================================================
+<template>
+  <v-dialog v-model="dialog" persistent scrollable max-width="300px">
+    <template #activator="{ on: onDialog }">
+      <v-tooltip top>
+        <template #activator="{ on: onTooltip }">
+          <v-btn class="mx-0 mt-4" text icon v-on="onDialog">
+            <v-icon v-on="onTooltip">{{
+              $options.static.mdiMagnifyPlusOutline
+            }}</v-icon>
+          </v-btn>
+        </template>
+        <span class="font-lato">Use existing authors</span>
+      </v-tooltip>
+    </template>
+    <v-card class="font-lato">
+      <div class="py-4 text-center large">Select from existing authors</div>
+      <v-divider></v-divider>
+      <v-card-text style="height: 300px">
+        <v-checkbox
+          v-for="author in authorOptions"
+          :key="author"
+          v-model="authors"
+          hide-details
+          :label="author"
+          :value="author"
+        >
+        </v-checkbox>
+      </v-card-text>
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog">Back</v-btn>
+        <v-btn color="primary" text @click="onUse">Use</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script>
+import { mdiMagnifyPlusOutline } from '@mdi/js'
+import { fetchItemsList as fetchAuthorsList } from '@/services/client.authors'
+
+export default {
+  data() {
+    return {
+      dialog: false,
+      authorOptions: [],
+      authors: [],
+    }
+  },
+  async created() {
+    this.authorOptions = (await fetchAuthorsList()).data.sort()
+  },
+  methods: {
+    closeDialog() {
+      this.authors = []
+      this.dialog = false
+    },
+    onUse() {
+      if (this.authors.length)
+        this.$emit(
+          'useExistingAuthors',
+          this.authors.map((el) => `${el} | ${el} is ...`).join('\n')
+        )
+      this.closeDialog()
+    },
+  },
+  static: {
+    mdiMagnifyPlusOutline,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateFormExistingTags.vue
+================================================
+<template>
+  <v-dialog v-model="dialog" persistent scrollable max-width="300px">
+    <template #activator="{ on: onDialog }">
+      <v-tooltip top>
+        <template #activator="{ on: onTooltip }">
+          <v-btn class="mx-0 mt-4" text icon v-on="onDialog">
+            <v-icon v-on="onTooltip">{{
+              $options.static.mdiMagnifyPlusOutline
+            }}</v-icon>
+          </v-btn>
+        </template>
+        <span class="font-lato">Use existing tags</span>
+      </v-tooltip>
+    </template>
+    <v-card class="font-lato">
+      <div class="py-4 text-center large">Select from existing tags</div>
+      <v-divider></v-divider>
+      <v-card-text style="height: 300px">
+        <v-checkbox
+          v-for="tag in tagOptions"
+          :key="tag"
+          v-model="tags"
+          hide-details
+          :label="tag"
+          :value="tag"
+        >
+        </v-checkbox>
+      </v-card-text>
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog">Back</v-btn>
+        <v-btn color="primary" text @click="onUse">Use</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script>
+import { mdiMagnifyPlusOutline } from '@mdi/js'
+import { fetchItemsList as fetchTagsList } from '@/services/client.tags'
+
+export default {
+  data() {
+    return {
+      dialog: false,
+      tagOptions: [],
+      tags: [],
+    }
+  },
+  async created() {
+    this.tagOptions = (await fetchTagsList()).data.sort()
+  },
+  methods: {
+    closeDialog() {
+      this.tags = []
+      this.dialog = false
+    },
+    onUse() {
+      this.$emit('useExistingTags', this.tags.join(', '))
+      this.closeDialog()
+    },
+  },
+  static: {
+    mdiMagnifyPlusOutline,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/CreateStepper.vue
+================================================
+<template>
+  <BaseStepper :step-num-total="2" @stepper-navigate-before="onNavigateBefore">
+    <template #stepHeader1>{{ 'Select content type' }}</template>
+
+    <template #stepHeader2>{{ 'Create' }}</template>
+
+    <template #stepItem1>
+      <ContentTypeSelector
+        :content-types="contentTypes"
+        :content-type.sync="contentType"
+      />
+    </template>
+
+    <template #stepItem2>
+      <CreateForm :key="formKey" :content-type="contentType" :update="false" />
+    </template>
+  </BaseStepper>
+</template>
+
+<script>
+import resetItem from '@/utils/resetItem'
+import setupStepper from '@/utils/setupStepper'
+
+const BaseStepper = () => import('@/components/BaseStepper')
+const ContentTypeSelector = () => import('@/components/ContentTypeSelector')
+const CreateForm = () => import('@/components/CreateForm')
+
+export default {
+  components: {
+    BaseStepper,
+    ContentTypeSelector,
+    CreateForm,
+  },
+  data() {
+    return {
+      formKey: 0,
+    }
+  },
+  created() {
+    setupStepper(this)
+  },
+  methods: {
+    onNavigateBefore() {
+      resetItem(this.$store)
+      this.formKey += 1
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/DatePicker.vue
+================================================
+<template>
+  <v-menu
+    ref="menu"
+    v-model="menu"
+    :close-on-content-click="false"
+    min-width="290px"
+    offset-y
+    transition="scale-transition"
+  >
+    <template #activator="{ on }">
+      <v-text-field
+        v-model="dateLocal"
+        :append-icon="$options.static.mdiCalendar"
+        label="Date"
+        readonly
+        v-on="on"
+      />
+    </template>
+
+    <v-date-picker v-model="dateLocal" no-title scrollable @input="onInput" />
+  </v-menu>
+</template>
+
+<script>
+import { mdiCalendar } from '@mdi/js'
+
+export default {
+  props: {
+    date: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      dateLocal: null,
+      menu: false,
+    }
+  },
+  mounted() {
+    this.dateLocal = this.date
+  },
+  updated() {
+    this.dateLocal = this.date
+  },
+  methods: {
+    onInput(e) {
+      this.menu = false
+      this.$emit('update:date', e)
+    },
+  },
+  static: {
+    mdiCalendar,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/HomeTaskCard.vue
+================================================
+<template>
+  <router-link :to="`/${task.path}`">
+    <v-card class="ma-2" height="150" hover>
+      <v-row class="fill-height" align="center" justify="center">
+        <span class="large text-uppercase wide">{{ task.title }}</span>
+        <span v-if="task.adminOnly" class="pl-2">
+          <v-icon small color="error">{{ $options.static.mdiAlert }}</v-icon>
+          <span class="small admin-only">Admin only</span>
+        </span>
+      </v-row>
+    </v-card>
+  </router-link>
+</template>
+
+<script>
+import { mdiAlert } from '@mdi/js'
+
+export default {
+  props: {
+    task: {
+      type: Object,
+      default: null,
+    },
+  },
+  static: {
+    mdiAlert,
+  },
+}
+</script>
+
+<style scoped>
+.admin-only {
+  color: grey;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/ItemTable.vue
+================================================
+<template>
+  <div>
+    <v-row justify="end">
+      <v-col cols="6" lg="4">
+        <v-text-field
+          v-model="search"
+          :append-icon="$options.static.mdiMagnify"
+          hide-details
+          label="Search"
+          single-line
+          width="300"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+
+    <v-data-table
+      v-if="items"
+      class="item-table"
+      :headers="$options.static.headers"
+      :items="items"
+      :search="search"
+      sort-by="date"
+      :sort-desc="true"
+    >
+      <template #item.date="{ item }">{{ item.date.slice(0, 10) }}</template>
+
+      <template #item.action="{ item }">
+        <div class="d-flex justify-end">
+          <PreviewDialog
+            :id="item._id"
+            :content-type="contentType"
+            :icon="true"
+            :status="status"
+          >
+            <v-btn icon>
+              <v-icon @click="openArticlePreview(item)">{{
+                $options.static.mdiEye
+              }}</v-icon>
+            </v-btn>
+            <!-- <v-btn icon @click="dispatchAction('fetchItem', { id: item._id })">
+              <v-icon>{{ $options.static.mdiEye }}</v-icon>
+            </v-btn> -->
+          </PreviewDialog>
+
+          <template v-if="type === 'manage'">
+            <template v-if="isStatusPublished && !isRoleAuthor">
+              <v-btn icon @click="updateToSubmitted(item)">
+                <v-icon>{{ $options.static.mdiClose }}</v-icon>
+              </v-btn>
+            </template>
+
+            <template v-if="isStatusSubmitted">
+              <v-btn icon @click="updateToPublished(item)">
+                <v-icon>{{ $options.static.mdiCheck }}</v-icon>
+              </v-btn>
+              <v-btn icon @click="updateToCreated(item)">
+                <v-icon>{{ $options.static.mdiClose }}</v-icon>
+              </v-btn>
+            </template>
+
+            <template v-if="isStatusCreated">
+              <v-btn icon @click="updateToSubmitted(item)">
+                <v-icon>{{ $options.static.mdiCheck }}</v-icon>
+              </v-btn>
+              <v-btn color="error" icon @click="deleteItem(item)">
+                <v-icon>{{ $options.static.mdiDeleteForever }}</v-icon>
+              </v-btn>
+            </template>
+          </template>
+
+          <v-btn v-if="type === 'update'" icon @click="editItem(item)">
+            <v-icon>{{ $options.static.mdiPencil }}</v-icon>
+          </v-btn>
+        </div>
+      </template>
+
+      <template #no-results>{{ msgNoResult }}</template>
+
+      <template #no-data>{{ msgNoData }}</template>
+    </v-data-table>
+  </div>
+</template>
+
+<script>
+import {
+  mdiCheck,
+  mdiClose,
+  mdiDeleteForever,
+  mdiEye,
+  mdiMagnify,
+  mdiPencil,
+} from '@mdi/js'
+import { main } from '@/config'
+
+const PreviewDialog = () => import('@/components/PreviewDialog')
+
+export default {
+  components: {
+    PreviewDialog,
+  },
+  props: {
+    contentType: {
+      type: String,
+      default: '',
+    },
+    status: {
+      type: String,
+      default: '',
+    },
+    type: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      loading: false,
+      search: '',
+    }
+  },
+  computed: {
+    items() {
+      const items = this.$store.state.content.itemlist
+
+      return this.contentType === 'datasets'
+        ? this.filterDatasets(items, this.$store.state.auth.role)
+        : items
+    },
+    isRoleAuthor() {
+      return this.$store.state.auth.role === 'Author'
+    },
+    isStatusCreated() {
+      return this.status === 'created'
+    },
+    isStatusPublished() {
+      return this.status === 'published'
+    },
+    isStatusSubmitted() {
+      return this.status === 'submitted'
+    },
+    msgNoResult() {
+      return `Your search for "${this.search}" found no results.`
+    },
+    msgNoData() {
+      return this.loading
+        ? `Loading "${this.status}" items...`
+        : `No "${this.status}" items.`
+    },
+  },
+  watch: {
+    contentType() {
+      this.loadItemList()
+    },
+    status() {
+      this.loadItemList()
+    },
+  },
+  created() {
+    this.loadItemList()
+  },
+  methods: {
+    openArticlePreview(item) {
+      console.log('open preview window here')
+    },
+    async dispatchAction(action, params) {
+      return await this.$store.dispatch(`content/${action}`, {
+        contentType: this.contentType,
+        ...params,
+      })
+    },
+    filterDatasets(datasets, role) {
+      switch (role) {
+        case 'Administrator':
+          return datasets
+        case 'Author':
+          return datasets.filter((el) => el.project)
+        case 'Data Manager':
+          return datasets.filter((el) => !el.project)
+      }
+    },
+    async loadItemList() {
+      this.loading = true
+      await this.dispatchAction('clearAll')
+      await this.dispatchAction('fetchItemList', { status: this.status })
+      this.loading = false
+    },
+    handleUpdate(res, msgSuccess, msgFailure, callback = this.loadItemList) {
+      if (res && res.status === 200) {
+        alert(`✔️${msgSuccess}`)
+        callback()
+      } else {
+        alert(`⚠️${msgFailure}`)
+      }
+    },
+    async editItem({ _id: id, title }) {
+      const res = await this.dispatchAction('fetchItem', { id })
+      if (res && res.status === 200) {
+        alert('✔️Item is selected. Click the next button (>) to edit.')
+      } else {
+        alert(`⚠️Failed to select: ${title}`)
+      }
+    },
+    async deleteItem({ _id: id, title }) {
+      if (confirm('Deleting an item cannot be undone. Are you sure?')) {
+        const res = await this.dispatchAction('deleteItem', { id })
+        const msgSuccess = 'Item is deleted.'
+        const msgFailure = `Failed to delete: ${title}`
+
+        this.handleUpdate(res, msgSuccess, msgFailure)
+      }
+    },
+    async triggerBuildMain() {
+      fetch(main.buildHook, { method: 'POST' })
+    },
+    async updateToCreated({ _id: id, title }) {
+      const res = await this.dispatchAction('updateItemToCreated', { id })
+      const msgSuccess = `Status updated to "created": ${title}`
+      const msgFailure = `Failed to update status: ${title}`
+
+      this.handleUpdate(res, msgSuccess, msgFailure)
+    },
+    async updateToPublished({ _id: id, title, slug }) {
+      if (confirm('Publishing an item is considered final. Are you sure?')) {
+        const res = await this.dispatchAction('updateItemToPublished', { id })
+        const msgSuccess =
+          `Status updated to "published": ${title}\n\n` +
+          `Public link: ${main.baseURL}/${this.contentType}/${slug}`
+        const msgFailure = `Failed to update status: ${title}`
+
+        this.handleUpdate(res, msgSuccess, msgFailure, () => {
+          if (this.contentType !== 'datasets') this.triggerBuildMain()
+          this.loadItemList()
+        })
+      }
+    },
+    async updateToSubmitted({ _id: id, title, slug }) {
+      const res = await this.dispatchAction('updateItemToSubmitted', { id })
+      const msgSuccess =
+        `Status updated to "submitted": ${title}\n\n` +
+        `Preview link: https://preview.icjia.cloud/${this.contentType}/${slug}`
+      const msgFailure = `Failed to update status: ${title}`
+
+      this.handleUpdate(res, msgSuccess, msgFailure)
+    },
+  },
+  static: {
+    headers: [
+      {
+        text: 'Date',
+        align: 'left',
+        value: 'date',
+      },
+      {
+        text: 'Title',
+        align: 'left',
+        value: 'title',
+      },
+      {
+        text: 'Actions',
+        align: 'right',
+        value: 'action',
+        sortable: false,
+      },
+    ],
+    mdiCheck,
+    mdiClose,
+    mdiDeleteForever,
+    mdiEye,
+    mdiMagnify,
+    mdiPencil,
+  },
+}
+</script>
+
+<style scoped>
+.item-table >>> td {
+  font-size: 0.95em;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/LoginForm.vue
+================================================
+<template>
+  <v-form ref="form" v-model="valid" class="font-lato" lazy-validation>
+    <v-sheet
+      class="elevation-24"
+      :class="loginError ? 'login-error' : ''"
+      width="300px"
+    >
+      <div class="py-4 text-center">
+        <h3>Log in</h3>
+        <span class="font-weight-light large">with a valid account</span>
+      </div>
+
+      <div class="px-6 pt-4 pb-10">
+        <v-text-field
+          ref="username"
+          v-model="username"
+          class="input-group--focused"
+          label="Username"
+          :rules="[rules.required]"
+          outlined
+          @keyup.enter="login"
+        />
+
+        <v-text-field
+          v-model="password"
+          label="Password"
+          class="input-group--focused pb-4"
+          :rules="[rules.required]"
+          :type="showPassword ? 'text' : 'password'"
+          :append-icon="
+            showPassword ? $options.static.mdiEyeOff : $options.static.mdiEye
+          "
+          outlined
+          @keyup.enter="login"
+          @click:append="showPassword = !showPassword"
+        />
+
+        <v-btn block color="primary" @click="login" @keyup.enter="login">
+          <template>{{ 'log in' }}</template>
+        </v-btn>
+
+        <div
+          v-if="loginError"
+          class="text-center mt-6 px-6 login-error-message"
+        >
+          Invalid username or password!
+        </div>
+      </div>
+    </v-sheet>
+  </v-form>
+</template>
+
+<script>
+import { mdiEye, mdiEyeOff } from '@mdi/js'
+import NProgress from 'nprogress'
+
+export default {
+  data() {
+    return {
+      username: '',
+      password: '',
+      showPassword: false,
+      loginError: false,
+      rules: {
+        required: (value) => !!value || 'Required.',
+      },
+      valid: true,
+    }
+  },
+  async mounted() {
+    await this.$nextTick(this.$refs.username.focus)
+  },
+  methods: {
+    login() {
+      if (this.$refs.form.validate()) {
+        this.$store
+          .dispatch('auth/login', {
+            identifier: this.username,
+            password: this.password,
+          })
+          .then(() => this.$router.push('/'))
+          .catch(() => {
+            this.loginError = true
+            NProgress.done()
+          })
+      }
+    },
+  },
+  static: {
+    mdiEye,
+    mdiEyeOff,
+  },
+}
+</script>
+
+<style scoped>
+.login-error {
+  border: 1px solid #ff5252 !important;
+  box-shadow: 0 3px 1px -2px rgba(255, 0, 0, 0.2),
+    0 2px 2px 0 rgba(255, 0, 0, 0.14), 0 1px 5px 0 rgba(255, 0, 0, 0.12) !important;
+}
+
+.login-error-message {
+  color: #ff5252;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/ManageStepper.vue
+================================================
+<template>
+  <BaseStepper :step-num-total="2" @stepper-navigate-before="onNavigateBefore">
+    <template #stepHeader1>{{ 'Select content type' }}</template>
+
+    <template #stepItem1>
+      <ContentTypeSelector
+        :content-types="contentTypes"
+        :content-type.sync="contentType"
+      />
+    </template>
+
+    <template #stepHeader2>{{ 'Manage' }}</template>
+
+    <template #stepItem2>
+      <div class="text-center greycolor">
+        <template>{{ 'Content type: ' }}</template>
+        <span class="text-capitalize">{{ contentType }}</span>
+      </div>
+
+      <v-row justify="center" no-gutters>
+        <v-radio-group
+          v-model="status"
+          class="text-capitalize mt-2 pt-0"
+          label="Status:"
+          row
+        >
+          <v-radio
+            v-for="statusOption in $options.static.statusOptions"
+            :key="statusOption"
+            :label="statusOption"
+            :value="statusOption"
+          ></v-radio>
+        </v-radio-group>
+      </v-row>
+
+      <ItemTable :content-type="contentType" :status="status" type="manage" />
+    </template>
+  </BaseStepper>
+</template>
+
+<script>
+import { statusOptions } from '@/consts/fieldOptions'
+import resetItem from '@/utils/resetItem'
+import setupStepper from '@/utils/setupStepper'
+
+const BaseStepper = () => import('@/components/BaseStepper')
+const ContentTypeSelector = () => import('@/components/ContentTypeSelector')
+const ItemTable = () => import('@/components/ItemTable')
+
+export default {
+  components: {
+    BaseStepper,
+    ContentTypeSelector,
+    ItemTable,
+  },
+  props: {
+    type: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      status: 'submitted',
+    }
+  },
+  watch: {
+    contentType() {
+      this.status = 'submitted'
+    },
+  },
+  created() {
+    setupStepper(this)
+  },
+  methods: {
+    onNavigateBefore() {
+      resetItem(this.$store)
+    },
+  },
+  static: {
+    statusOptions,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/MarkdownEditor.vue
+================================================
+<template>
+  <!-- eslint-disable vue/no-v-html -->
+  <v-row no-gutters>
+    <v-col cols="12" lg="6">
+      <span class="greycolor small">
+        <template>{{ 'Markdown' }}</template>
+        <template>{{ ' (Use ' }}</template>
+        <a href="https://markdown.icjia.cloud/" target="_blank">
+          <template>{{ 'ICJIA markdown editor' }}</template>
+          <v-icon small>{{ $options.static.mdiOpenInNew }}</v-icon>
+        </a>
+        <template>{{ ') :' }}</template>
+      </span>
+      <v-textarea
+        id="editor"
+        ref="myEditor"
+        v-model="markdownLocal"
+        height="400"
+        filled
+        no-resize
+        @scroll="syncScrollEditor"
+        @input="onInput"
+      >
+      </v-textarea>
+    </v-col>
+
+    <v-col class="hidden-md-and-down" cols="6">
+      <span class="greycolor small">HTML Preview :</span>
+      <div
+        id="preview"
+        ref="myPreview"
+        @scroll="syncScrollPreview"
+        v-html="compiledMarkdown"
+      ></div>
+    </v-col>
+  </v-row>
+</template>
+
+<script>
+import { mdiOpenInNew } from '@mdi/js'
+import { initTexmath } from 'researchhub-lib/src/utils/texmath'
+
+const mdOpts = {
+  html: true,
+  linkify: true,
+  typographer: true,
+}
+
+const mdLinkAttrOpts = {
+  attrs: {
+    target: '_blank',
+  },
+}
+
+const mdMultimdTableOpts = {
+  enableMultilineRows: true,
+  enableRowspan: true,
+}
+
+const md = require('markdown-it')(mdOpts)
+  .use(require('markdown-it-footnote'))
+  .use(require('markdown-it-link-attributes'), mdLinkAttrOpts)
+  .use(require('markdown-it-multimd-table'), mdMultimdTableOpts)
+
+function syncScroll(from, to) {
+  let sf = from.scrollHeight - from.clientHeight
+
+  if (sf < 1) return
+
+  let st = to.scrollHeight - to.clientHeight
+  let p = (from.scrollTop / sf) * 100
+
+  to.scrollTop = (st / 100) * p
+}
+
+export default {
+  props: {
+    markdown: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      markdownLocal: null,
+    }
+  },
+  computed: {
+    compiledMarkdown() {
+      return md.render(this.markdown)
+    },
+    editor() {
+      return this.$refs.myEditor.$el.querySelector('#editor')
+    },
+    preview() {
+      return this.$refs.myPreview
+    },
+  },
+  async created() {
+    await initTexmath()
+    // eslint-disable-next-line no-undef
+    md.use(texmath.use(katex))
+  },
+  mounted() {
+    this.markdownLocal = this.markdown
+  },
+  updated() {
+    this.markdownLocal = this.markdown
+  },
+  methods: {
+    onInput(e) {
+      this.$emit('update:markdown', e)
+    },
+    syncScrollEditor() {
+      syncScroll(this.editor, this.preview)
+    },
+    syncScrollPreview() {
+      syncScroll(this.preview, this.editor)
+    },
+    updateMarkdown() {
+      this.$emit('update:markdown', this.markdownLocal)
+    },
+  },
+  static: {
+    mdiOpenInNew,
+  },
+}
+</script>
+
+<style scoped>
+#preview {
+  font-family: 'Gentium Book Basic', serif;
+  height: 400px;
+  overflow: auto;
+  vertical-align: top;
+  box-sizing: border-box;
+  padding: 20px 15px;
+  border: 1px solid #ccc;
+}
+
+#preview >>> h2,
+#preview >>> h3,
+#preview >>> h4,
+#preview >>> h5 {
+  font-family: 'Oswald', sans-serif;
+  line-height: 1.3;
+  margin-bottom: 11px;
+}
+
+#preview >>> h4,
+#preview >>> h5,
+#preview >>> h6 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  margin-bottom: 11px;
+  margin-top: 11px;
+}
+
+#preview >>> h2 {
+  font-size: 1.7em;
+}
+
+#preview >>> h3 {
+  font-size: 1.2em;
+}
+
+#preview >>> h4 {
+  font-size: 0.85em;
+}
+
+#preview >>> h5 {
+  font-size: 0.7em;
+}
+
+#preview >>> h6 {
+  font-family: 'Lato', sans-serif;
+  font-size: 0.65em;
+}
+
+#preview >>> .article-figure,
+#preview >>> .article-table {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  padding: 1.2em 0.6em;
+}
+
+#preview >>> blockquote {
+  background-color: #ebf6ff;
+  border-left: 0.25em solid #466c8c;
+  font-family: 'Lato', sans-serif;
+  color: #466c8c;
+  padding: 1em 2em;
+  margin: 2em 0;
+}
+
+#preview >>> blockquote p,
+#preview >>> blockquote ol,
+#preview >>> blockquote ul {
+  text-indent: 0;
+}
+
+#preview >>> blockquote > :first-child {
+  margin-top: 0;
+}
+
+#preview >>> blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+#preview >>> table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#preview >>> table td,
+#preview >>> table th {
+  border: 1px solid grey;
+  padding: 6px 13px;
+}
+
+#preview >>> table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+#preview >>> table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+#preview >>> .katex {
+  font-size: 1em;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/MyDropzone.vue
+================================================
+<template>
+  <div>
+    <p class="greycolor">
+      <slot name="title"></slot>
+      <span v-if="update"> (No change if not provided)</span>
+    </p>
+
+    <BaseDropzone
+      id="dropzone"
+      ref="MyDropzone"
+      :duplicate-check="true"
+      :options="dropzoneOptions"
+      @vdropzone-file-added="vfileAdded"
+      @vdropzone-error="verror"
+      @vdropzone-removed-file="vremoved"
+      @vdropzone-total-upload-progress="vprogress"
+      @vdropzone-mounted="vmounted"
+      @vdropzone-duplicate-file="vdduplicate"
+    >
+      <slot name="message"></slot>
+    </BaseDropzone>
+  </div>
+</template>
+
+<script>
+/* eslint no-unused-vars: "off" */
+const BaseDropzone = () => import('@/components/BaseDropzone')
+
+export default {
+  components: {
+    BaseDropzone,
+  },
+  props: {
+    fileTypes: {
+      type: String,
+      default: '',
+    },
+    maxFilesize: {
+      type: Number,
+      default: 0,
+    },
+    multipleFiles: {
+      type: Boolean,
+      default: false,
+    },
+    update: Boolean,
+  },
+  data() {
+    return {
+      fileAdded: false,
+      error: false,
+      removedFile: false,
+      uploadProgress: false,
+      progress: false,
+      myProgress: 0,
+      isMounted: false,
+      dDuplicate: false,
+    }
+  },
+  computed: {
+    dropzoneOptions() {
+      let options = {
+        url: '/post',
+        thumbnailWidth: 150,
+        acceptedFiles: this.fileTypes,
+        addRemoveLinks: true,
+        autoProcessQueue: false,
+        accept(file, done) {
+          done()
+        },
+      }
+      if (!this.multipleFiles) options.maxFiles = 1
+      if (this.maxFilesize) options.maxFilesize = this.maxFilesize
+
+      return options
+    },
+  },
+  watch: {
+    fileAdded() {
+      let that = this
+      setTimeout(function () {
+        that.fileAdded = false
+      }, 2000)
+    },
+    error() {
+      let that = this
+      setTimeout(function () {
+        that.error = false
+      }, 2000)
+    },
+    removedFile() {
+      let that = this
+      setTimeout(function () {
+        that.removedFile = false
+      }, 2000)
+    },
+    progress() {
+      let that = this
+      setTimeout(function () {
+        that.progress = false
+      }, 2000)
+    },
+    isMounted() {
+      let that = this
+      setTimeout(function () {
+        that.isMounted = false
+      }, 2000)
+    },
+    dDuplicate() {
+      let that = this
+      setTimeout(function () {
+        that.dDuplicate = false
+      }, 2000)
+    },
+  },
+  methods: {
+    vfileAdded(file) {
+      this.fileAdded = true
+      this.$refs.MyDropzone.$el.querySelector('.dz-progress').remove()
+    },
+    verror(file) {
+      this.error = true
+    },
+    vremoved(file, xhr, error) {
+      this.removedFile = true
+    },
+    vprogress(totalProgress, totalBytes, totalBytesSent) {
+      this.progress = true
+      this.myProgress = Math.floor(totalProgress)
+    },
+    vmounted() {
+      this.isMounted = true
+    },
+    vdduplicate() {
+      this.dDuplicate = true
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/PostForm.vue
+================================================
+<template>
+  <BaseForm
+    :content-type="contentType"
+    form-type="post"
+    @form-main="onMain"
+    @form-reset="onReset"
+  >
+    <v-form>
+      <v-row class="pl-4 pb-12">
+        <v-col class="px-4" cols="10">
+          <p class="greycolor">Status</p>
+          <v-radio-group v-model="statusLocal" class="text-capitalize" row>
+            <v-radio
+              v-for="statusOption in $options.static.statusOptions"
+              :key="statusOption"
+              :label="statusOption"
+              :value="statusOption"
+            ></v-radio>
+          </v-radio-group>
+        </v-col>
+
+        <v-col class="px-4 pt-4" cols="10">
+          <MyDropzone
+            ref="DropzoneJson"
+            key="DropzoneJson"
+            file-types=".json"
+            :update="update"
+          >
+            <template #title>{{ 'JSON file' }}</template>
+            <template #message>{{ $options.static.dropzoneMsgJson }}</template>
+          </MyDropzone>
+        </v-col>
+
+        <template v-if="contentType === 'apps'">
+          <v-col class="px-4 pt-4" cols="10">
+            <MyDropzone
+              ref="DropzoneImage"
+              key="DropzoneImage"
+              file-types=".jpg, .jpeg, .png"
+            >
+              <template #title>{{ 'Image' }}</template>
+              <template #message>{{
+                $options.static.dropzoneMsgImage
+              }}</template>
+            </MyDropzone>
+          </v-col>
+        </template>
+
+        <template v-if="contentType === 'articles'">
+          <v-col class="px-4 pt-4" cols="10">
+            <MyDropzone
+              ref="DropzoneSplash"
+              key="DropzoneSplash"
+              file-types=".jpg, .jpeg, .png"
+              :update="update"
+            >
+              <template #title>{{ 'Splash image' }}</template>
+              <template #message>{{
+                $options.static.dropzoneMsgImage
+              }}</template>
+            </MyDropzone>
+          </v-col>
+
+          <v-col class="px-4 pt-4" cols="10">
+            <MyDropzone
+              ref="DropzoneImages"
+              key="DropzoneImages"
+              file-types=".jpg, .jpeg, .png"
+              :update="update"
+            >
+              <template #title>{{ 'Figures' }}</template>
+              <template #message>{{
+                $options.static.dropzoneMsgImages
+              }}</template>
+            </MyDropzone>
+          </v-col>
+
+          <v-col class="px-4 pt-4" cols="10">
+            <MyDropzone
+              key="DropzoneMarkdown"
+              ref="DropzoneMarkdown"
+              file-types=".md"
+              :update="update"
+            >
+              <template #title>{{ 'Article body' }}</template>
+              <template #message>{{
+                $options.static.dropzoneMsgMarkdown
+              }}</template>
+            </MyDropzone>
+          </v-col>
+
+          <template v-if="update">
+            <v-col class="px-4 pt-4" cols="10">
+              <MyDropzone
+                ref="DropzoneMainfile"
+                key="DropzoneMainfile"
+                file-types=".pdf"
+                :max-filesize="5"
+                :update="update"
+              >
+                <template #title>{{ 'Main file' }}</template>
+                <template #message>{{
+                  $options.static.dropzoneMsgPDF
+                }}</template>
+              </MyDropzone>
+            </v-col>
+
+            <v-col class="px-4 pt-4" cols="10">
+              <MyDropzone
+                ref="DropzoneExtrafile"
+                key="DropzoneExtrafile"
+                :max-filesize="10"
+                :update="update"
+              >
+                <template #title>{{ 'Extra file' }}</template>
+                <template #message>{{
+                  $options.static.dropzoneMsgFile
+                }}</template>
+              </MyDropzone>
+            </v-col>
+          </template>
+        </template>
+
+        <template v-if="contentType === 'datasets'">
+          <v-col class="px-4 pt-4" cols="10">
+            <MyDropzone
+              ref="DropzoneDatafile"
+              key="DropzoneDatafile"
+              file-types=".csv"
+              :update="update"
+            >
+              <template #title>{{ 'Data file' }}</template>
+              <template #message>{{ $options.static.dropzoneMsgCsv }}</template>
+            </MyDropzone>
+          </v-col>
+        </template>
+      </v-row>
+
+      <v-btn class="mx-2" outlined @click="onSave">Save</v-btn>
+      <PreviewDialog
+        v-if="saved"
+        :key="previewKey"
+        :content-type="contentType"
+        :icon="false"
+        :local="true"
+      />
+      <v-btn v-else class="mx-2" disabled outlined>Preview</v-btn>
+    </v-form>
+  </BaseForm>
+</template>
+
+<script>
+import { mapState } from 'vuex'
+
+import dropzoneMsgs from '@/consts/dropzoneMsgs'
+import { statusOptions } from '@/consts/fieldOptions'
+
+import addDropzoneFiles from '@/utils/addDropzoneFiles'
+import getDropzoneFilelist from '@/utils/getDropzoneFilelist'
+import getDropzoneList from '@/utils/getDropzoneList'
+import removeDropzoneFiles from '@/utils/removeDropzoneFiles'
+import submitForm from '@/utils/submitForm'
+
+const BaseForm = () => import('@/components/BaseForm')
+const MyDropzone = () => import('@/components/MyDropzone')
+const PreviewDialog = () => import('@/components/PreviewDialog')
+
+export default {
+  components: {
+    BaseForm,
+    MyDropzone,
+    PreviewDialog,
+  },
+  props: {
+    contentType: {
+      type: String,
+      default: '',
+    },
+    status: {
+      type: String,
+      default: '',
+    },
+    update: Boolean,
+  },
+  data() {
+    return {
+      dropzoneList: {},
+      item: {},
+      previewKey: 0,
+      statusLocal: this.status,
+      saved: false,
+    }
+  },
+  computed: {
+    ...mapState('content', {
+      content: 'item',
+      contentId: 'itemId',
+    }),
+  },
+  watch: {
+    // eslint-disable-next-line no-unused-vars
+    content(newContent, _) {
+      if (this.update && newContent && Object.keys(newContent).length) {
+        this.item = newContent
+        this.saved = true
+      }
+    },
+    // eslint-disable-next-line no-unused-vars
+    status(newStatus, _) {
+      if (this.update && newStatus) this.statusLocal = newStatus
+    },
+  },
+  mounted() {
+    this.dropzoneList = getDropzoneList(this.$refs)
+  },
+  updated() {
+    this.dropzoneList = getDropzoneList(this.$refs)
+  },
+  methods: {
+    async onMain() {
+      await submitForm({
+        contentType: this.contentType,
+        router: this.$router,
+        store: this.$store,
+        update: this.update,
+      })
+    },
+    async onReset() {
+      if (this.update) {
+        await this.$store.dispatch('content/fetchItem', {
+          contentType: this.contentType,
+          id: this.contentId,
+        })
+      } else {
+        this.$store.dispatch('content/setItem', {})
+        this.item = { status: 'publisehd' }
+      }
+      if (this.dropzoneList) removeDropzoneFiles(this.dropzoneList)
+      this.saved = false
+    },
+    async onSave() {
+      await this.saveItem()
+      if (this.saved) {
+        if (this.update) this.saveFiles()
+        alert('✔️Changes saved. Try preview.')
+      } else {
+        alert('⚠️Missing required information!')
+      }
+    },
+    rerenderPreview() {
+      this.previewKey += 1
+    },
+    saveFiles() {
+      const filelist = getDropzoneFilelist(this.dropzoneList)
+      this.$store.dispatch('content/setFilelist', filelist)
+    },
+    async saveItem() {
+      const item = {
+        status: this.statusLocal,
+        ...this.item,
+        ...(await addDropzoneFiles(this.dropzoneList)),
+      }
+      this.$store.dispatch('content/setItem', item)
+      await this.$nextTick()
+      this.saved = true
+      this.rerenderPreview()
+    },
+  },
+  static: {
+    ...dropzoneMsgs,
+    statusOptions,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/PostStepper.vue
+================================================
+<template>
+  <BaseStepper :step-num-total="2" @stepper-navigate-before="onNavigateBefore">
+    <template #stepHeader1>{{ 'Select content type' }}</template>
+
+    <template #stepHeader2>{{ 'Post' }}</template>
+
+    <template #stepItem1>
+      <ContentTypeSelector
+        :content-types="contentTypes"
+        :content-type.sync="contentType"
+      />
+    </template>
+
+    <template #stepItem2>
+      <PostForm :content-type="contentType" status="created" :update="false" />
+    </template>
+  </BaseStepper>
+</template>
+
+<script>
+import resetItem from '@/utils/resetItem'
+import setupStepper from '@/utils/setupStepper'
+
+const BaseStepper = () => import('@/components/BaseStepper')
+const PostForm = () => import('@/components/PostForm')
+const ContentTypeSelector = () => import('@/components/ContentTypeSelector')
+
+export default {
+  components: {
+    BaseStepper,
+    PostForm,
+    ContentTypeSelector,
+  },
+  created() {
+    setupStepper(this)
+  },
+  methods: {
+    onNavigateBefore() {
+      resetItem(this.$store)
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/PreviewDialog.vue
+================================================
+<template>
+  <v-dialog
+    v-model="dialog"
+    fullscreen
+    hide-overlay
+    transition="dialog-bottom-transition"
+  >
+    <template #activator="{ on }">
+      <v-btn class="mx-2" :icon="icon" :outlined="!icon" v-on="on">
+        <slot>Preview</slot>
+      </v-btn>
+    </template>
+
+    <v-card>
+      <v-toolbar class="toolbar">
+        <span class="px-4 text-uppercase wide">{{ msgTitle }}</span>
+
+        <v-spacer></v-spacer>
+
+        <template v-if="status !== 'created'">
+          <v-btn class="mx-1" color="primary" text :href="link" target="_blank">
+            {{ status === 'published' ? 'public link' : 'preview link' }}
+          </v-btn>
+        </template>
+
+        <v-btn class="mx-1" text @click="view = !view">
+          <template>{{ view ? 'show card' : 'show view' }}</template>
+        </v-btn>
+
+        <v-btn class="mx-1" icon @click="closePreview">
+          <v-icon>{{ $options.static.mdiClose }}</v-icon>
+        </v-btn>
+      </v-toolbar>
+
+      <BaseViewTitle page="Item preview" />
+
+      <template v-if="dialog && item">
+        <PreviewDialogApp
+          v-if="contentType === 'apps'"
+          :item="item"
+          :view="view"
+        />
+
+        <PreviewDialogArticle
+          v-if="contentType === 'articles'"
+          :item="item"
+          :view="view"
+        />
+
+        <PreviewDialogDataset
+          v-if="contentType === 'datasets'"
+          :item="item"
+          :view="view"
+        />
+      </template>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script>
+import { mdiClose } from '@mdi/js'
+import { main } from '@/config'
+import { fetchItemById as fetchAppById } from '@/services/client.apps'
+import { fetchItemById as fetchArticleById } from '@/services/client.articles'
+import { fetchItemById as fetchDatasetById } from '@/services/client.datasets'
+
+const BaseViewTitle = () => import('@/components/BaseViewTitle')
+const PreviewDialogApp = () => import('@/components/PreviewDialogApp')
+const PreviewDialogArticle = () => import('@/components/PreviewDialogArticle')
+const PreviewDialogDataset = () => import('@/components/PreviewDialogDataset')
+
+export default {
+  components: {
+    BaseViewTitle,
+    PreviewDialogApp,
+    PreviewDialogArticle,
+    PreviewDialogDataset,
+  },
+  props: {
+    contentType: {
+      type: String,
+      default: '',
+    },
+    icon: Boolean,
+    id: {
+      type: String,
+      default: '',
+    },
+    local: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      dialog: false,
+      view: true,
+      item: this.local ? this.$store.state.content.item : null,
+      published: this.status === 'published',
+      mdiClose,
+    }
+  },
+  computed: {
+    msgTitle() {
+      return `Preview type: ${this.contentType} ${this.view ? 'view' : 'card'}`
+    },
+    link() {
+      if (status !== 'created' && this.item) {
+        let link
+        if (this.status === 'published') {
+          link = main.baseURL + `/${this.contentType}/${this.item.slug}`
+        } else {
+          return (
+            'https://preview.icjia.cloud/' +
+            `${this.contentType}/${this.item.slug}`
+          )
+        }
+        return link
+      } else {
+        return ''
+      }
+    },
+  },
+  watch: {
+    async id() {
+      if (!this.local) await this.reload()
+    },
+  },
+  async created() {
+    if (!this.local) await this.reload()
+  },
+  methods: {
+    closePreview() {
+      this.dialog = false
+      this.view = true
+    },
+    async reload() {
+      switch (this.contentType) {
+        case 'apps':
+          this.item = (await fetchAppById(this.id)).data
+          break
+        case 'articles':
+          this.item = (await fetchArticleById(this.id)).data
+          break
+        case 'datasets':
+          this.item = (await fetchDatasetById(this.id)).data
+      }
+    },
+  },
+  static: {
+    mdiClose,
+  },
+}
+</script>
+
+<style scoped>
+.toolbar {
+  font-family: 'Lato' !important;
+  box-shadow: 0 1px rgba(0, 0, 0, 0.2);
+  height: 60px;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/PreviewDialogApp.vue
+================================================
+<template>
+  <v-col class="mx-auto mt-6 px-0" cols="12" sm="10" lg="8" xl="7">
+    <AppView v-if="view" :item="item" :preview="true" />
+
+    <v-col v-else class="mx-auto" cols="12" md="4">
+      <AppCard
+        :horizontal="$vuetify.breakpoint.smOnly"
+        :item="item"
+        :preview="true"
+      />
+    </v-col>
+  </v-col>
+</template>
+
+<script>
+const AppCard = () => import('researchhub-lib').then((m) => m.AppCard)
+const AppView = () => import('researchhub-lib').then((m) => m.AppView)
+
+export default {
+  components: {
+    AppCard,
+    AppView,
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    view: Boolean,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/PreviewDialogArticle.vue
+================================================
+<template>
+  <div>
+    <ArticleView
+      v-if="view"
+      id="article-view"
+      :downloader="nodownloader"
+      :item="item"
+      :preview="true"
+    />
+
+    <v-col v-else class="mx-auto mt-6 px-0" cols="12" sm="10" lg="8" xl="7">
+      <ArticleCard
+        :horizontal="$vuetify.breakpoint.smAndUp"
+        :item="item"
+        :preview="true"
+      />
+    </v-col>
+  </div>
+</template>
+
+<script>
+const ArticleCard = () => import('researchhub-lib').then((m) => m.ArticleCard)
+const ArticleView = () => import('researchhub-lib').then((m) => m.ArticleView)
+
+export default {
+  components: {
+    ArticleCard,
+    ArticleView,
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    view: Boolean,
+  },
+  methods: {
+    nodownloader() {
+      alert('⚠️Cannot download files in preview!')
+    },
+  },
+}
+</script>
+
+<style scoped>
+#article-view {
+  font-family: 'Gentium Book Basic', serif;
+}
+</style>
+
+
+
+================================================
+FILE: src/components/PreviewDialogDataset.vue
+================================================
+<template>
+  <v-col class="mx-auto mt-6 px-0" cols="12" sm="10" lg="8" xl="7">
+    <DatasetView
+      v-if="view"
+      :downloader="nodownloader"
+      :item="item"
+      :preview="true"
+    />
+
+    <v-col v-else cols="12" md="6">
+      <DatasetCard :item="item" :preview="true" />
+    </v-col>
+  </v-col>
+</template>
+
+<script>
+const DatasetCard = () => import('researchhub-lib').then((m) => m.DatasetCard)
+const DatasetView = () => import('researchhub-lib').then((m) => m.DatasetView)
+
+export default {
+  components: {
+    DatasetCard,
+    DatasetView,
+  },
+  props: {
+    item: {
+      type: Object,
+      default: null,
+    },
+    view: Boolean,
+  },
+  methods: {
+    nodownloader() {
+      alert('⚠️Cannot download files in preview!')
+    },
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/ServerError.vue
+================================================
+<template>
+  <div>
+    <BaseViewTitle page="Error" />
+
+    <div class="error-page">
+      <v-icon color="error" x-large>{{
+        $options.static.mdiCloseCircle
+      }}</v-icon>
+      <h1 class="pb-4">Sorry, something went wrong</h1>
+
+      <p>Try refreshing the page or please check back later.</p>
+
+      <p>
+        If the problem persists, please report to
+        <a href="mailto:CJA.ResearchHub@illinois.gov"
+          >CJA.ResearchHub@illinois.gov</a
+        >.
+      </p>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mdiCloseCircle } from '@mdi/js'
+const BaseViewTitle = () => import('@/components/BaseViewTitle')
+
+export default {
+  components: {
+    BaseViewTitle,
+  },
+  static: {
+    mdiCloseCircle,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/TheFooter.vue
+================================================
+<template>
+  <Footer :github="$options.static.github" />
+</template>
+
+<script>
+import { github } from '@/config'
+const Footer = () => import('researchhub-lib').then((m) => m.Footer)
+
+export default {
+  components: {
+    Footer,
+  },
+  static: {
+    github,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/TheToolbar.vue
+================================================
+<template>
+  <BaseToolbar :menu="isLoggedIn" :logo-path="$options.static.logoPath">
+    <template #titleExtra>
+      <span class="font-weight-light"> Studio</span>
+    </template>
+
+    <template v-if="isLoggedIn" #toolbarItems>
+      <v-btn v-for="(view, i) in views" :key="i" :to="`/${view.path}`" text>
+        <v-icon v-if="/post/.test(view.name)" color="error">{{
+          $options.static.mdiAlert
+        }}</v-icon>
+        <template>{{ view.name }}</template>
+      </v-btn>
+
+      <v-btn color="primary" text @click="logout">log out</v-btn>
+    </template>
+
+    <template v-if="isLoggedIn" #toolbarDrawerItems>
+      <v-list-item v-for="(view, i) in views" :key="i" :to="`/${view.path}`">
+        <v-icon v-if="/post/.test(view.name)" color="error">{{
+          $options.static.mdiAlert
+        }}</v-icon>
+        <v-list-item-title>{{ view.name }}</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item @click="logout">
+        <v-list-item-title>log out</v-list-item-title>
+      </v-list-item>
+    </template>
+  </BaseToolbar>
+</template>
+
+<script>
+import { mdiAlert } from '@mdi/js'
+import { mapState } from 'vuex'
+const BaseToolbar = () => import('researchhub-lib').then((m) => m.BaseToolbar)
+
+export default {
+  components: {
+    BaseToolbar,
+  },
+  computed: {
+    ...mapState('auth', {
+      isLoggedIn: 'isLoggedIn',
+    }),
+    views() {
+      const views = [
+        { name: 'home', path: '' },
+        { name: 'create', path: 'create' },
+        { name: 'update', path: 'update' },
+        { name: 'manage', path: 'manage' },
+      ]
+
+      if (this.$store.state.auth.role === 'Administrator') {
+        views.push(
+          { name: 'post new', path: 'post-new' },
+          { name: 'post up', path: 'post-update' }
+        )
+      }
+
+      return views
+    },
+  },
+  methods: {
+    logout() {
+      this.$store
+        .dispatch('auth/logout')
+        .then(() => this.$router.push('/login'))
+    },
+  },
+  static: {
+    logoPath: process.env.BASE_URL + 'icjia-logo.png',
+    mdiAlert,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/components/UpdateStepper.vue
+================================================
+<template>
+  <BaseStepper :step-num-total="3" @stepper-navigate-before="onNavigateBefore">
+    <template #stepHeader1>{{ 'Select content type' }}</template>
+
+    <template #stepItem1>
+      <ContentTypeSelector
+        :content-types="contentTypes"
+        :content-type.sync="contentType"
+      />
+    </template>
+
+    <template #stepHeader2>{{ 'Select item' }}</template>
+
+    <template #stepItem2>
+      <div class="text-center greycolor">
+        <template>{{ 'Content type: ' }}</template>
+        <span class="text-capitalize">{{ contentType }}</span>
+      </div>
+
+      <template v-if="type === 'post'">
+        <v-row justify="center" no-gutters>
+          <v-radio-group
+            v-model="status"
+            label="Status:"
+            class="text-capitalize mt-2 pt-0"
+            row
+          >
+            <v-radio
+              v-for="statusOption in $options.static.statusOptions"
+              :key="statusOption"
+              :label="statusOption"
+              :value="statusOption"
+            ></v-radio>
+          </v-radio-group>
+        </v-row>
+
+        <ItemTable type="update" :content-type="contentType" :status="status" />
+      </template>
+
+      <template v-if="type === 'create'">
+        <ItemTable type="update" :content-type="contentType" status="created" />
+      </template>
+    </template>
+
+    <template #stepHeader3>{{ 'Update' }}</template>
+
+    <template #stepItem3>
+      <v-col>
+        <CreateForm
+          v-if="type === 'create'"
+          :content-type="contentType"
+          :update="true"
+        />
+
+        <PostForm
+          v-if="type === 'post'"
+          :content-type="contentType"
+          :status="status"
+          :update="true"
+        />
+      </v-col>
+    </template>
+  </BaseStepper>
+</template>
+
+<script>
+import { statusOptions } from '@/consts/fieldOptions'
+import resetItem from '@/utils/resetItem'
+import setupStepper from '@/utils/setupStepper'
+
+const BaseStepper = () => import('@/components/BaseStepper')
+const ContentTypeSelector = () => import('@/components/ContentTypeSelector')
+const CreateForm = () => import('@/components/CreateForm')
+const ItemTable = () => import('@/components/ItemTable')
+const PostForm = () => import('@/components/PostForm')
+
+export default {
+  components: {
+    BaseStepper,
+    ContentTypeSelector,
+    CreateForm,
+    ItemTable,
+    PostForm,
+  },
+  props: {
+    type: {
+      type: String,
+      default: '',
+    },
+  },
+  data() {
+    return {
+      status: 'submitted',
+    }
+  },
+  watch: {
+    contentType() {
+      this.status = 'submitted'
+      resetItem(this.$store)
+    },
+  },
+  created() {
+    setupStepper(this)
+  },
+  methods: {
+    onNavigateBefore(step) {
+      if (step.to === 2) resetItem(this.$store)
+    },
+  },
+  static: {
+    statusOptions,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/consts/contentTypes.js
+================================================
+export default ['apps', 'articles', 'datasets']
+
+
+
+================================================
+FILE: src/consts/dropzoneMsgs.js
+================================================
+export default {
+  dropzoneMsgCsv: 'Drop a CSV file here to upload',
+  dropzoneMsgFile: 'Drop a file here to upload',
+  dropzoneMsgImage: 'Drop an image (JPEG or PNG only) here to upload',
+  dropzoneMsgImages: 'Drop images (JPEG or PNG only) here to upload',
+  dropzoneMsgJson: 'Drop a JSON file here to upload',
+  dropzoneMsgMarkdown: 'Drop a markdown file here to upload',
+  dropzoneMsgPDF: 'Drop a PDF file here to upload',
+}
+
+
+
+================================================
+FILE: src/consts/emptyItem.js
+================================================
+export default {
+  title: '',
+  slug: '',
+  date: new Date().toISOString().slice(0, 10),
+  categories: [],
+  tags: [],
+  tagString: '',
+  abstract: null,
+  authors: null,
+  authorString: null,
+  citation: null,
+  description: null,
+  doi: '',
+  funding: null,
+  mainfiletype: '',
+  markdown: '',
+  notes: null,
+  noteString: null,
+  project: null,
+  sources: null,
+  sourceString: null,
+  timeperiod: null,
+  timeperiodString: null,
+  timeperiodType: null,
+  thumbnail: null,
+  variables: null,
+  variableString: null,
+  unit: null,
+  url: null,
+  apps: null,
+  articles: null,
+  datasets: null,
+}
+
+
+
+================================================
+FILE: src/consts/fieldOptions.js
+================================================
+export {
+  categoryOptions,
+  mainfiletypeOptions,
+  statusOptions,
+  timeperiodOptions,
+  unitOptions,
+}
+
+const categoryOptions = [
+  'corrections',
+  'courts',
+  'crimes',
+  'law enforcement',
+  'victims',
+  'other',
+]
+
+const mainfiletypeOptions = ['full report', 'pdf version']
+
+const statusOptions = ['created', 'submitted', 'published']
+
+const timeperiodOptions = [
+  'calendar',
+  'fiscal-Federal',
+  'fiscal-Illinois',
+  'other',
+]
+
+const unitOptions = ['national', 'state', 'county', 'municipal', 'other']
+
+
+
+================================================
+FILE: src/consts/queryFields.js
+================================================
+export { baseFields, appFields, articleFields, datasetFields }
+
+const baseFields = ['_id', 'title', 'slug', 'date']
+
+const appFields = [
+  ...baseFields,
+  'external',
+  'categories',
+  'tags',
+  'image',
+  'contributors',
+  'description',
+  'url',
+  'citation',
+  'funding',
+  'articles (sort: "date:desc", where: { status: "published" }) { _id title slug }',
+  'datasets (sort: "date:desc", where: { status: "published" }) { _id title slug }',
+]
+
+const articleFields = [
+  ...baseFields,
+  'external',
+  'categories',
+  'tags',
+  'splash',
+  'thumbnail',
+  'abstract',
+  'authors',
+  'images',
+  'markdown',
+  'citation',
+  'doi',
+  'funding',
+  'mainfiletype',
+  'mainfile { name url }',
+  'extrafile { name url }',
+  'apps (sort: "date:desc", where: { status: "published" }) { _id title slug }',
+  'datasets (sort: "date:desc", where: { status: "published" }) { _id title slug }',
+]
+
+const datasetFields = [
+  ...baseFields,
+  'external',
+  'categories',
+  'tags',
+  'project',
+  'sources',
+  'timeperiod',
+  'unit',
+  'variables',
+  'description',
+  'notes',
+  'citation',
+  'funding',
+  'datafile { name url }',
+  'apps (sort: "date:desc", where: { status: "published" }) { _id title slug } ',
+  'articles (sort: "date:desc", where: { status: "published" }) { _id title slug } ',
+]
+
+
+
+================================================
+FILE: src/consts/tasks.js
+================================================
+export default [
+  {
+    title: 'create contents',
+    path: 'create',
+    adminOnly: false,
+  },
+  {
+    title: 'update contents',
+    path: 'update',
+    adminOnly: false,
+  },
+  {
+    title: 'manage contents',
+    path: 'manage',
+    adminOnly: false,
+  },
+  {
+    title: 'post new',
+    path: 'post-new',
+    adminOnly: true,
+  },
+  {
+    title: 'post update',
+    path: 'post-update',
+    adminOnly: true,
+  },
+]
+
+
+
+================================================
+FILE: src/consts/temporaryFields.js
+================================================
+export default [
+  'authorString',
+  'noteString',
+  'sourceString',
+  'tagString',
+  'timeperiodString',
+  'timeperiodType',
+  'variableString',
+]
+
+
+
+================================================
+FILE: src/plugins/vuetify.js
+================================================
+import Vue from 'vue'
+import Vuetify, {
+  VAppBar,
+  VFooter,
+  VNavigationDrawer,
+  VSpacer,
+} from 'vuetify/lib'
+import { ResearchHubLibIcons } from 'researchhub-lib'
+
+Vue.use(Vuetify, {
+  components: {
+    VAppBar,
+    VFooter,
+    VNavigationDrawer,
+    VSpacer,
+  },
+})
+
+export default new Vuetify({
+  theme: { disable: true },
+  icons: {
+    iconfont: 'mdiSvg',
+    values: { ...ResearchHubLibIcons },
+  },
+})
+
+
+
+================================================
+FILE: src/router/index.js
+================================================
+import Vue from 'vue'
+import Router from 'vue-router'
+import NProgress from 'nprogress'
+import store from '@/store/index'
+import routes from './routes'
+
+Vue.use(Router)
+
+const router = new Router({
+  base: process.env.BASE_URL,
+  mode: 'history',
+  routes,
+})
+
+const auth = store.state.auth
+
+router.beforeEach((to, from, next) => {
+  NProgress.start()
+  store.dispatch('content/clearAll')
+
+  if (sessionStorage.getItem('token') !== null && !auth.isLoggedIn) {
+    store.dispatch('auth/loginUsingToken')
+  }
+
+  if (to.meta.auth) {
+    if (auth.isLoggedIn) {
+      if (auth.role !== 'Administrator' && to.meta.adminOnly) {
+        next('/')
+      } else {
+        next()
+      }
+    } else {
+      next('/login')
+    }
+  } else if (auth.isLoggedIn) {
+    next('/')
+  } else {
+    next()
+  }
+})
+
+router.afterEach(() => {
+  NProgress.done()
+})
+
+export default router
+
+
+
+================================================
+FILE: src/router/routes.js
+================================================
+export default [
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/views/Home.vue'),
+    meta: {
+      auth: true,
+      adminOnly: false,
+    },
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/Login.vue'),
+    meta: {
+      auth: false,
+    },
+  },
+  {
+    path: '/post-new',
+    name: 'post new',
+    component: () => import('@/views/PostNew.vue'),
+    meta: {
+      auth: true,
+      adminOnly: true,
+    },
+  },
+  {
+    path: '/post-update',
+    name: 'post update',
+    component: () => import('@/views/PostUpdate.vue'),
+    meta: {
+      auth: true,
+      adminOnly: true,
+    },
+  },
+  {
+    path: '/manage',
+    name: 'manage',
+    component: () => import('@/views/Manage.vue'),
+    meta: {
+      auth: true,
+      adminOnly: false,
+    },
+  },
+  {
+    path: '/create',
+    name: 'create',
+    component: () => import('@/views/Create.vue'),
+    meta: {
+      auth: true,
+      adminOnly: false,
+    },
+  },
+  {
+    path: '/update',
+    name: 'update',
+    component: () => import('@/views/Update.vue'),
+    meta: {
+      auth: true,
+      adminOnly: false,
+    },
+  },
+  {
+    path: '/page-not-found',
+    name: '404',
+    component: () => import('@/views/404.vue'),
+    meta: {
+      auth: true,
+      adminOnly: false,
+    },
+  },
+  {
+    path: '*',
+    redirect: { name: '404' },
+  },
+]
+
+
+
+================================================
+FILE: src/services/client.apps.js
+================================================
+import { fetchOneById, fetchListByStatus } from './client.utils'
+import { appFields, baseFields } from '@/consts/queryFields'
+
+export { fetchItemById, fetchItemsList }
+
+/**
+ * Fetch a dataset using id.
+ * @param {String} id
+ */
+const fetchItemById = async (id) =>
+  await fetchOneById({ contentType: 'app', id, fields: appFields })
+
+/**
+ * Fetch a list of datasets of status.
+ * @param {String} status
+ */
+const fetchItemsList = async (status) =>
+  await fetchListByStatus({ contentType: 'apps', fields: baseFields, status })
+
+
+
+================================================
+FILE: src/services/client.articles.js
+================================================
+import { fetchOneById, fetchListByStatus } from './client.utils'
+import { articleFields, baseFields } from '@/consts/queryFields'
+
+export { fetchItemById, fetchItemsList }
+
+/**
+ * Fetch a dataset using id.
+ * @param {String} id
+ */
+const fetchItemById = async (id) =>
+  await fetchOneById({ contentType: 'article', id, fields: articleFields })
+
+/**
+ * Fetch a list of datasets of status.
+ * @param {String} status
+ */
+const fetchItemsList = async (status) =>
+  await fetchListByStatus({
+    contentType: 'articles',
+    fields: baseFields,
+    status,
+  })
+
+
+
+================================================
+FILE: src/services/client.auth.js
+================================================
+import { apiBaseURL } from '@/config'
+import client from './client'
+
+export { login, loginUsingToken, logout }
+
+/**
+ * Log in with id and password.
+ * @param {String} identifier
+ * @param {String} password
+ */
+const login = ({ identifier, password }) =>
+  new Promise((resolve, reject) => {
+    client
+      .post(`${apiBaseURL}/auth/local`, {
+        identifier,
+        password,
+      })
+      .then(
+        (res) => {
+          loginUsingToken(res.data.jwt)
+          resolve(res)
+        },
+        (error) => reject(error)
+      )
+  })
+
+/**
+ * Log in by using JWT for authorization.
+ * @param {String} token
+ */
+const loginUsingToken = (token) =>
+  (client.defaults.headers.common['Authorization'] = `Bearer ${token}`)
+
+/**
+ * Log out by removing authorization.
+ */
+const logout = () => delete client.defaults.headers.common['Authorization']
+
+
+
+================================================
+FILE: src/services/client.authors.js
+================================================
+import { fetchQueryResult } from './client.utils'
+
+export { fetchItemsList }
+
+const authorQuery = `{ articles (where: { status: "published" }) { authors } }`
+/**
+ * Fetch a list of unique tags in published items.
+ */
+const fetchItemsList = async () =>
+  useAuthorsList(await fetchQueryResult()(authorQuery))
+
+/**
+ * Use tags list for data.
+ * @param {Object} args
+ * @param {Object} args.data
+ * @param {Number} args.status
+ */
+const useAuthorsList = ({ data, status }) => ({
+  data: getAuthorsList(data),
+  status,
+})
+
+/**
+ * Get a list of unique tags from published items.
+ * @param {Object} args
+ * @param {[Object]} args.articles
+ */
+const getAuthorsList = ({ articles }) => [
+  ...new Set(
+    articles
+      .map((article) => article.authors.map((author) => author.title))
+      .flat()
+  ),
+]
+
+
+
+================================================
+FILE: src/services/client.datasets.js
+================================================
+import { fetchOneById, fetchListByStatus } from './client.utils'
+import { baseFields, datasetFields } from '@/consts/queryFields'
+
+export { fetchItemById, fetchItemsList }
+
+/**
+ * Fetch a dataset using id.
+ * @param {String} id
+ */
+const fetchItemById = async (id) =>
+  await fetchOneById({ contentType: 'dataset', id, fields: datasetFields })
+
+/**
+ * Fetch a list of datasets of status.
+ * @param {String} status
+ */
+const fetchItemsList = async (status) =>
+  await fetchListByStatus({
+    contentType: 'datasets',
+    fields: [...baseFields, 'project'],
+    status,
+  })
+
+
+
+================================================
+FILE: src/services/client.jobs.js
+================================================
+import client from './client'
+import { fetchData } from './client.utils'
+
+export { createItem, deleteItem, updateItem, updateItemStatus, uploadFile }
+
+/**
+ * Create an item of the given content type with the payload.
+ * @param {String} contentType
+ * @param {Object} item
+ */
+const createItem = async (contentType, item) =>
+  await client
+    .post(`/${contentType}`, { ...item, status: item.status || 'created' })
+    .then((res) => res)
+    .catch((err) => err.response)
+
+/**
+ * Delete an item of the given content type and id.
+ * @param {String} contentType
+ * @param {String} id
+ */
+const deleteItem = async (contentType, id) =>
+  await client
+    .delete(`/${contentType}/${id}`)
+    .catch((err) => console.error(err))
+
+/**
+ * Update an item of the given content type and id with the payload.
+ * @param {String} contentType
+ * @param {String} id
+ * @param {Object} item
+ */
+const updateItem = async (contentType, id, item) =>
+  await client
+    .put(`/${contentType}/${id}`, item)
+    .then((res) => res)
+    .catch((err) => err.response)
+
+/**
+ * Update an item status.
+ * @param {String} contentType
+ * @param {String} id
+ * @param {String} status
+ */
+const updateItemStatus = async (contentType, id, status) =>
+  await client
+    .post('/graphql', {
+      query: buildUpdateQuery({
+        contentType: contentType.slice(0, -1),
+        params: `where: { id: "${id}" }`,
+        key: 'status',
+        value: status,
+      }),
+    })
+    .catch((err) => console.error(err))
+
+/**
+ * Uploads a file to the given content type item field.
+ * @param {String} contentType
+ * @param {String} field
+ * @param {FormData} file
+ * @param {String} id
+ */
+const uploadFile = async (contentType, field, file, id) => {
+  const ref = contentType.slice(0, -1)
+  const { data, status } = await getFileId({ contentType: ref, field, id })
+
+  if (status === 200) {
+    if (data[field]) await deleteFile(data[field].id)
+    await postFile({ file, refId: id, ref, field })
+  }
+}
+
+/**
+ * Generate a graphql mutation update string.
+ * @param {Object} args Mutate query information
+ * @param {String} args.contentType
+ * @param {String} args.params
+ * @param {String} args.key
+ * @param {String} args.value
+ */
+const buildUpdateQuery = ({ contentType, params, key, value }) =>
+  `mutation {
+    update${capitalize(contentType)} (input: {
+      ${params},
+      data: {
+        ${key}: "${value}"
+      }
+    }) {
+      ${contentType} {
+        ${key}
+      }
+    }
+  }`
+
+/**
+ * @param {String} str
+ */
+const capitalize = (str) => `${str[0].toUpperCase()}${str.slice(1)}`
+
+/**
+ * Delete an uploads file by id.
+ * @param {String} id
+ */
+const deleteFile = async (id) =>
+  await client.delete(`/upload/files/${id}`).catch((err) => console.error(err))
+
+/**
+ * Get a related uploads file id for the given content type item field.
+ * @param {Object} args
+ * @param {String} args.contentType
+ * @param {String} args.field
+ * @param {String} args.type
+ */
+const getFileId = async ({ contentType, field, id }) =>
+  await fetchData(contentType)({
+    params: `id: "${id}"`,
+    fields: [`${field} { id }`],
+  })
+
+/**
+ * Post a uploads file for the given content type item field.
+ * @param {Object} args Uploads file and information
+ * @param {FormData} args.file FormData object to upload
+ * @param {String} args.refId Content item id
+ * @param {String} args.ref Content type
+ * @param {String} args.field Field for the uploads file
+ */
+const postFile = async ({ file, refId, ref, field }) =>
+  await client
+    .post('/upload', prepareForm({ file, refId, ref, field }))
+    .catch((err) => {
+      console.error(err)
+      alert(`⚠️Failed to upload the file!`)
+    })
+
+/**
+ * Prepare a uploads file for the given content type item field.
+ * @param {Object} args Uploads file and information
+ * @param {FormData} args.file FormData object to upload
+ * @param {String} args.refId Content item id
+ * @param {String} args.ref Content type
+ * @param {String} args.field Field for the uploads file
+ */
+const prepareForm = ({ file, refId, ref, field }) => {
+  const form = new FormData()
+  form.append('files', file)
+  form.append('refId', refId)
+  form.append('ref', ref)
+  form.append('field', field)
+  return form
+}
+
+
+
+================================================
+FILE: src/services/client.js
+================================================
+import axios from 'axios'
+import NProgress from 'nprogress'
+import { apiBaseURL } from '@/config'
+
+const client = axios.create({
+  baseURL: apiBaseURL,
+})
+
+client.interceptors.request.use((config) => {
+  NProgress.start()
+  return config
+})
+
+client.interceptors.response.use((response) => {
+  NProgress.done()
+  return response
+})
+
+export default client
+
+
+
+================================================
+FILE: src/services/client.tags.js
+================================================
+import { fetchQueryResult } from './client.utils'
+
+export { fetchItemsList }
+
+const tagsQuery = `{
+  apps (where: { status: "published" }) { tags }
+  articles (where: { status: "published" }) { tags }
+  datasets (where: { status: "published" }) { tags }
+}`
+
+/**
+ * Fetch a list of unique tags in published items.
+ */
+const fetchItemsList = async () =>
+  useTagsList(await fetchQueryResult()(tagsQuery))
+
+/**
+ * Use tags list for data.
+ * @param {Object} args
+ * @param {Object} args.data
+ * @param {Number} args.status
+ */
+const useTagsList = ({ data, status }) => ({ data: getTagsList(data), status })
+
+/**
+ * Get a list of unique tags from published items.
+ * @param {Object} args
+ * @param {[Object]} args.apps
+ * @param {[Object]} args.articles
+ * @param {[Object]} args.datasets
+ */
+const getTagsList = ({ apps, articles, datasets }) => [
+  ...new Set([
+    ...getFieldSet('tags')(apps),
+    ...getFieldSet('tags')(articles),
+    ...getFieldSet('tags')(datasets),
+  ]),
+]
+
+/**
+ * Get a list of unique tags from published items.
+ * @param {String} field
+ * @param {[Object]} items
+ */
+const getFieldSet = (field) => (items) =>
+  new Set(items.map((el) => el[field]).flat())
+
+
+
+================================================
+FILE: src/services/client.utils.js
+================================================
+import client from './client'
+
+export {
+  fetchData,
+  fetchListByStatus,
+  fetchOneById,
+  fetchQueryResult,
+  healthCheck,
+}
+
+/**
+ * @param {Object} args
+ * @param {String} args.contentType
+ * @param {String} args.id
+ * @param {[String]} args.fields
+ */
+const fetchOneById = async ({ contentType, id, fields }) =>
+  await fetchData(contentType)({ params: `id: "${id}"`, fields })
+
+/**
+ * @param {Object} args
+ * @param {String} args.contentType
+ * @param {String} args.status
+ */
+const fetchListByStatus = async ({ contentType, fields, status }) => {
+  const res = await fetchData(contentType)({
+    params: `where: { status: "${status}" }`,
+    fields,
+  })
+
+  const data = res.data.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  return { ...res, data }
+}
+
+/**
+ * Fetch data from API server
+ * @param {String} contentType
+ * @param {String} params String
+ * @param {String} fields String
+ */
+const fetchData =
+  (contentType) =>
+  async ({ params, fields }) =>
+    await fetchQueryResult(contentType)(
+      `{\n  ${contentType} (${params}) {    \n${fields.join('    \n')}\n  }\n}`
+    )
+
+/**
+ * Fetch Graphql query results from API server.
+ * @param {String} contentType
+ * @param {String} query
+ * @return {(query:String) => Promise<Object>}
+ */
+const fetchQueryResult =
+  (contentType = '') =>
+  async (query) =>
+    await client
+      .post('/graphql', { query })
+      .then(({ data, status }) => ({
+        data: contentType ? data.data[contentType] : data.data,
+        status,
+      }))
+      .catch((err) => console.error(err))
+
+/**
+ * Check API server health.
+ */
+const healthCheck = async (timeout = 2000) =>
+  await client
+    .head(`/`, { timeout })
+    .then((res) => res.status === 200)
+    .catch(() => false)
+
+
+
+================================================
+FILE: src/store/index.js
+================================================
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+import * as auth from '@/store/modules/auth'
+import * as content from '@/store/modules/content'
+
+Vue.use(Vuex)
+
+const store = new Vuex.Store({
+  modules: {
+    auth,
+    content,
+  },
+})
+
+export default store
+
+
+
+================================================
+FILE: src/store/modules/auth.js
+================================================
+import { login, loginUsingToken, logout } from '@/services/client.auth'
+
+export { namespaced, state, mutations, actions }
+
+const namespaced = true
+
+const state = {
+  isLoggedIn: false,
+  role: '',
+}
+
+const mutations = {
+  LOGIN(state) {
+    state.isLoggedIn = true
+    state.role = sessionStorage.getItem('role')
+  },
+  LOGOUT(state) {
+    state.isLoggedIn = false
+    state.role = ''
+    logout()
+  },
+}
+
+const actions = {
+  login({ commit }, user) {
+    return new Promise((resolve, reject) => {
+      login(user).then(
+        (res) => {
+          sessionStorage.setItem('token', res.data.jwt)
+          sessionStorage.setItem('role', res.data.user.role.name)
+          commit('LOGIN')
+          resolve(res)
+        },
+        (error) => {
+          reject(error)
+        }
+      )
+    })
+  },
+  loginUsingToken({ commit }) {
+    loginUsingToken(sessionStorage.token)
+    commit('LOGIN')
+  },
+  logout({ commit }) {
+    sessionStorage.clear()
+    commit('LOGOUT')
+  },
+}
+
+
+
+================================================
+FILE: src/store/modules/content.js
+================================================
+import {
+  fetchItemById as fetchAppById,
+  fetchItemsList as fetchAppsList,
+} from '@/services/client.apps'
+import {
+  fetchItemById as fetchArticleById,
+  fetchItemsList as fetchArticlesList,
+} from '@/services/client.articles'
+import {
+  fetchItemById as fetchDatasetById,
+  fetchItemsList as fetchDatasetsList,
+} from '@/services/client.datasets'
+import {
+  createItem,
+  deleteItem,
+  updateItem,
+  updateItemStatus,
+  uploadFile,
+} from '@/services/client.jobs'
+
+export { namespaced, state, getters, mutations, actions }
+
+const namespaced = true
+
+const state = {
+  filelist: [],
+  item: {},
+  itemId: '',
+  itemlist: [],
+}
+
+const getters = {
+  itemToPost: (state) => {
+    const item = { ...state.item }
+    if (Object.keys(item).length) item.external = false
+
+    Object.keys(item)
+      .filter((key) => /file$/.test(key))
+      .forEach((key) => delete item[key])
+
+    if (item.apps) item.apps = item.apps.map((el) => el._id)
+    if (item.articles) item.articles = item.articles.map((el) => el._id)
+    if (item.datasets) item.datasets = item.datasets.map((el) => el._id)
+
+    return item
+  },
+}
+
+const mutations = {
+  SET_FILE_LIST(state, payload) {
+    state.filelist = payload
+  },
+  SET_ITEM(state, payload) {
+    state.item = payload
+  },
+  SET_ITEM_ID(state, payload) {
+    state.itemId = payload
+  },
+  SET_ITEM_LIST(state, payload) {
+    state.itemlist = payload
+  },
+}
+
+const actions = {
+  setFilelist({ commit }, filelist) {
+    commit('SET_FILE_LIST', filelist)
+  },
+  setItem({ commit }, item) {
+    commit('SET_ITEM', item)
+  },
+  setItemId({ commit }, id) {
+    commit('SET_ITEM_ID', id)
+  },
+  clearAll({ commit }) {
+    commit('SET_ITEM', {})
+    commit('SET_ITEM_ID', '')
+    commit('SET_ITEM_LIST', [])
+  },
+  async fetchItem({ commit }, { contentType, id }) {
+    let res
+
+    switch (contentType) {
+      case 'apps':
+        res = await fetchAppById(id)
+        break
+      case 'articles':
+        res = await fetchArticleById(id)
+        break
+      case 'datasets':
+        res = await fetchDatasetById(id)
+    }
+
+    commit('SET_ITEM', res.data)
+    commit('SET_ITEM_ID', id)
+    return res
+  },
+  async fetchItemList({ commit }, { contentType, status }) {
+    let res
+
+    switch (contentType) {
+      case 'apps':
+        res = await fetchAppsList(status)
+        break
+      case 'articles':
+        res = await fetchArticlesList(status)
+        break
+      case 'datasets':
+        res = await fetchDatasetsList(status)
+    }
+
+    commit('SET_ITEM_LIST', res.data)
+    return res
+  },
+  async updateItemToPublished(_, { contentType, id }) {
+    return await updateItemStatus(contentType, id, 'published')
+  },
+  async updateItemToSubmitted(_, { contentType, id }) {
+    return await updateItemStatus(contentType, id, 'submitted')
+  },
+  async updateItemToCreated(_, { contentType, id }) {
+    return await updateItemStatus(contentType, id, 'created')
+  },
+
+  async deleteItem(_, { contentType, id }) {
+    return await deleteItem(contentType, id)
+  },
+  async createItem({ getters }, contentType) {
+    const item = getters.itemToPost
+    if (contentType === 'apps')
+      item.contributors = [{ title: 'ICJIA R&A staff' }]
+    return await createItem(contentType, getters.itemToPost)
+  },
+  async updateItem({ state, getters }, contentType) {
+    return await updateItem(contentType, state.itemId, getters.itemToPost)
+  },
+  async uploadFiles({ state }, contentType) {
+    state.filelist.forEach(async (el) => {
+      await uploadFile(contentType, el.field, el.file, state.itemId)
+    })
+  },
+}
+
+
+
+================================================
+FILE: src/utils/addDropzoneFiles.js
+================================================
+export default async (dropzoneList) => ({
+  // common (post)
+  ...(await getJSON(dropzoneList)),
+
+  // apps
+  ...getImage(dropzoneList),
+
+  // articles
+  ...getImages(dropzoneList),
+  ...(await getMarkdown(dropzoneList)),
+  ...(await getSplash(dropzoneList)),
+})
+
+const getImage = ({ image }) => {
+  if (!image) return {}
+  const files = image.getAcceptedFiles()
+  return files.length ? { image: files[0].dataURL } : {}
+}
+
+const getImages = ({ images }) => {
+  if (!images) return {}
+  const files = images.getAcceptedFiles()
+  return files.length
+    ? {
+        images: files.map((file) => ({
+          title: removeExt(file.name),
+          src: file.dataURL,
+        })),
+      }
+    : {}
+}
+
+const removeExt = (str) => str.split('.').slice(0, -1).join('.')
+
+const getMarkdown = async ({ markdown }) => {
+  if (!markdown) return {}
+  const files = markdown.getAcceptedFiles()
+  return files.length ? { markdown: await readFileAsync(files[0]) } : {}
+}
+
+const getSplash = async ({ splash }) => {
+  if (!splash) return {}
+  const files = splash.getAcceptedFiles()
+  return files.length
+    ? {
+        splash: files[0].dataURL,
+        thumbnail: await createThumbnail(files[0].dataURL, 500),
+      }
+    : {}
+}
+
+const getJSON = async ({ json }) => {
+  if (!json) return {}
+  const files = json.getAcceptedFiles()
+  return files.length ? JSON.parse(await readFileAsync(files[0])) : {}
+}
+const calculateBase64Size = (input) => Math.round(new Blob([input]).size / 1024)
+
+const createThumbnail = (input, targetSize) => {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement('img')
+
+    img.onload = function () {
+      const size = calculateBase64Size(input)
+      const compress = size < 50 ? null : 50 / size
+
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const refSize =
+        this.naturalHeight < this.naturalWidth
+          ? this.naturalHeight
+          : this.naturalWidth
+
+      canvas.height = targetSize
+      canvas.width = targetSize
+      ctx.drawImage(this, 0, 0, refSize, refSize, 0, 0, targetSize, targetSize)
+
+      resolve(canvas.toDataURL('image/jpeg', compress))
+    }
+    img.onerror = reject
+    img.src = input
+  })
+}
+
+const readFileAsync = (file) => {
+  return new Promise((resolve, reject) => {
+    let reader = new FileReader()
+
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsText(file)
+  })
+}
+
+
+
+================================================
+FILE: src/utils/getDropzoneFilelist.js
+================================================
+export default (dropzoneList) =>
+  Object.keys(dropzoneList)
+    .filter((field) => field.includes('file'))
+    .reduce((arr, field) => [...arr, ...getFile(dropzoneList, field)], [])
+
+const getFile = (dropzoneList, field) => {
+  const files = dropzoneList[field].getAcceptedFiles()
+  return files.length ? [{ field, file: files[0] }] : []
+}
+
+
+
+================================================
+FILE: src/utils/getDropzoneList.js
+================================================
+export default (refs) => ({
+  // common (post)
+  ...getDz(refs.DropzoneJson, 'json'),
+
+  // apps
+  ...getDz(refs.DropzoneImage, 'image'),
+
+  // articles
+  ...getDz(refs.DropzoneExtrafile, 'extrafile'),
+  ...getDz(refs.DropzoneImages, 'images'),
+  ...getDz(refs.DropzoneMainfile, 'mainfile'),
+  ...getDz(refs.DropzoneMarkdown, 'markdown'),
+  ...getDz(refs.DropzoneSplash, 'splash'),
+
+  // datasets
+  ...getDz(refs.DropzoneDatafile, 'datafile'),
+})
+
+const getDz = (dz, field) => (dz ? { [field]: dz.$refs.MyDropzone } : {})
+
+
+
+================================================
+FILE: src/utils/parseItem.js
+================================================
+import temporaryFields from '@/consts/temporaryFields'
+
+export default (item) =>
+  removeUnusedFields({
+    // common
+    ...item,
+    ...parseTags(item),
+
+    // articles
+    ...parseAuthors(item),
+    ...parseMarkdown(item),
+
+    // datasets
+    ...parseNotes(item),
+    ...parseSources(item),
+    ...parseTimeperiod(item),
+    ...parseVariables(item),
+  })
+
+const parseAuthors = ({ authorString }) =>
+  authorString
+    ? {
+        authors: authorString.split(/[\r\n]+/).map((author) => {
+          const [title, description] = author.split('|').map((el) => el.trim())
+          return { title, description }
+        }),
+      }
+    : {}
+
+const parseMarkdown = ({ markdown }) => (markdown ? { markdown } : {})
+
+const parseNotes = ({ noteString }) =>
+  noteString
+    ? {
+        notes: noteString
+          .split(/[\r\n]+/)
+          .map((el) => el.trim())
+          .filter((el) => el),
+      }
+    : {}
+
+const parseSources = ({ sourceString }) =>
+  sourceString
+    ? {
+        sources: sourceString.split(/[\r\n]+/).map((row) => {
+          const [title, url] = strToArr(row, '|')
+          return { title, url }
+        }),
+      }
+    : {}
+
+const parseTags = ({ tagString }) =>
+  tagString ? { tags: strToArr(tagString) } : {}
+
+const parseTimeperiod = ({ timeperiodType, timeperiodString }) =>
+  timeperiodString
+    ? {
+        timeperiod: {
+          yeartype: timeperiodType,
+          yearmin: timeperiodString.split('-')[0],
+          yearmax: timeperiodString.split('-')[1],
+        },
+      }
+    : {}
+
+const parseVariables = ({ variableString }) =>
+  variableString
+    ? {
+        variables: variableString.split(/[\r\n]+/).map((row) => {
+          const [name, type, definition, values] = strToArr(row, '|')
+          return { name, type, definition, values }
+        }),
+      }
+    : {}
+
+const strToArr = (str, sep = ',') => str.split(sep).map((el) => el.trim())
+
+const removeUnusedFields = (item) =>
+  Object.keys(item)
+    .filter(
+      (field) =>
+        !temporaryFields.includes(field) &&
+        item[field] !== undefined &&
+        item[field] !== null
+    )
+    .reduce(
+      (obj, field) => ({ ...obj, [field]: removeUndefined(item[field]) }),
+      {}
+    )
+
+const removeUndefined = (field) =>
+  Array.isArray(field) ? field.filter((el) => el !== undefined) : field
+
+
+
+================================================
+FILE: src/utils/prepareItem.js
+================================================
+export default (content) => ({
+  // common
+  ...content,
+  ...prepareBase(content),
+
+  // articles
+  ...getAuthorString(content),
+
+  // datasets
+  ...getNoteString(content),
+  ...getSourceString(content),
+  ...getTimeperiodStrings(content),
+  ...getVariableSTring(content),
+})
+
+const prepareBase = ({ date, tags }) => ({
+  date: date.slice(0, 10),
+  tagString: tags ? tags.join(', ') : '',
+})
+
+const getAuthorString = ({ authors }) =>
+  authors
+    ? {
+        authorString: authors
+          .map((el) => `${el.title} | ${el.description}`)
+          .join('\n'),
+      }
+    : {}
+
+const getTimeperiodStrings = ({ timeperiod }) =>
+  timeperiod
+    ? {
+        timeperiodString: `${timeperiod.yearmin}-${timeperiod.yearmax}`,
+        timeperiodType: timeperiod.yeartype,
+      }
+    : {}
+
+const getSourceString = ({ sources }) =>
+  sources
+    ? {
+        sourceString: sources.map((el) => `${el.title} | ${el.url}`).join('\n'),
+      }
+    : {}
+
+const getNoteString = ({ notes }) =>
+  notes ? { noteString: notes.join('\n') } : {}
+
+const getVariableSTring = ({ variables }) =>
+  variables
+    ? {
+        variableString: variables
+          .map(
+            (el) => `${el.name} | ${el.type} | ${el.definition} | ${el.values}`
+          )
+          .join('\n'),
+      }
+    : {}
+
+
+
+================================================
+FILE: src/utils/removeDropzoneFiles.js
+================================================
+export default (dropzoneList) =>
+  Object.keys(dropzoneList)
+    .filter((k) => dropzoneList[k])
+    .forEach((k) => dropzoneList[k].removeAllFiles())
+
+
+
+================================================
+FILE: src/utils/resetItem.js
+================================================
+export default (store) => {
+  store.dispatch('content/setItem', {})
+  store.dispatch('content/setItemId', '')
+}
+
+
+
+================================================
+FILE: src/utils/setupStepper.js
+================================================
+import contentTypes from '@/consts/contentTypes'
+
+export default (vm) => {
+  vm.contentType = contentTypes[0]
+  vm.contentTypes = contentTypes
+
+  if (vm.$store.state.auth.role === 'Data Manager') {
+    vm.contentType = 'datasets'
+    vm.contentTypes = ['datasets']
+  }
+}
+
+
+
+================================================
+FILE: src/utils/submitForm.js
+================================================
+import NProgress from 'nprogress'
+
+export default async ({ contentType, router, store, update }) => {
+  if (update) {
+    await store.dispatch(`content/uploadFiles`, contentType)
+
+    handleSubmitResponse({
+      res: await store.dispatch(`content/updateItem`, contentType),
+      router,
+      successMsg: 'Item updated',
+    })
+  } else {
+    handleSubmitResponse({
+      res: await store.dispatch(`content/createItem`, contentType),
+      router,
+      successMsg: 'New item created',
+    })
+  }
+}
+
+const handleSubmitResponse = ({ res, router, successMsg }) => {
+  if (res.status === 413) {
+    alert('️️️️⚠️Form is too large! Please try resizing/compressing images.')
+    NProgress.done()
+    return
+  }
+
+  if (res.status !== 200) {
+    alert('️⚠️Something went wrong! Please try again--back to home!')
+  } else {
+    alert(`✔️${successMsg}--back to home!`)
+  }
+  router.push('/')
+}
+
+
+
+================================================
+FILE: src/views/404.vue
+================================================
+<template>
+  <div>
+    <BaseViewTitle page="Error" />
+
+    <div class="error-page">
+      <v-icon x-large color="error">{{
+        $options.static.mdiCloseCircle
+      }}</v-icon>
+      <h1 class="pb-4">Page not found</h1>
+
+      <p>Sorry. The page you are looking for does not exist.</p>
+      <v-btn text to="/"
+        >return to home <v-icon>{{ $options.static.mdiUndo }}</v-icon></v-btn
+      >
+    </div>
+  </div>
+</template>
+
+<script>
+import { mdiCloseCircle, mdiUndo } from '@mdi/js'
+const BaseViewTitle = () => import('@/components/BaseViewTitle')
+
+export default {
+  components: {
+    BaseViewTitle,
+  },
+  static: {
+    mdiCloseCircle,
+    mdiUndo,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/Create.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <template #title>{{ 'Create contents' }}</template>
+
+    <template #description>
+      <template>{{
+        'Fill out the form, preview the result, and create a new item.'
+      }}</template>
+      <span class="greycolor pl-4">
+        <v-icon color="warning">{{ $options.static.mdiAlert }}</v-icon>
+        <template>{{
+          'Uploading files is available only in the update page.'
+        }}</template>
+      </span>
+    </template>
+
+    <CreateStepper />
+  </BaseViewLayout>
+</template>
+
+<script>
+import { mdiAlert } from '@mdi/js'
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const CreateStepper = () => import('@/components/CreateStepper')
+
+export default {
+  components: {
+    BaseViewLayout,
+    CreateStepper,
+  },
+  static: {
+    mdiAlert,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/Home.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <div class="text-center py-6">
+      <h1 class="font-lato font-weight-bold text-uppercase wide">
+        <template>{{ 'Choose your task' }}</template>
+      </h1>
+      <p>Permission level: {{ role }}</p>
+    </div>
+
+    <v-row class="mb-12" justify="center">
+      <template v-for="(task, i) in $options.static.tasks">
+        <v-col v-if="checkPermission(task)" :key="i" cols="12" sm="6" lg="4">
+          <HomeTaskCard :task="task" />
+        </v-col>
+      </template>
+    </v-row>
+
+    <div class="text-center">
+      <AuthorGuideButton />
+    </div>
+  </BaseViewLayout>
+</template>
+
+<script>
+import tasks from '@/consts/tasks'
+const AuthorGuideButton = () => import('@/components/AuthorGuideButton')
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const HomeTaskCard = () => import('@/components/HomeTaskCard')
+
+export default {
+  components: {
+    AuthorGuideButton,
+    BaseViewLayout,
+    HomeTaskCard,
+  },
+  computed: {
+    role() {
+      return this.$store.state.auth.role
+    },
+  },
+  methods: {
+    checkPermission(card) {
+      if (this.role === 'Administrator') {
+        return true
+      } else {
+        return !card.adminOnly
+      }
+    },
+  },
+  static: {
+    tasks,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/Login.vue
+================================================
+<template>
+  <div class="fill-height" style="background-color: #466c8c">
+    <v-row class="fill-height" align="center" justify="center">
+      <login-form />
+    </v-row>
+  </div>
+</template>
+
+<script>
+const LoginForm = () => import('@/components/LoginForm')
+
+export default {
+  components: {
+    LoginForm,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/Manage.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <template #title>{{ 'Manage contents' }}</template>
+
+    <template #description>{{
+      'Review and publish submissions or take down published items to make changes.'
+    }}</template>
+
+    <ManageStepper />
+  </BaseViewLayout>
+</template>
+
+<script>
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const ManageStepper = () => import('@/components/ManageStepper')
+
+export default {
+  components: {
+    BaseViewLayout,
+    ManageStepper,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/PostNew.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <template #title>{{ 'Post new' }}</template>
+
+    <template #description>
+      <template>{{ 'Post new items of any type and status.' }}</template>
+      <span class="greycolor ml-4">
+        <v-icon color="error">{{ $options.static.mdiAlert }}</v-icon>
+        <template>{{ 'Admin only' }}</template>
+      </span>
+    </template>
+
+    <PostStepper />
+  </BaseViewLayout>
+</template>
+
+<script>
+import { mdiAlert } from '@mdi/js'
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const PostStepper = () => import('@/components/PostStepper')
+
+export default {
+  components: {
+    BaseViewLayout,
+    PostStepper,
+  },
+  static: {
+    mdiAlert,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/PostUpdate.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <template #title>{{ 'Post update' }}</template>
+
+    <template #description>
+      <template>{{ 'Post updates to existing items.' }}</template>
+      <span class="greycolor ml-4">
+        <v-icon color="error">{{ $options.static.mdiAlert }}</v-icon>
+        <template>{{ 'Admin only' }}</template>
+      </span>
+    </template>
+
+    <UpdateStepper type="post" />
+  </BaseViewLayout>
+</template>
+
+<script>
+import { mdiAlert } from '@mdi/js'
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const UpdateStepper = () => import('@/components/UpdateStepper')
+
+export default {
+  components: {
+    BaseViewLayout,
+    UpdateStepper,
+  },
+  static: {
+    mdiAlert,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: src/views/Update.vue
+================================================
+<template>
+  <BaseViewLayout>
+    <template #title>{{ 'Update contents' }}</template>
+
+    <template #description>{{
+      'Make updates to existing drafts. Select an item to update, make changes, and apply the update.'
+    }}</template>
+
+    <UpdateStepper type="create" />
+  </BaseViewLayout>
+</template>
+
+<script>
+const BaseViewLayout = () => import('@/components/BaseViewLayout')
+const UpdateStepper = () => import('@/components/UpdateStepper')
+
+export default {
+  components: {
+    BaseViewLayout,
+    UpdateStepper,
+  },
+}
+</script>
+
+
+
+================================================
+FILE: .github/ISSUE_TEMPLATE/bug_report.md
+================================================
+---
+name: Bug report
+about: Create a researchHub bug report
+title: ''
+labels: ''
+assignees: cschweda
+
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
+
+**Desktop (please complete the following information):**
+ - OS: [e.g. iOS]
+ - Browser [e.g. chrome, safari]
+ - Version [e.g. 22]
+
+**Smartphone (please complete the following information):**
+ - Device: [e.g. iPhone6]
+ - OS: [e.g. iOS8.1]
+ - Browser [e.g. stock browser, safari]
+ - Version [e.g. 22]
+
+**Additional context**
+Add any other context about the problem here.
+
+
+
+================================================
+FILE: .github/ISSUE_TEMPLATE/feature_request.md
+================================================
+---
+name: Feature request
+about: Suggest a new feature for the ResearchHub Studio
+title: ''
+labels: ''
+assignees: cschweda
+
+---
+
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+
+**Describe the solution you'd like**
+A clear and concise description of what you want to happen.
+
+**Describe alternatives you've considered**
+A clear and concise description of any alternative solutions or features you've considered.
+
+**Additional context**
+Add any other context or screenshots about the feature request here.
+
+
+
+================================================
+FILE: .github/workflows/codeql-analysis.yml
+================================================
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+# You may wish to alter this file to override the set of languages analyzed,
+# or to provide custom queries or build logic.
+#
+# ******** NOTE ********
+# We have attempted to detect the languages in your repository. Please check
+# the `language` matrix defined below to confirm you have the correct set of
+# supported CodeQL languages.
+#
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+  schedule:
+    - cron: '39 6 * * 6'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
+        # Learn more:
+        # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: ${{ matrix.language }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+        # queries: ./path/to/local/query, your-org/your-repo/queries@main
+
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
+    # If this step fails, then you should remove it and run the build manually (see below)
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
+
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 https://git.io/JvXDl
+
+    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+    #    and modify them (or add more) to build your code if your project
+    #    uses a compiled language
+
+    #- run: |
+    #   make bootstrap
+    #   make release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+
+

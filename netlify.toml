@@ -6,8 +6,3 @@
 [build]
   command = "npm run build"
   publish = "dist"
-
-[build.environment]
-  # TEMPORARY: the current pinia persistedstate Nuxt module has a peer-dep
-  # mismatch. Remove this once the maintained module replaces it (plan Task 3).
-  NPM_FLAGS = "--legacy-peer-deps"

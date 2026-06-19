@@ -269,7 +269,7 @@ Confirmed by introspection on 2026-06-19. `UploadFile` = media relation. `JSON` 
 
 - **Login:** `POST /api/auth/local` (`identifier`, `password`) → `{ jwt, user }`. v1 used `user.role.name`.
 - **Session:** Pinia `auth` store holds `{ jwt, user, role }`, persisted (cookie preferred for SPA; localStorage acceptable). An `ofetch` `onRequest` interceptor attaches `Authorization: Bearer <jwt>` and the Strapi base URL. 401 → clear session, redirect to login.
-- **Route protection:** Nuxt route middleware — unauthenticated → `/login`; role-gated routes (publish/manage) require **Manager**.
+- **Route protection (auth gates the entire Studio):** the Studio is private — a **global** Nuxt route middleware makes **every** route require a valid Strapi login; only `/login` is public. Unauthenticated visitors are redirected to `/login` before any Studio content renders (no anonymous access). Role-gated routes (publish/manage) additionally require the publisher role (`admin`).
 - **Roles (capabilities) — assumed, pending confirmation (§14 #1):**
   - **`author`:** create/read/update drafts; upload media; **cannot publish**. (Per-author scoping — "only *my* drafts" — is **not** expressible from the current schema: there is no author→user relation. Treat the draft pool as shared among authenticated authors unless an owner field + policy is added; see §14 #12.)
   - **`admin`:** everything an author can do **+ publish/unpublish** + view all drafts. (This is the "Manager"/publisher capability referred to elsewhere in this doc — e.g. Part A.)
@@ -294,7 +294,7 @@ This sidesteps the v5 "no upload at creation" rule (files are uploaded standalon
 Reusable component backing every media field (`splash`, `thumbnail`, app `image`, `mainfile`, `extrafile`, `datafile`):
 - **Upload new:** drag/drop or browse → eager upload → real-URL preview.
 - **Pick existing:** browse the Media Library via `GET /api/upload/files` (search, type filter, pagination) → select → reuse its `id`/`url`.
-- **Implementation note:** the drag-and-drop "drop zone" is built with native HTML5 drag-and-drop / Nuxt UI file primitives — **not** the legacy `dropzone.js` library that v1 used. "Drop zone" here means the *interaction*, not that dependency; no extra upload library is added.
+- **Implementation note:** "drop zone" means the drag-and-drop *interaction*, not a specific library. **Prefer** native HTML5 drag-and-drop / Nuxt UI file primitives (no extra dependency); the legacy `dropzone.js` is **also acceptable** if it turns out to be the cleanest path. Decide at build time — the only hard requirement is drag-an-image-and-drop-to-upload.
 - Per-field constraints (accepted types, max size) carried as props; defaults ported from v1 (confirm in §14):
   - app `image`: jpg/png · article `splash`: jpg/png ~0.5 MB · article figures: jpg/png ~0.1 MB (multiple) · `mainfile`: pdf ~5 MB · `extrafile`: any ~10 MB · `datafile`: csv ~100 MB.
 

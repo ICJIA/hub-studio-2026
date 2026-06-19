@@ -1,0 +1,13 @@
+# Netlify deployment for the ICJIA Research Hub Studio (Nuxt 4 SPA).
+# Nuxt auto-detects Netlify and uses the Nitro `netlify` preset, emitting
+# static assets plus serverless functions (the publish build-hook proxy
+# will live there in a later phase). The Node version comes from .nvmrc.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # TEMPORARY: the current pinia persistedstate Nuxt module has a peer-dep
+  # mismatch. Remove this once the maintained module replaces it (plan Task 3).
+  NPM_FLAGS = "--legacy-peer-deps"

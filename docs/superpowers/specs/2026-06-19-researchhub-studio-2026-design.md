@@ -294,6 +294,7 @@ This sidesteps the v5 "no upload at creation" rule (files are uploaded standalon
 Reusable component backing every media field (`splash`, `thumbnail`, app `image`, `mainfile`, `extrafile`, `datafile`):
 - **Upload new:** drag/drop or browse → eager upload → real-URL preview.
 - **Pick existing:** browse the Media Library via `GET /api/upload/files` (search, type filter, pagination) → select → reuse its `id`/`url`.
+- **Implementation note:** the drag-and-drop "drop zone" is built with native HTML5 drag-and-drop / Nuxt UI file primitives — **not** the legacy `dropzone.js` library that v1 used. "Drop zone" here means the *interaction*, not that dependency; no extra upload library is added.
 - Per-field constraints (accepted types, max size) carried as props; defaults ported from v1 (confirm in §14):
   - app `image`: jpg/png · article `splash`: jpg/png ~0.5 MB · article figures: jpg/png ~0.1 MB (multiple) · `mainfile`: pdf ~5 MB · `extrafile`: any ~10 MB · `datafile`: csv ~100 MB.
 

@@ -31,5 +31,11 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
     },
   },
-  persist: true,
+  persist: {
+    storage: piniaPluginPersistedstate.cookies({
+      sameSite: 'strict',
+      secure: !import.meta.dev,
+      maxAge: 60 * 60 * 24 * 30, // ~30 days, matches Strapi JWT lifespan
+    }),
+  },
 })

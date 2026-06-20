@@ -1787,6 +1787,85 @@ git commit -m "feat(data): add per-type repositories and composables"
 
 ---
 
+### Task 12: Allowed image extensions
+
+**Files:**
+- Create: `app/lib/image-types.ts`
+- Test: `tests/unit/image-types.test.ts`
+
+**Interfaces:**
+- Produces: `ALLOWED_IMAGE_EXTENSIONS` (readonly `['jpg','jpeg','png','svg']`); `hasAllowedImageExtension(urlOrName: string): boolean`.
+
+> Added 2026-06-20 (user): v1 over-rejected valid image extensions. The accepted set is **jpg/jpeg/png/svg** (case-insensitive). The *primary* enforcement point is the Plan 3 upload dropzone's accept-filter; this module is the shared source of truth. (SVG must additionally be DOMPurify-sanitized before upload — Plan 3, not this task.)
+
+- [ ] **Step 1: Write the failing test**
+
+```ts
+// tests/unit/image-types.test.ts
+import { describe, it, expect } from 'vitest'
+import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
+
+describe('ALLOWED_IMAGE_EXTENSIONS', () => {
+  it('is exactly jpg, jpeg, png, svg', () => {
+    expect(ALLOWED_IMAGE_EXTENSIONS).toEqual(['jpg', 'jpeg', 'png', 'svg'])
+  })
+})
+
+describe('hasAllowedImageExtension', () => {
+  it('accepts jpg/jpeg/png/svg, case-insensitively', () => {
+    for (const u of ['/uploads/a.jpg', '/uploads/a.JPEG', 'b.png', 'c.SVG', 'https://x/y.jpeg'])
+      expect(hasAllowedImageExtension(u)).toBe(true)
+  })
+  it('ignores query strings and hash fragments', () => {
+    expect(hasAllowedImageExtension('/uploads/a.png?width=100')).toBe(true)
+    expect(hasAllowedImageExtension('/uploads/a.svg#frag')).toBe(true)
+  })
+  it('rejects other or missing extensions', () => {
+    for (const u of ['/uploads/a.gif', 'a.webp', 'a.bmp', 'noext', '/uploads/'])
+      expect(hasAllowedImageExtension(u)).toBe(false)
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/image-types.test.ts`
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Write minimal implementation**
+
+```ts
+// app/lib/image-types.ts
+// Allowed image upload extensions (user 2026-06-20): v1 over-rejected valid types.
+// Accepted set is jpg/jpeg/png/svg (case-insensitive). The Plan 3 upload dropzone uses
+// this as its accept-filter (shared source of truth). SVG must be DOMPurify-sanitized
+// before upload (Plan 3) — not handled here.
+export const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'svg'] as const
+
+/** True if the URL or filename ends in an allowed image extension (query/hash ignored). */
+export function hasAllowedImageExtension(urlOrName: string): boolean {
+  const path = urlOrName.split(/[?#]/)[0] ?? ''
+  const dot = path.lastIndexOf('.')
+  if (dot < 0 || dot === path.length - 1) return false
+  const ext = path.slice(dot + 1).toLowerCase()
+  return (ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext)
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run tests/unit/image-types.test.ts`
+Expected: PASS (3 tests).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/lib/image-types.ts tests/unit/image-types.test.ts
+git commit -m "feat(data): add allowed-image-extension allowlist + helper"
+```
+
+---
+
 ## Post-plan verification (user-gated)
 
 These are **not** unit-testable offline and require a real admin-panel login (the Content-Manager API rejects unauthenticated calls — reads included), so they run as a controlled manual check after the plan lands — they do **not** block merge:

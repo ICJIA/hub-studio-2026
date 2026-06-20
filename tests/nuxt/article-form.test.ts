@@ -33,6 +33,16 @@ describe('ArticleForm (save-gate + repo wiring)', () => {
     expect(wrapper.vm.$.exposed!.errors.value.some((e: { field: string }) => e.field === 'markdown')).toBe(true)
   })
 
+  it('blocks create when images contain base64 — the zero-base64 save-gate for images', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')
+    wrapper.vm.$.exposed!.setField('date', '2020-01-01')
+    wrapper.vm.$.exposed!.setField('images', [{ title: 'Fig 1', src: 'data:image/png;base64,AAAA', alt: 'x' }])
+    await wrapper.vm.$.exposed!.submit()
+    expect(createMock).not.toHaveBeenCalled()
+    expect(wrapper.vm.$.exposed!.errors.value.some((e: { field: string }) => e.field === 'images')).toBe(true)
+  })
+
   it('on a clean create, slugifies the title and calls repo.create once', async () => {
     const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
     wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')

@@ -1,0 +1,128 @@
+<!-- app/components/MarkdownEditor.vue -->
+<!--
+  MarkdownEditor: the ICJIA Markdown Editor 2026 CodeMirror 6 writing surface, wrapped per-instance so
+  it honors the EXACT { modelValue / update:modelValue } v-model seam that MarkdownField defined in
+  Plan 5 — so ArticleForm (the only mounter) is untouched. The CM setup is the VENDORED, de-singletoned
+  createStudioEditorState (Task 1); the upstream's module-level content singleton (useEditor.ts) is NOT
+  used. The upstream editor has NO image handling — we author it here: EditorView.domEventHandlers({
+  paste, drop }) + a toolbar "Insert image" button extract File(s) and run them through the pure
+  handleImageFiles core (Task 2) with useUpload().upload injected, inserting ![alt](url "caption?") at the
+  cursor and selecting the alt for in-place refinement. ZERO base64 — every insert is a hosted url.
+  OUR renderer (MarkdownPreview) is kept beside it as the live preview (we do NOT vendor their renderer).
+  Client-only: EditorView mounts in onMounted, tears down in onBeforeUnmount (app is ssr:false).
+-->
+<script setup lang="ts">
+import { ref, watch, onMounted, onBeforeUnmount } from '#imports'
+import { EditorView } from '@codemirror/view'
+import { EditorSelection } from '@codemirror/state'
+import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
+import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
+import { ALLOWED_IMAGE_EXTENSIONS } from '~/lib/image-types'
+
+const props = defineProps<{ modelValue: string; label?: string }>()
+const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+
+const { upload } = useUpload()
+const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
+
+const host = ref<HTMLElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+let view: EditorView | null = null
+// Guards the modelValue→doc watcher against re-emitting our own onChange echo.
+let applyingExternal = false
+
+/** Single emit path — CM's onChange and the test hook both route through here. */
+function emitChange(value: string) {
+  if (applyingExternal) return
+  emit('update:modelValue', value)
+}
+
+/** Insert one built image at the current selection head and select its alt text for refinement. */
+function insertAtCursor(img: InsertedImage) {
+  if (!view) return
+  const pos = view.state.selection.main.head
+  view.dispatch({
+    changes: { from: pos, insert: img.markdown },
+    selection: EditorSelection.range(pos + img.altStart, pos + img.altEnd),
+  })
+  view.focus()
+}
+
+/** Upload + insert each image File via the pure core (DI: live upload + live insert). */
+async function handleFiles(files: File[], onInsert?: (markdown: string) => void) {
+  await handleImageFiles(files, upload, (img) => {
+    insertAtCursor(img)
+    onInsert?.(img.markdown)
+  })
+}
+
+function imageFilesFrom(list: FileList | null | undefined): File[] {
+  return list && list.length ? Array.from(list) : []
+}
+
+function onToolbarPick() { fileInput.value?.click() }
+function onFileInput(e: Event) {
+  const files = imageFilesFrom((e.target as HTMLInputElement).files)
+  if (files.length) handleFiles(files)
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+onMounted(() => {
+  if (!host.value) return
+  const state = createStudioEditorState({
+    doc: props.modelValue,
+    onChange: emitChange,
+  })
+  view = new EditorView({
+    state,
+    parent: host.value,
+    // use default dispatch
+  })
+  // domEventHandlers must be part of the state extensions; add them via a reconfigure-free approach:
+  // we attach native listeners on the CM content for paste/drop (equivalent, and simpler to wire here).
+  const content = view.contentDOM
+  content.addEventListener('paste', (e: ClipboardEvent) => {
+    const files = imageFilesFrom(e.clipboardData?.files)
+    if (files.length) { e.preventDefault(); handleFiles(files) }
+  })
+  content.addEventListener('drop', (e: DragEvent) => {
+    const files = imageFilesFrom(e.dataTransfer?.files)
+    if (files.length) { e.preventDefault(); handleFiles(files) }
+  })
+})
+
+// External modelValue changes → replace the document, without re-emitting.
+watch(() => props.modelValue, (next) => {
+  if (!view) return
+  const current = view.state.doc.toString()
+  if (next === current) return
+  applyingExternal = true
+  view.dispatch({ changes: { from: 0, to: current.length, insert: next ?? '' } })
+  applyingExternal = false
+})
+
+onBeforeUnmount(() => { view?.destroy(); view = null })
+
+// Test seams: route through the SAME functions CM's onChange / handlers use (not divergent logic).
+defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles })
+</script>
+
+<template>
+  <div class="markdown-editor">
+    <label v-if="label" class="block text-sm font-medium mb-1">{{ label }}</label>
+    <div class="flex items-center gap-2 mb-2">
+      <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
+      <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
+    </div>
+    <div class="grid gap-3 md:grid-cols-2">
+      <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" />
+      <MarkdownPreview :source="modelValue" />
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* Give the CodeMirror host a sensible authoring height; CM owns its inner DOM/theme. */
+.cm-host :deep(.cm-editor) { min-height: 24rem; }
+.cm-host :deep(.cm-scroller) { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+</style>

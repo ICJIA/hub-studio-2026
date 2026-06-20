@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { validateArticle } from '~/lib/validators/article'
 import { validateApp } from '~/lib/validators/app'
-import type { Article, App } from '~/types/content'
+import { validateDataset } from '~/lib/validators/dataset'
+import type { Article, App, Dataset } from '~/types/content'
 
 const baseArticle = (over: Partial<Article> = {}): Article => ({
   documentId: '', title: 'T', slug: 't', date: '2020-01-01', external: false,
@@ -43,5 +44,22 @@ describe('validateApp', () => {
   it('rejects base64 in the description', () => {
     expect(validateApp(baseApp({ description: 'data:image/png;base64,AAAA' })))
       .toContainEqual(expect.objectContaining({ field: 'description' }))
+  })
+})
+
+const baseDataset = (over: Partial<Dataset> = {}): Dataset => ({
+  documentId: '', title: 'D', slug: 'd', date: '2020-01-01', external: false, project: false,
+  categories: [], tags: [], sources: [], unit: null, timeperiod: null, description: null,
+  notes: [], variables: [], citation: null, funding: null, datafile: null,
+  apps: [], articles: [], publishedAt: null, ...over,
+})
+
+describe('validateDataset', () => {
+  it('requires title and date', () => {
+    expect(validateDataset(baseDataset({ title: '', date: null })).map((e) => e.field).sort())
+      .toEqual(['date', 'title'])
+  })
+  it('rejects an unknown unit', () => {
+    expect(validateDataset(baseDataset({ unit: 'galactic' }))).toContainEqual(expect.objectContaining({ field: 'unit' }))
   })
 })

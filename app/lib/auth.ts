@@ -1,13 +1,14 @@
 import type { $Fetch } from 'ofetch'
-import type { LoginResponse, StrapiUser } from '~/types/strapi'
+import type { AdminUser, AdminLoginResponse, AdminMeResponse } from '~/types/admin'
 
-export function loginRequest(api: $Fetch, identifier: string, password: string): Promise<LoginResponse> {
-  return api<LoginResponse>('/api/auth/local', {
-    method: 'POST',
-    body: { identifier, password },
-  })
+/** Admin-panel login. NOTE: the returned user has an EMPTY roles array — call fetchMe for roles. */
+export async function loginRequest(api: $Fetch, email: string, password: string): Promise<{ jwt: string; user: AdminUser }> {
+  const res = await api<AdminLoginResponse>('/admin/login', { method: 'POST', body: { email, password } })
+  return { jwt: res.data.token, user: res.data.user }
 }
 
-export function fetchMe(api: $Fetch): Promise<StrapiUser> {
-  return api<StrapiUser>('/api/users/me', { query: { populate: 'role' } })
+/** Current admin user WITH roles populated (used at login completion and on boot re-verify). */
+export async function fetchMe(api: $Fetch): Promise<AdminUser> {
+  const res = await api<AdminMeResponse>('/admin/users/me')
+  return res.data
 }

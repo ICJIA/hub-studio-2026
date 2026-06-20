@@ -73,7 +73,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(base, {
         method: 'POST',
         query: { status: opts.status },
-        body: cfg.toWrite(model),
+        body: cfg.toWrite(model) as Record<string, unknown>,
       })
       return cfg.fromStrapi(unwrapOne(res))
     },
@@ -82,7 +82,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}`, {
         method: 'PUT',
         query: { status: opts.status },
-        body: cfg.toWrite(model),
+        body: cfg.toWrite(model) as Record<string, unknown>,
       })
       return cfg.fromStrapi(unwrapOne(res))
     },

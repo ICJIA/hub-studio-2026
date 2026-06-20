@@ -11,21 +11,21 @@ export function parseList(str: string, sep = ','): string[] {
 
 export function parseAuthors(authorString: string): Author[] {
   return rows(authorString).map((row) => {
-    const [title, description] = cols(row)
+    const [title = '', description = ''] = cols(row)
     return { title, description }
   })
 }
 
 export function parseSources(sourceString: string): Source[] {
   return rows(sourceString).map((row) => {
-    const [title, url] = cols(row)
+    const [title = '', url = ''] = cols(row)
     return { title, url }
   })
 }
 
 export function parseVariables(variableString: string): Variable[] {
   return rows(variableString).map((row) => {
-    const [name, type, definition, values] = cols(row)
+    const [name = '', type = '', definition = '', values = ''] = cols(row)
     return { name, type, definition, values }
   })
 }
@@ -35,7 +35,7 @@ export function parseNotes(noteString: string): string[] {
 }
 
 export function parseTimeperiod(yeartype: string, range: string): TimePeriod {
-  const [yearmin, yearmax] = range.split('-').map((s) => s.trim())
+  const [yearmin = '', yearmax = ''] = range.split('-').map((s) => s.trim())
   return { yeartype, yearmin, yearmax }
 }
 

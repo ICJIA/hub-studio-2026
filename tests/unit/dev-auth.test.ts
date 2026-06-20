@@ -34,7 +34,9 @@ describe('isDevAdminToken', () => {
   })
 
   it('rejects a real-looking jwt', () => {
-    expect(isDevAdminToken('eyJhbGciOiJIUzI1NiJ9.real.jwt')).toBe(false)
+    // A JWT-shaped string (three dot-separated segments) that is NOT the dev token.
+    // Kept deliberately zero-entropy so secret scanners don't false-positive on a test fixture.
+    expect(isDevAdminToken('header.payload.signature')).toBe(false)
   })
 
   it('rejects null', () => {

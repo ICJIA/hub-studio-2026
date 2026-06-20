@@ -1,0 +1,15 @@
+# GitGuardian / ggshield configuration — https://docs.gitguardian.com
+#
+# This repository's tests use ONLY synthetic fixtures: fake tokens and a
+# JWT-shaped placeholder ("header.payload.signature") that the code under test
+# is asserted to REJECT. No real credentials live in tests. Exclude the test
+# tree from secret scanning so these fixtures don't raise false positives.
+#
+# Note: this primarily affects ggshield (local pre-commit / CI) scans. The
+# GitGuardian dashboard's own monitoring may still rely on its server-side
+# exclusion settings — the real fix for the platform is that the triggering
+# value no longer exists in the source.
+version: 2
+secret:
+  ignored-paths:
+    - "tests/**"

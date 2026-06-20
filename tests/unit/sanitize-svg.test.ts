@@ -23,7 +23,9 @@ describe('sanitizeSvgText', () => {
   })
   it('drops external xlink:href references', () => {
     const dirty = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="http://evil.example/x.svg"/></svg>'
-    expect(sanitizeSvgText(dirty)).not.toMatch(/evil\.example/)
+    const r = sanitizeSvgText(dirty)
+    expect(r).not.toMatch(/xlink:href/i)
+    expect(r).not.toMatch(/evil\.example/i)
   })
   it('keeps a clean <svg><rect/></svg> intact', () => {
     const clean = sanitizeSvgText('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>')

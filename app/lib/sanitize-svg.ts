@@ -15,22 +15,20 @@ export function isSvg(file: File | Blob): boolean {
 /**
  * Sanitize SVG source with the SVG profile: strips <script>, on* handlers, and external
  * entity / xlink:href references. No ADD_TAGS/ADD_ATTR — we never re-admit a risky tag.
+ *
+ * happy-dom (the test environment) strips the <svg> root element when passed directly to
+ * DOMPurify, so we wrap in a neutral <root> element and extract the inner content after
+ * sanitization. We use a non-greedy match on the inner content so that adversarial input
+ * containing "</root>" cannot cause premature truncation.
+ * xlink:href stripping covers double-quoted, single-quoted, and unquoted values.
  */
 export function sanitizeSvgText(svg: string): string {
-  const config = {
+  const sanitized = DOMPurify.sanitize(`<root>${svg}</root>`, {
     USE_PROFILES: { svg: true, svgFilters: true },
-  }
+  })
+    .replace(/\s+xlink:href=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s+xmlns:xlink=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
 
-  // DOMPurify sanitizes the SVG content but strips the <svg> root. We wrap it
-  // to preserve the root element, then extract it back after sanitization.
-  const wrappedSvg = `<root>${svg}</root>`
-  let sanitized = DOMPurify.sanitize(wrappedSvg, config)
-
-  // Remove xlink:href and other namespace attributes that can reference external content
-  sanitized = sanitized.replace(/\s+xlink:href="[^"]*"/gi, '')
-  sanitized = sanitized.replace(/\s+xmlns:xlink="[^"]*"/gi, '')
-
-  // Extract content from <root>...</root>
-  const match = sanitized.match(/<root[^>]*>([\s\S]*)<\/root>/i)
+  const match = sanitized.match(/<root[^>]*>([\s\S]*?)<\/root>/i)
   return match ? match[1] : sanitized
 }

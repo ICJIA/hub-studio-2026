@@ -1,32 +1,25 @@
 import { describe, it, expect } from 'vitest'
 import { resolveAuthRedirect } from '~/lib/guard'
 
-const loggedOut = { isLoggedIn: false, isAdmin: false }
-const author = { isLoggedIn: true, isAdmin: false }
-const admin = { isLoggedIn: true, isAdmin: true }
+const ctx = (over = {}) => ({ path: '/x', isPublic: false, isAdminOnly: false, isLoggedIn: true, canPublish: false, ...over })
 
 describe('resolveAuthRedirect', () => {
-  it('sends logged-out users from a protected route to /login', () => {
-    expect(resolveAuthRedirect({ path: '/', }, loggedOut)).toBe('/login')
+  it('sends an unauthenticated user on a private route to /login', () => {
+    expect(resolveAuthRedirect(ctx({ isLoggedIn: false }))).toBe('/login')
   })
-
-  it('allows logged-out users on a public route', () => {
-    expect(resolveAuthRedirect({ path: '/login', public: true }, loggedOut)).toBeNull()
+  it('lets a logged-in user reach a normal private route', () => {
+    expect(resolveAuthRedirect(ctx())).toBeNull()
   })
-
-  it('sends logged-in users away from /login to home', () => {
-    expect(resolveAuthRedirect({ path: '/login', public: true }, author)).toBe('/')
+  it('bounces a logged-in non-publisher off an admin-only route', () => {
+    expect(resolveAuthRedirect(ctx({ isAdminOnly: true, canPublish: false }))).toBe('/')
   })
-
-  it('allows an author on a normal protected route', () => {
-    expect(resolveAuthRedirect({ path: '/' }, author)).toBeNull()
+  it('lets a publisher reach an admin-only route', () => {
+    expect(resolveAuthRedirect(ctx({ isAdminOnly: true, canPublish: true }))).toBeNull()
   })
-
-  it('blocks a non-admin from an admin-only route', () => {
-    expect(resolveAuthRedirect({ path: '/manage', adminOnly: true }, author)).toBe('/')
+  it('redirects a logged-in user away from /login (public)', () => {
+    expect(resolveAuthRedirect(ctx({ path: '/login', isPublic: true }))).toBe('/')
   })
-
-  it('allows an admin on an admin-only route', () => {
-    expect(resolveAuthRedirect({ path: '/manage', adminOnly: true }, admin)).toBeNull()
+  it('lets an anonymous visitor see a public route', () => {
+    expect(resolveAuthRedirect(ctx({ path: '/login', isPublic: true, isLoggedIn: false }))).toBeNull()
   })
 })

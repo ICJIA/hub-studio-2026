@@ -6,20 +6,17 @@ export function useAuth() {
   const store = useAuthStore()
   const { $api } = useNuxtApp()
 
-  /** Authenticate, then load the user with role populated. */
-  async function login(identifier: string, password: string) {
-    // DEV-ONLY fixed admin bypass. `import.meta.dev` is false in production builds,
-    // so this whole branch is tree-shaken away. See app/lib/dev-auth.ts.
-    if (import.meta.dev && matchesDevAdmin(identifier, password)) {
+  /** Admin login: get token + user, then load the user WITH roles from /admin/users/me. */
+  async function login(email: string, password: string) {
+    if (import.meta.dev && matchesDevAdmin(email, password)) {
       const session = makeDevAdminSession()
       store.setSession(session)
       console.warn('[dev-auth] Signed in with the fixed dev admin bypass — NOT a real Strapi session.')
       return session.user
     }
-
-    const { jwt, user } = await loginRequest($api, identifier, password)
+    const { jwt, user } = await loginRequest($api, email, password)
     store.setSession({ jwt, user }) // set token first so $api attaches it
-    const me = await fetchMe($api)
+    const me = await fetchMe($api)  // /admin/users/me returns the user WITH roles
     store.setUser(me)
     return me
   }
@@ -29,24 +26,17 @@ export function useAuth() {
     await navigateTo('/login')
   }
 
-  /**
-   * Re-verify the persisted session against Strapi on app boot.
-   * Clears the session if the token is invalid or the request fails.
-   */
+  /** Re-verify the persisted session against the admin API on app boot. */
   async function init() {
     if (!store.jwt) return
-    // DEV-ONLY: the synthetic dev session has no real token to re-verify, so keep it
-    // across reloads instead of letting fetchMe 401 and clear it. See app/lib/dev-auth.ts.
-    if (import.meta.dev && isDevAdminToken(store.jwt)) return
+    if (import.meta.dev && isDevAdminToken(store.jwt)) return // synthetic dev session — keep across reloads
     try {
       const me = await fetchMe($api)
       store.setUser(me)
     } catch {
-      // Deliberate no-op. A 401 (invalid/expired token) is already handled globally by
-      // the $api interceptor (it clears the session and redirects to /login). For transient
-      // failures (network down, Strapi restarting, 5xx) keep the existing session rather
-      // than logging the user out — the token may still be valid on recovery, and the
-      // server enforces authorization on every real request regardless.
+      // Deliberate no-op: a 401 is handled globally by the $api interceptor (clears session,
+      // redirects to /login). For transient failures (network/5xx) keep the session — the
+      // token may still be valid on recovery, and the server enforces authz on every request.
     }
   }
 
@@ -56,7 +46,6 @@ export function useAuth() {
     init,
     isLoggedIn: computed(() => store.isLoggedIn),
     user: computed(() => store.user),
-    role: computed(() => store.role),
-    isAdmin: computed(() => store.isAdmin),
+    canPublish: computed(() => store.canPublish),
   }
 }

@@ -1,21 +1,17 @@
-export interface RouteInfo {
+export interface GuardContext {
   path: string
-  public?: boolean
-  adminOnly?: boolean
-}
-
-export interface AuthSnapshot {
+  isPublic: boolean
+  isAdminOnly: boolean
   isLoggedIn: boolean
-  isAdmin: boolean
+  canPublish: boolean
 }
 
-/** Returns a path to redirect to, or null to allow navigation. */
-export function resolveAuthRedirect(route: RouteInfo, auth: AuthSnapshot): string | null {
-  if (route.public) {
-    if (route.path === '/login' && auth.isLoggedIn) return '/'
-    return null
+/** Returns a redirect path, or null to allow. Default-deny: only `isPublic` routes are open. */
+export function resolveAuthRedirect(ctx: GuardContext): string | null {
+  if (ctx.isPublic) {
+    return ctx.isLoggedIn && ctx.path === '/login' ? '/' : null
   }
-  if (!auth.isLoggedIn) return '/login'
-  if (route.adminOnly && !auth.isAdmin) return '/'
+  if (!ctx.isLoggedIn) return '/login'
+  if (ctx.isAdminOnly && !ctx.canPublish) return '/'
   return null
 }

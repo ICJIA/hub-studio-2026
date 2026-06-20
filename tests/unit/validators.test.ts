@@ -41,6 +41,9 @@ describe('validateApp', () => {
   it('requires a title', () => {
     expect(validateApp(baseApp({ title: '' }))).toContainEqual(expect.objectContaining({ field: 'title' }))
   })
+  it('requires a slug', () => {
+    expect(validateApp(baseApp({ slug: '' }))).toContainEqual(expect.objectContaining({ field: 'slug' }))
+  })
   it('rejects base64 in the description', () => {
     expect(validateApp(baseApp({ description: 'data:image/png;base64,AAAA' })))
       .toContainEqual(expect.objectContaining({ field: 'description' }))
@@ -59,7 +62,18 @@ describe('validateDataset', () => {
     expect(validateDataset(baseDataset({ title: '', date: null })).map((e) => e.field).sort())
       .toEqual(['date', 'title'])
   })
+  it('requires a slug', () => {
+    expect(validateDataset(baseDataset({ slug: '' }))).toContainEqual(expect.objectContaining({ field: 'slug' }))
+  })
   it('rejects an unknown unit', () => {
     expect(validateDataset(baseDataset({ unit: 'galactic' }))).toContainEqual(expect.objectContaining({ field: 'unit' }))
+  })
+  it('rejects an unknown timeperiod yeartype', () => {
+    expect(validateDataset(baseDataset({ timeperiod: { yeartype: 'bogus', yearmin: 2000, yearmax: 2001 } })))
+      .toContainEqual(expect.objectContaining({ field: 'timeperiod' }))
+  })
+  it('rejects base64 in the description', () => {
+    expect(validateDataset(baseDataset({ description: 'data:image/png;base64,AAAA' })))
+      .toContainEqual(expect.objectContaining({ field: 'description' }))
   })
 })

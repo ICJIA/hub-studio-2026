@@ -43,18 +43,16 @@ describe('isDevAdminToken', () => {
 })
 
 describe('makeDevAdminSession', () => {
-  it('carries the sentinel token and an admin role', () => {
+  it('carries the sentinel token and a super-admin role code', () => {
     const session = makeDevAdminSession()
     expect(session.jwt).toBe(DEV_ADMIN_TOKEN)
-    expect(session.user.role?.name).toBe('admin')
+    expect(session.user.roles.map((r) => r.code)).toContain('strapi-super-admin')
   })
-
-  it('grants a logged-in admin session through the real auth store', () => {
+  it('grants a logged-in publisher session through the real auth store', () => {
     setActivePinia(createPinia())
     const store = useAuthStore()
-    const session = makeDevAdminSession()
-    store.setSession(session)
+    store.setSession(makeDevAdminSession())
     expect(store.isLoggedIn).toBe(true)
-    expect(store.isAdmin).toBe(true)
+    expect(store.canPublish).toBe(true)
   })
 })

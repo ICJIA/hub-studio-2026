@@ -15,7 +15,7 @@
  * app/composables/useAuth.ts (login + init) and the dev hint in app/pages/login.vue.
  * The build will fail loudly on the dangling import until every call site is gone.
  */
-import type { LoginResponse, StrapiUser } from '~/types/strapi'
+import type { AdminUser } from '~/types/admin'
 
 export const DEV_ADMIN_IDENTIFIER = 'admin'
 export const DEV_ADMIN_PASSWORD = 'admin'
@@ -33,15 +33,17 @@ export function isDevAdminToken(token: string | null): boolean {
   return token === DEV_ADMIN_TOKEN
 }
 
-/** Build the synthetic admin session minted by the dev bypass. */
-export function makeDevAdminSession(): LoginResponse {
-  const user: StrapiUser = {
+/** Build the synthetic ADMIN session minted by the dev bypass (super-admin = can publish). */
+export function makeDevAdminSession(): { jwt: string; user: AdminUser } {
+  const user: AdminUser = {
     id: 0,
     username: DEV_ADMIN_IDENTIFIER,
     email: 'dev-admin@localhost',
-    confirmed: true,
+    firstname: 'Dev',
+    lastname: 'Admin',
+    isActive: true,
     blocked: false,
-    role: { id: 0, name: 'admin', type: 'admin' },
+    roles: [{ id: 0, name: 'Super Admin', code: 'strapi-super-admin' }],
   }
   return { jwt: DEV_ADMIN_TOKEN, user }
 }

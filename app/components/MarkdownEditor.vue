@@ -17,7 +17,7 @@ import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
 import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
-import { ALLOWED_IMAGE_EXTENSIONS } from '~/lib/image-types'
+import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
 
 const props = defineProps<{ modelValue: string; label?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -27,6 +27,7 @@ const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 
 const host = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+const uploadError = ref<string | null>(null)
 let view: EditorView | null = null
 // Guards the modelValue→doc watcher against re-emitting our own onChange echo.
 let applyingExternal = false
@@ -50,14 +51,23 @@ function insertAtCursor(img: InsertedImage) {
 
 /** Upload + insert each image File via the pure core (DI: live upload + live insert). */
 async function handleFiles(files: File[], onInsert?: (markdown: string) => void) {
-  await handleImageFiles(files, upload, (img) => {
-    insertAtCursor(img)
-    onInsert?.(img.markdown)
-  })
+  uploadError.value = null
+  try {
+    await handleImageFiles(files, upload, (img) => {
+      insertAtCursor(img)
+      onInsert?.(img.markdown)
+    })
+  } catch (err) {
+    uploadError.value = err instanceof Error ? err.message : 'Image upload failed. Please try again.'
+  }
 }
 
+/** Collect image files only: by MIME type, or by extension when type is absent (common on drop). */
 function imageFilesFrom(list: FileList | null | undefined): File[] {
-  return list && list.length ? Array.from(list) : []
+  if (!list || list.length === 0) return []
+  return Array.from(list).filter(
+    (f) => f.type.startsWith('image/') || (!f.type && hasAllowedImageExtension(f.name)),
+  )
 }
 
 function onToolbarPick() { fileInput.value?.click() }
@@ -66,6 +76,10 @@ function onFileInput(e: Event) {
   if (files.length) handleFiles(files)
   if (fileInput.value) fileInput.value.value = ''
 }
+
+// Named handlers so onBeforeUnmount can remove the exact same references.
+let onPaste: ((e: ClipboardEvent) => void) | null = null
+let onDrop: ((e: DragEvent) => void) | null = null
 
 onMounted(() => {
   if (!host.value) return
@@ -81,14 +95,18 @@ onMounted(() => {
   // domEventHandlers must be part of the state extensions; add them via a reconfigure-free approach:
   // we attach native listeners on the CM content for paste/drop (equivalent, and simpler to wire here).
   const content = view.contentDOM
-  content.addEventListener('paste', (e: ClipboardEvent) => {
+
+  onPaste = (e: ClipboardEvent) => {
     const files = imageFilesFrom(e.clipboardData?.files)
     if (files.length) { e.preventDefault(); handleFiles(files) }
-  })
-  content.addEventListener('drop', (e: DragEvent) => {
+  }
+  onDrop = (e: DragEvent) => {
     const files = imageFilesFrom(e.dataTransfer?.files)
     if (files.length) { e.preventDefault(); handleFiles(files) }
-  })
+  }
+
+  content.addEventListener('paste', onPaste)
+  content.addEventListener('drop', onDrop)
 })
 
 // External modelValue changes → replace the document, without re-emitting.
@@ -101,10 +119,17 @@ watch(() => props.modelValue, (next) => {
   applyingExternal = false
 })
 
-onBeforeUnmount(() => { view?.destroy(); view = null })
+onBeforeUnmount(() => {
+  if (view?.contentDOM) {
+    if (onPaste) view.contentDOM.removeEventListener('paste', onPaste)
+    if (onDrop) view.contentDOM.removeEventListener('drop', onDrop)
+  }
+  view?.destroy()
+  view = null
+})
 
 // Test seams: route through the SAME functions CM's onChange / handlers use (not divergent logic).
-defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles })
+defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadError: uploadError })
 </script>
 
 <template>
@@ -114,6 +139,7 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles })
       <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
       <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
     </div>
+    <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
     <div class="grid gap-3 md:grid-cols-2">
       <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" />
       <MarkdownPreview :source="modelValue" />

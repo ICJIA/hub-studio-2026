@@ -14,7 +14,7 @@ import AppForm from '~/components/forms/AppForm.vue'
 describe('AppForm', () => {
   beforeEach(() => createMock.mockClear())
 
-  it('blocks create with no title', async () => {
+  it('blocks create with a blank model (title and slug required)', async () => {
     const wrapper = await mountSuspended(AppForm, { props: { mode: 'create' } })
     await wrapper.vm.$.exposed!.submit()
     expect(createMock).not.toHaveBeenCalled()
@@ -28,5 +28,15 @@ describe('AppForm', () => {
     expect(createMock).toHaveBeenCalledOnce()
     const call = createMock.mock.calls[0]
     expect(call![0].slug).toBe('ucr-index-offense-explorer')
+  })
+
+  it('blocks create when description contains base64', async () => {
+    const wrapper = await mountSuspended(AppForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'My App')
+    wrapper.vm.$.exposed!.setField('description', 'data:image/png;base64,abc123==')
+    await wrapper.vm.$.exposed!.submit()
+    expect(createMock).not.toHaveBeenCalled()
+    const errs = wrapper.vm.$.exposed!.errors.value
+    expect(errs.some((e: { field: string }) => e.field === 'description')).toBe(true)
   })
 })

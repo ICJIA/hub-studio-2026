@@ -1,3 +1,5 @@
+import { resolveAuthRedirect } from '~/lib/guard'
+
 export default defineNuxtRouteMiddleware((to) => {
   const auth = useAuthStore()
   const redirect = resolveAuthRedirect({

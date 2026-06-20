@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   ssr: false,
   modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/prose-preview.css'],
   runtimeConfig: {
     public: {
       strapiBaseUrl: 'https://v2.hub.icjia-api.cloud',

@@ -1,14 +1,12 @@
 <!-- app/components/MarkdownField.vue -->
 <!--
-  MarkdownField: a BASIC markdown editor — a textarea bound via v-model beside a live
-  MarkdownPreview. This is the SEAM the full ICJIA Markdown Editor 2026 (CodeMirror 6 +
-  uploadHandler) slots into in Plan 4: the replacement keeps this exact { modelValue /
-  update:modelValue } contract, so the content forms don't change. Live preview uses the
-  shared renderMarkdown (parity with published output).
+  MarkdownField: the editor SEAM. Plan 5 shipped this as a basic textarea + live preview and reserved
+  the { modelValue / update:modelValue } contract for the full editor. Plan 4 fulfills that: the body is
+  now a thin pass-through to MarkdownEditor (the vendored ICJIA CodeMirror 6 surface + our authored
+  paste/drop/toolbar image pipeline), while the public v-model contract is UNCHANGED — so ArticleForm
+  (the only mounter) and the other forms are untouched. The live preview remains OUR renderMarkdown.
 -->
 <script setup lang="ts">
-import { computed } from '#imports'
-
 const props = defineProps<{ modelValue: string; label?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
@@ -19,11 +17,5 @@ const value = computed({
 </script>
 
 <template>
-  <div class="markdown-field">
-    <label v-if="label" class="block text-sm font-medium mb-1">{{ label }}</label>
-    <div class="grid gap-3 md:grid-cols-2">
-      <UTextarea v-model="value" :rows="16" class="w-full font-mono" placeholder="Write Markdown…" />
-      <MarkdownPreview :source="value" />
-    </div>
-  </div>
+  <MarkdownEditor v-model="value" :label="label" />
 </template>

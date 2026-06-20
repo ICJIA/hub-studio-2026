@@ -7,14 +7,18 @@ import AppForm from '~/components/forms/AppForm.vue'
 import DatasetForm from '~/components/forms/DatasetForm.vue'
 
 const route = useRoute()
-const type = route.params.type as 'article' | 'app' | 'dataset'
+const type = route.params.type as string
 const documentId = route.params.documentId as string
 
-const repo = type === 'article' ? useArticles() : type === 'app' ? useApps() : useDatasets()
+const knownTypes = ['article', 'app', 'dataset']
+const isKnownType = knownTypes.includes(type)
+
+const repo = type === 'article' ? useArticles() : type === 'app' ? useApps() : type === 'dataset' ? useDatasets() : null
 const entry = ref<Article | App | Dataset | null>(null)
-const loading = ref(true)
+const loading = ref(isKnownType)
 
 onMounted(async () => {
+  if (!isKnownType || !repo) { loading.value = false; return }
   try { entry.value = await repo.findOne(documentId, { status: 'draft' }) }
   finally { loading.value = false }
 })
@@ -22,7 +26,8 @@ onMounted(async () => {
 <template>
   <div>
     <h1 class="text-2xl font-semibold mb-4">Edit {{ type }}</h1>
-    <p v-if="loading" class="text-muted">Loading…</p>
+    <p v-if="!isKnownType" class="text-muted">Unknown content type.</p>
+    <p v-else-if="loading" class="text-muted">Loading…</p>
     <template v-else-if="entry">
       <ArticleForm v-if="type === 'article'" mode="edit" :initial="entry as Article" />
       <AppForm v-else-if="type === 'app'" mode="edit" :initial="entry as App" />

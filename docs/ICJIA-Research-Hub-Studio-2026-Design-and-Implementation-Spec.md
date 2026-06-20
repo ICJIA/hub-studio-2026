@@ -601,7 +601,7 @@ actually do once it's done*, and where it stands. Detailed subsections follow.
 | 1. Foundation & Secure Login | Sign in securely; the app remembers your session; only publishers see Publish controls | **Built** |
 | 1.5. Auth Retarget (Admin API) | Sign in with your real Strapi admin account; your real role decides who can publish | **Built** (merged to `main`) |
 | 2. Content Engine / Data Layer | The app can read and save articles, apps, and datasets correctly and safely | **Built** (81 tests, merged) |
-| 3. Media & Images | Add images properly: shared library, alt-text/captions, safe SVGs, valid formats | **Planned** |
+| 3. Media & Images | Add images properly: shared library, alt-text/captions, safe SVGs, valid formats | **Built** |
 | 4. Authoring Editor | Write with formatting buttons, a table builder, and live preview — no code | **Planned** |
 | 5. Screens, Preview & Onboarding | Use real dashboards/forms; preview exactly-as-published; complete first-login profile | **Planned** |
 | 6. Publish, Rebuild & Review Email | Publish with one click (rebuilds the public site); request review by email | **Planned** |
@@ -731,26 +731,38 @@ the substance here.
 > land. Relation-write and the publish action were intentionally deferred to later
 > phases.
 
-### Phase 3 — Media & Images  ·  Status: **PLANNED**
+### Phase 3 — Media & Images  ·  Status: **BUILT**
 
 **Plain-English deliverable.** Staff can add images the right way: upload to the
 shared Media Library or pick an existing image, see a real preview (never a giant
 embedded copy), provide alt-text and an optional caption, and upload only valid
 image formats — with SVGs automatically cleaned of anything dangerous.
 
+**What it delivered.** A Strapi Upload-API library (upload/list/delete via
+`POST /upload` + `GET /upload/files`), a `useUpload` composable (extension gate →
+SVG sanitize → eager upload), a **MediaPicker** (upload-new or pick-existing,
+**alt-text required**, optional caption), and an **ImageDropzone** (drag-drop →
+eager upload → thumbnails → click-to-insert `![alt](url "caption")`). An
+image-format allowlist enforces `jpg/jpeg/png/svg`. A cross-cutting guard test
+confirms the **zero-base64 invariant**: no `data:` URL ever enters state. All
+shipped to `main` and pushed.
+
 **For developers — technical scope.** An eager-upload composable (upload on
 select/drop → store `{ id, url }` → preview from the returned URL, never a client
-data URL), a reusable `MediaPicker` backing every media field (upload-new and
-pick-existing via Media Library browse), per-field type/size constraints, the
-DOMPurify SVG sanitization step before upload, the allowed-extension accept-filter
-(`jpg/jpeg/png/svg`), and a lint/test guard reinforcing zero-base64. Inline
-article figures upload to the Media Library and insert as `![alt](url "caption")`
-at the cursor; each insertion also appends `{ title, src, alt?, caption? }` to the
-`images` JSON array (URLs only).
+data URL) backs a reusable `MediaPicker` for every media field (upload-new and
+pick-existing via Media Library browse). The DOMPurify SVG sanitization step
+(SVG profile — strips `<script>`, `on*` handlers, and external `xlink:href`
+across all quote styles) runs **before** upload, defusing hostile files at ingest.
+The allowed-extension accept-filter (`jpg/jpeg/png/svg`, case-insensitive) lives in
+`lib/image-types.ts`. Inline article figures insert as `![alt](url "caption")`
+at the cursor and append `{ title, src, alt?, caption? }` to the `images` JSON
+array (URLs only). A cross-cutting guard test asserts the zero-base64 invariant
+end-to-end (no `data:` URI can reach a write payload) — the build fails if the
+invariant is violated.
 
 **Why this isn't trivial.** This is where the four hidden image requirements
-from §2.3 (no base64, accessibility, SVG safety, valid formats) stop being
-principles and become concrete UI and upload behavior — and the four pull against
+from §2.3 (no base64, accessibility, SVG safety, valid formats) stopped being
+principles and became concrete UI and upload behavior — and the four pull against
 each other. The most natural way to show someone the image they just picked is to
 display it straight from their own machine, which is precisely the embedded-image
 habit the whole project bans; avoiding it means the file must travel to the shared
@@ -760,9 +772,14 @@ or retry gracefully while the person waits. Layered on top is the content system
 own rule that a file can't be attached while a record is being created — it must be
 uploaded on its own and then linked by reference — which inverts the order older
 tools used and means the upload and the record-save are two separate moments that
-have to be sequenced correctly. And the SVG-cleaning step sits in the middle of
-all of it, because a dangerous file has to be defused *before* it is stored, not
-after.
+have to be sequenced correctly. The SVG-cleaning step sits in the middle of all of
+it, because a dangerous file has to be defused *before* it is stored, not after.
+All four requirements are now satisfied, tested, and merged.
+
+> **Status note (developer):** Built, reviewed, merged to `main`, and pushed.
+> **108 automated tests passing, `nuxt typecheck` clean** across foundation + auth
+> + data + media. The zero-base64 invariant is verified by a cross-cutting guard
+> test; the build fails if a `data:` URI can reach a write payload.
 
 ### Phase 4 — Authoring Editor  ·  Status: **PLANNED**
 
@@ -925,8 +942,9 @@ entire point of rebuilding on a modern foundation in the first place.
 > errors that `nuxt typecheck` caught); conventional commits with **no AI
 > co-author trailer**; per-task and whole-branch reviews. The build ledger
 > (`.superpowers/sdd/progress.md`) is the durable record of status, discoveries,
-> and captured future work. Evidence of the rigor: Phase 2 shipped 81 passing
-> tests with a clean typecheck and a clean whole-branch review.
+> and captured future work. Evidence of the rigor: the project now has 108 passing tests with a clean
+> typecheck across foundation + auth + data + media, and a clean whole-branch
+> review at every phase boundary.
 
 ---
 
@@ -940,24 +958,23 @@ A clean done-vs-planned view of the whole project.
 | Auth retarget (real Strapi roles) | **Done** | Built, 84 tests passing, typecheck clean, merged to `main` |
 | Content engine (read/save 3 types) | **Done** | 81 automated tests, typecheck clean, merged |
 | Zero-base64 guarantee | **Done (enforced by tests)** | Wires into live forms in Phase 5 |
-| Media & images (library, alt, SVG safety) | **Planned** | — |
+| Media & images (library, alt, SVG safety) | **Done** | 108 tests passing, typecheck clean, merged to `main` |
 | Authoring editor (buttons + live preview) | **Planned** | Reuses ICJIA editor as a layer |
 | Screens, exact preview & onboarding | **Planned** | — |
 | Publish + rebuild + review email | **Planned** | Needs build-hook URL + Mailgun key |
 | Polish, accessibility & launch | **Planned** | Includes sample-article demo |
 
-**One-line summary for a manager:** the secure front door — now signing staff in
-with their real Strapi accounts and enforcing who-can-publish by their real role —
-and the content engine are **built and tested**; the screens, image handling,
-editor, preview, publishing, and onboarding are **designed and planned**, ready to
-build in sequence.
+**One-line summary for a manager:** the secure front door, the content engine, and
+the full media-and-images layer are **built and tested** (108 passing tests, 4
+phases merged to `main`); the authoring editor, screens, preview, publishing, and
+onboarding are **designed and planned**, ready to build in sequence.
 
 > **For developers:** "Done" items are merged to `main` **and pushed to `origin`**
-> (the public GitHub repo) — the foundation, the admin-API auth retarget, and the
-> content engine are live on GitHub. Note `main` includes the dev-only
-> `admin/admin` bypass, flagged **REMOVE BEFORE DEPLOY**. With the auth retarget
-> landed, Content-Manager reads and writes are unblocked; **Phase 3 (Media &
-> Images)** is the next recommended execution target.
+> (the public GitHub repo) — the foundation, the admin-API auth retarget, the
+> content engine, and the media layer are all live on GitHub. Note `main` includes
+> the dev-only `admin/admin` bypass, flagged **REMOVE BEFORE DEPLOY**. With
+> Phases 1–3 landed, **Phase 4 (Authoring Editor)** is the next recommended
+> execution target.
 
 ---
 

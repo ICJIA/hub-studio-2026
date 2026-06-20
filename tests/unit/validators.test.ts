@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { validateArticle } from '~/lib/validators/article'
-import type { Article } from '~/types/content'
+import { validateApp } from '~/lib/validators/app'
+import type { Article, App } from '~/types/content'
 
 const baseArticle = (over: Partial<Article> = {}): Article => ({
   documentId: '', title: 'T', slug: 't', date: '2020-01-01', external: false,
@@ -26,5 +27,21 @@ describe('validateArticle', () => {
       .toContainEqual(expect.objectContaining({ field: 'images' }))
     expect(validateArticle(baseArticle({ markdown: '![x](data:image/png;base64,AAAA)' })))
       .toContainEqual(expect.objectContaining({ field: 'markdown' }))
+  })
+})
+
+const baseApp = (over: Partial<App> = {}): App => ({
+  documentId: '', title: 'A', slug: 'a', date: null, external: false,
+  categories: [], tags: [], contributors: [], image: null, description: null,
+  url: null, citation: null, funding: null, datasets: [], articles: [], publishedAt: null, ...over,
+})
+
+describe('validateApp', () => {
+  it('requires a title', () => {
+    expect(validateApp(baseApp({ title: '' }))).toContainEqual(expect.objectContaining({ field: 'title' }))
+  })
+  it('rejects base64 in the description', () => {
+    expect(validateApp(baseApp({ description: 'data:image/png;base64,AAAA' })))
+      .toContainEqual(expect.objectContaining({ field: 'description' }))
   })
 })

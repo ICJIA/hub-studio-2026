@@ -104,21 +104,34 @@ reasonable person might assume X is trivial — here is the real work behind it.
 
 None of this is a complaint. Each item below is normal, professional software
 engineering, and the team has either already built it or has a written plan to.
-The point is simply to make the iceberg visible.
+The point is to make the iceberg visible.
 
 ### 2.1 "Just let them log in" → secure login **and** who-is-allowed-to-publish
 
-A login box looks like one text field, one password field, and a button. But a
-login that you can trust has to: keep your session secure across page reloads,
-re-check with the server on every app start that you are still who you say you
-are, send you back to the login screen the moment your access expires, and —
-critically — know **what you are allowed to do** once you are in.
+A login you can actually trust has to do several things at once that aren't
+visible on the screen. It keeps your session secure across page reloads so you
+aren't asked to sign in again every few minutes. It re-checks with the server on
+every app start that your account is still valid and still has the access it had
+yesterday — because the answer can change between visits (an account can be
+disabled, a role can be reduced) and the app must honor that immediately rather
+than trust a stale local copy. It sends you back to the login screen the moment
+your access expires, mid-session, without losing or corrupting work in progress.
+And — the part that carries the most weight — it has to know **what you are
+allowed to do** once you are in.
 
-That last part is the real work. The whole tool hinges on a rule: **Authors can
-write and save drafts but cannot publish; Editors and Super Admins can publish
-(make content live).** That rule has to be enforced by the system itself — not
-merely by hiding a button — so that no one can publish who shouldn't, even if
-they go looking for a way around the screen.
+That last part is the real work, and it is harder than it sounds because it is a
+*security boundary*, not a screen behavior. The whole tool hinges on a rule:
+**Authors can write and save drafts but cannot publish; Editors and Super Admins
+can publish (make content live).** Hiding the Publish button from an author is
+trivial and worthless on its own — the button is just paint. The browser is a
+fundamentally untrusted place: a determined person can read the page's code, see
+every request it makes, and replay those requests by hand with the button out of
+the picture entirely. So the rule has to be enforced where the request actually
+lands — by the server that owns the content — and the rule the *server* applies
+and the rule the *screen* implies have to agree exactly, in every state, or you
+get either a silent security hole or a confusing app that offers actions it then
+refuses. Reconciling those two layers, and proving they agree, is the genuine
+work hiding behind "just let them log in."
 
 > **For developers:** Authentication targets Strapi 5's **admin
 > Content-Manager API**. Login is `POST /admin/login`; the user's roles come from
@@ -145,7 +158,18 @@ relationships to the others.
 Getting this right means modeling every field precisely, validating each one
 (required fields, correct formats, valid values), and faithfully reading and
 writing each shape to and from the content system without losing or corrupting
-anything.
+anything. The difficulty is not the count of fields — it is that several of them
+are not flat values but *structures*: a list of authors, a list of figures each
+with its own image and caption, a time period with a start and end, links from
+one article out to related apps and datasets. Each of those has to survive a full
+round trip — read from the content system, shown in a form, edited, and saved
+back — landing in exactly the shape the system expects, because a single field
+read or written in the wrong shape doesn't fail loudly; it quietly produces a
+record that looks fine in Studio and is broken on the public site. And the only
+trustworthy source for what each field's "correct shape" actually is, is the live
+content system itself, not a document or an assumption — which is why the real
+field shapes here were confirmed by inspecting the live data directly rather than
+taken on faith.
 
 > **For developers:** Three content types with TypeScript models mirrored from
 > the live Strapi schema: `Article`, `App`, `Dataset`, plus the JSON sub-shapes
@@ -159,25 +183,39 @@ anything.
 
 ### 2.3 "Just let them add a picture" → professional, accessible, safe image handling
 
-"Add an image" hides four separate requirements:
+"Add an image" carries four separate requirements that pull in different
+directions, and the work is in satisfying all four at once:
 
-1. **No giant embedded blobs.** The old tool stored each image by converting it
-   into an enormous block of text and stuffing that text directly into the
-   content record (a technique called "base64"). It bloats the database, slows
-   everything down, and makes images impossible to reuse. The new Studio
-   **never** does this. Every image is uploaded once to a shared Media Library
-   and referenced by a link.
-2. **Accessibility.** Every image needs **alt-text** (a short text description so
-   screen-reader users and search engines understand the image) and may carry an
-   optional **caption**. This is not optional polish; it is what makes the public
-   content usable by everyone and compliant with accessibility expectations.
-3. **Safe SVGs.** SVG image files are actually little programs and can carry
-   hidden scripts. Allowing staff to upload SVGs without cleaning them would be a
-   security hole. Studio strips anything dangerous out of an SVG **before** it is
-   ever stored.
-4. **Only valid image formats.** The tool accepts real image formats (JPG, PNG,
-   SVG) and rejects the rest, with a clear message — without over-rejecting valid
-   files, which was a bug in the old tool.
+1. **No image stored as embedded text (base64).** The old tool stored each image
+   by converting it into an enormous block of text — base64 — and writing that
+   text directly into the content record alongside the article. The consequences
+   compound: the database swells with image data it was never meant to hold,
+   every read and backup drags the images along whether you need them or not, and
+   the same picture used in three places is stored three separate times because a
+   record can't share text with another record. The new Studio refuses this
+   outright. Each image is uploaded once to a shared Media Library and the record
+   keeps only a link to it. Holding that line is not a one-time decision; an
+   embedded image can sneak in through a pasted editor, a copied field, or an
+   import, so the prohibition has to be actively guarded rather than assumed.
+2. **Accessibility is a legal-grade requirement, not polish.** Every image needs
+   **alt-text** — a short written description that a screen reader speaks aloud to
+   someone who can't see the image — and may carry an optional **caption**. For a
+   public government website this is a compliance obligation, not a nicety, which
+   means the tool can't merely *offer* an alt-text box; it has to make supplying
+   one the path of least resistance so that accessible content is what naturally
+   gets produced.
+3. **SVG uploads are an attack surface.** An SVG is not a flat picture like a JPG;
+   it is a text document that can legally contain executable instructions, which
+   is exactly what makes it dangerous to accept from a logged-in user — a booby-
+   trapped SVG can carry a script that runs in the browser of the next person who
+   views it. Studio strips the dangerous parts out of every SVG **before** it is
+   stored, so a hostile file is defused at the door rather than trusted and served
+   to the public.
+4. **Accept valid formats without over-rejecting.** The tool accepts real image
+   formats (JPG, PNG, SVG) and turns away the rest with a clear message. The
+   subtle part is the second half: the old tool was *too* strict and rejected
+   legitimate files, so getting this right means being precise about what counts
+   as valid rather than merely cautious.
 
 > **For developers:** Zero-base64 is a **hard invariant**, enforced structurally
 > and by an automated guard (`lib/base64-guard.ts`: `containsBase64` /
@@ -193,12 +231,19 @@ anything.
 
 ### 2.4 "They can just type it in" → a friendly authoring experience for non-technical staff
 
-Non-technical staff should not have to learn a markup language to write a
-heading, a list, a table, or a link. They need formatting **buttons**, a visual
-table builder, and a **live preview** that shows what they are creating as they
-create it — the same comfortable experience as any modern editor. Building (or in
-our case, adapting) such an editor, and teaching it to handle images, is a real
-piece of work.
+Staff should not have to learn a markup language to write a heading, a list, a
+table, or a link. They need formatting **buttons**, a visual table builder, and a
+**live preview** that shows what they are creating as they create it — the same
+experience they already expect from any modern editor. A rich text editor is one
+of the genuinely hard pieces of software to build well; the polished ones
+represent years of work, because the moment you let people format text freely you
+inherit a long tail of edge cases — pasting from Word, nested lists, tables
+inside tables, undo that behaves the way a human expects. The right move here is
+therefore *not* to build one. Studio adapts a capable editor ICJIA already owns,
+which converts most of that cost into a smaller, sharper problem: making someone
+else's editor handle images and render its live preview with the exact same rules
+the public site uses, so that what an author sees while typing is genuinely what
+will publish.
 
 > **For developers:** Rather than build an editor, Studio reuses the **ICJIA
 > Markdown Editor 2026** (Nuxt 4 / Vue 3.5 / Nuxt UI / CodeMirror 6 / markdown-it)
@@ -215,7 +260,15 @@ piece of work.
 will look like is not good enough for staff who are about to publish to a public
 government website. They need to see it rendered **exactly as it will appear on
 the live Research Hub** — same formatting rules, same layout, same styling — so
-there are no surprises after Publish.
+there are no surprises after Publish. The difficulty is that the preview and the
+live site are produced by two *separate* applications. "Exactly the same" is only
+true if both turn the author's text into a page using the identical set of
+formatting rules — and ICJIA's content leans on the rules that are easiest to get
+subtly wrong: footnotes, mathematical notation, and multi-row tables. If the
+preview's rules and the public site's rules drift even slightly apart, the
+preview becomes a confident lie, and the author finds out only after the content
+is already public. Keeping the two renderers provably in step is the real task
+hiding inside the word "preview."
 
 > **For developers:** The preview route renders the `markdown` body using the
 > **same markdown-it plugin set as the public renderer** (footnotes, KaTeX,
@@ -227,12 +280,20 @@ there are no surprises after Publish.
 
 ### 2.6 "Just hit publish" → a review/approval step with email notification
 
-In a real organization, content often gets a second set of eyes before it goes
-public. Studio supports a **review step**: an author can request review, which
-sends the author's manager(s) an **email** containing a **preview link** to the
-exact draft. The manager opens the link, sees the article as it will be
-published, and proceeds. Sending reliable email from a web app — securely, without
-exposing credentials — is its own small system.
+In organizations, content often gets a second set of eyes before it goes public.
+Studio supports a **review step**: an author can request review, which sends the
+author's manager(s) an **email** containing a **preview link** to the exact
+draft. The manager opens the link, sees the article as it will be published, and
+proceeds. Sending email reliably from a web app is its own small system, for a
+reason that isn't obvious from the outside: the app runs in the user's browser,
+and a browser is the wrong place to send mail from. The credential that lets you
+send mail through the email service is a secret — anyone who obtains it can send
+mail as ICJIA — and anything the browser holds, the user can read. So the send
+has to happen on a server the public can't inspect, with the browser merely
+*asking* that server to send, and the server deciding whether the request is
+legitimate before it does. That split — keep the secret off the browser, verify
+the request, then send — is a small piece of back-end machinery standing behind a
+feature that, on screen, is one button labeled "Request review."
 
 > **For developers:** A "Request review" action emails the author's manager(s)
 > the preview URL via **Mailgun**, sent from a **server-side** Netlify Function /
@@ -244,9 +305,16 @@ exposing credentials — is its own small system.
 Clicking **Publish** does two things, not one. First, it marks the content as
 published in the content system. Second, it **rings a doorbell** that tells the
 *separate* public Research Hub website to rebuild itself with the new content.
-Until that rebuild finishes (typically a minute or two), the content isn't
-visible publicly. Wiring that up — and keeping the "doorbell" address private so
-not just anyone can trigger a public rebuild — is real work.
+Those two steps live in two different systems, which creates the real engineering
+question here: what happens when the first succeeds and the second fails? The
+content is marked published but the public site hasn't picked it up, and an
+author who is told "published!" and then can't find their article on the live
+site has every reason to distrust the tool. So the publish flow has to treat the
+two steps honestly — report "published, but the site rebuild didn't trigger" as
+its own distinct outcome rather than a flat success or a flat failure. And the
+doorbell itself is a liability if it's left lying around: the address that
+triggers a public rebuild has to stay private, because a rebuild is something only
+a publisher should be able to set off, not anyone who happens to find the URL.
 
 > **For developers:** Publish issues the Content-Manager publish action
 > (`POST /content-manager/collection-types/:uid/:documentId/actions/publish`),
@@ -257,12 +325,17 @@ not just anyone can trigger a public rebuild — is real work.
 
 ### 2.8 "Just sign them in" → first-time onboarding
 
-The review-by-email feature needs to know *who your managers are*. The first time
-a staff member signs in, Studio collects a little profile: their manager
-email(s), which **center** they belong to, and their own (prefilled, editable)
-author email. The Studio is gated behind this on first login until it's complete.
-Collecting, storing, and enforcing that profile is, again, a small feature in its
-own right.
+The review-by-email feature can't email a manager it doesn't know about, so the
+information has to be captured somewhere — and the first sign-in is the one moment
+you can require it without nagging people later. The first time a staff member
+signs in, Studio collects a short profile: their manager email(s), which
+**center** they belong to, and their own (prefilled, editable) author email, and
+it holds the rest of the tool closed until that profile exists. Two things make
+this more than a form. First, "hold the tool closed until complete" is an
+enforced gate, which means every path into the app has to route through it — a
+gate with one unguarded side door isn't a gate. Second, the profile has to be
+*stored* somewhere durable and tied to the person, which (as §2.9 gets into) the
+content system doesn't offer for free — a place to keep it has to be added.
 
 > **For developers:** First-login onboarding (required if the profile is missing)
 > collects manager email(s), center (a dropdown — placeholder list until the real
@@ -277,29 +350,35 @@ own right.
 
 All of the above runs against **Strapi 5**, a real content-management system with
 its own contracts and rules — how records are identified, how drafts differ from
-published items, how images attach, how relationships are read and written. You
-have to learn and respect those rules precisely.
+published items, how images attach, how relationships are read and written. Those
+rules have to be learned and respected precisely, and the only authoritative
+source for what they actually are is the running system, not its documentation.
 
 And here is the single best example of *why this isn't simple* — a genuine
-discovery made **while building**:
+discovery made **while building**, and since **resolved**:
 
-When we set out, the plan was for Studio to talk to Strapi's *public* API and for
-us to configure the publish permissions ourselves. Mid-build, we confirmed
-something important: ICJIA staff are **Strapi admin-panel users** (Super Admin /
+When the project set out, the plan was for Studio to talk to Strapi's *public*
+API and for the team to configure the publish permissions by hand. Mid-build, a
+better path surfaced: ICJIA staff are **Strapi admin-panel users** (Super Admin /
 Editor / Author), and Strapi **already enforces exactly the rule we want** at the
 admin level — *authors draft; editors and super-admins publish* — with **zero
 backend changes**. But that enforcement only works through Strapi's **admin
-Content-Manager API**, which is a different "door" than the one our first login
-used.
+Content-Manager API**, which is a different "door" than the one the first login
+used. The catch is that this isn't visible from outside the system; you can only
+learn that the admin door enforces the rule, and the public door doesn't, by
+building far enough to knock on both.
 
-So we made a surgical change: we **retargeted the login and all content access to
-the admin Content-Manager API.** The payoff is large — "who can publish" is now
-decided by your real Strapi roles, natively, with no custom permission code to
-build or maintain. But discovering this required actually building far enough to
-hit it. That is the nature of a first iteration: *you find the deep requirements
-by building toward them, then you adjust.* This one discovery, on its own,
-answers "what's the issue?" — the issue is that a correct, role-enforced
-publishing tool has constraints you cannot see from the outside.
+That discovery has now been acted on. The login and all content access have been
+**retargeted to the admin Content-Manager API**, and that change is **built,
+tested, and merged.** The payoff is exactly what was hoped for: "who can publish"
+is now decided by each person's real Strapi role, natively, with no custom
+permission code to build or maintain — and the change was small and surgical
+rather than a redo, because the original code had been structured so that only the
+"door" needed to move. This is the nature of a disciplined first iteration: *you
+find the deep requirements by building toward them, then you adjust* — and here
+the adjustment is already behind us. This single episode answers "what's the
+issue?" on its own: a correct, role-enforced publishing tool has constraints you
+cannot see from the outside, and finding them is part of the genuine work.
 
 > **For developers:** The two Strapi APIs are separate: a Users & Permissions REST
 > token returns **401** on `/content-manager`. The admin JWT from `/admin/login`
@@ -311,9 +390,9 @@ publishing tool has constraints you cannot see from the outside.
 > `{ count: N }` only** and must be hydrated from a separate
 > `/content-manager/relations/...` endpoint; writes are **flat** bodies (not
 > wrapped in `{ data }`) and set media by numeric `id`. The data-layer plan was
-> revised mid-build from the public REST API to this contract; the auth-retarget
-> plan moves login to match. This retired the spec's original "publish via Users &
-> Permissions" open question entirely.
+> revised mid-build from the public REST API to this contract; the auth retarget
+> (Phase 1.5) has since moved login to match and is merged to `main`. This retired
+> the spec's original "publish via Users & Permissions" open question entirely.
 
 ### 2.10 So — is it simple?
 
@@ -474,7 +553,7 @@ here.
 | Decision / discovery | What it means, in plain English |
 |---|---|
 | **Zero base64 images** | Images live in a shared library and are referenced by link, never embedded as bloated text. Enforced automatically by tests. |
-| **Auth / Content-Manager pivot** | Mid-build, we moved login and content access to Strapi's admin API so your real roles enforce who-can-publish, natively, with no backend changes. (The marquee "why not simple" example.) |
+| **Auth / Content-Manager pivot** | Mid-build, we discovered — and have since shipped — a move of login and content access to Strapi's admin API, so your real roles now enforce who-can-publish, natively, with no backend changes. (The marquee "why not simple" example.) |
 | **Accessibility built in** | Every image carries alt-text and an optional caption; these are first-class fields, not afterthoughts. |
 | **Safe SVGs** | SVG uploads are cleaned of any hidden scripts before they are stored. |
 | **Onboarding profile** | First login collects manager email(s) and center so the review-by-email feature knows whom to notify. |
@@ -488,10 +567,11 @@ here.
 >   validator tests for all three content types; the guard must be wired into the
 >   write/submit path when forms land (a tracked hand-off from the data-layer
 >   review).
-> - **Auth / Content-Manager:** see §2.9 and §4. The pivot retired the original
->   spec §4.1 "publish via Users & Permissions" open item; publish-gating is now
->   native (`strapi-author` create/update/delete but **publish ❌**; `strapi-editor`
->   and `strapi-super-admin` publish ✅).
+> - **Auth / Content-Manager:** see §2.9 and §4. The pivot is **built and merged**
+>   (Phase 1.5) and retired the original spec §4.1 "publish via Users &
+>   Permissions" open item; publish-gating is now native (`strapi-author`
+>   create/update/delete but **publish ❌**; `strapi-editor` and
+>   `strapi-super-admin` publish ✅).
 > - **Accessibility:** `alternativeText` + `caption` on `MediaRef`; `alt?` +
 >   `caption?` on `ImageRef`; required-alt enforcement is UX-layer (forms) with an
 >   optional validator assist.
@@ -519,7 +599,7 @@ actually do once it's done*, and where it stands. Detailed subsections follow.
 | Phase | What you can do when it's done | Status |
 |---|---|---|
 | 1. Foundation & Secure Login | Sign in securely; the app remembers your session; only publishers see Publish controls | **Built** |
-| 1.5. Auth Retarget (Admin API) | Sign in with your real Strapi admin account; your real role decides who can publish | **Planned** (plan written) |
+| 1.5. Auth Retarget (Admin API) | Sign in with your real Strapi admin account; your real role decides who can publish | **Built** (merged to `main`) |
 | 2. Content Engine / Data Layer | The app can read and save articles, apps, and datasets correctly and safely | **Built** (81 tests, merged) |
 | 3. Media & Images | Add images properly: shared library, alt-text/captions, safe SVGs, valid formats | **Planned** |
 | 4. Authoring Editor | Write with formatting buttons, a table builder, and live preview — no code | **Planned** |
@@ -559,41 +639,56 @@ and it has to be in place before any content work can safely begin.
 > **Status note (developer):** Built and merged on `main` (commit `d1c3bc7`).
 > A dev-only fixed admin login (`admin/admin`) exists for local development and is
 > flagged **REMOVE BEFORE DEPLOY**. As originally built, Phase 1 used the Users &
-> Permissions API (`/api/auth/local`); Phase 1.5 retargets it to the admin API
-> (see below) — that retarget is the reason this phase, though built, is revised
-> rather than final.
+> Permissions API (`/api/auth/local`); Phase 1.5 has since retargeted it to the
+> admin API (see below) and is also merged — so the login in `main` today is the
+> admin-API version. Phase 1's structure (pure functions + thin wiring) carried
+> through the retarget unchanged; only the endpoints and the role model moved.
 
-### Phase 1.5 — Auth Retarget to the Admin API  ·  Status: **PLANNED (plan written)**
+### Phase 1.5 — Auth Retarget to the Admin API  ·  Status: **BUILT (merged to `main`)**
 
 **Plain-English deliverable.** Staff sign in with their **real Strapi admin
 accounts**, and **who can publish is decided by their real Strapi roles** — Super
-Admin and Editor can publish; Author cannot. This is a small, surgical fix, not a
-redo: nothing about the content, the zero-base64 rule, or the design changes.
+Admin and Editor can publish; Author cannot. This was a small, surgical fix, not a
+redo: nothing about the content, the zero-base64 rule, or the design changed.
+**What it delivered:** the tool now authenticates against the real admin system
+and reads each person's actual role from it, which is what unblocks live
+Content-Manager reads and writes for every phase that follows.
 
-**For developers — technical scope.** Retarget Phase 1 auth from Users &
+**For developers — technical scope.** Retargeted Phase 1 auth from Users &
 Permissions (`/api/auth/local`) to the **admin API** (`/admin/login` +
-`/admin/users/me`). Keep Phase 1's exact structure (pure functions + thin wiring);
-only the endpoints, the user/role shape, and the capability getter change. Login
-stays a two-step flow (login → fetch-me) because `/admin/login` returns an empty
-`roles` array. New: `app/types/admin.ts` (`AdminRole`, `AdminUser`, response
-types) and `app/lib/admin-roles.ts` (`PUBLISHER_ROLE_CODES`, `roleCodesOf`,
-`canPublish`). Modified: `auth.ts`, the auth store (now exposes
+`/admin/users/me`). Phase 1's exact structure (pure functions + thin wiring) was
+kept; only the endpoints, the user/role shape, and the capability getter changed.
+Login stays a two-step flow (login → fetch-me) because `/admin/login` returns an
+empty `roles` array. Added: `app/types/admin.ts` (`AdminRole`, `AdminUser`,
+response types) and `app/lib/admin-roles.ts` (`PUBLISHER_ROLE_CODES`,
+`roleCodesOf`, `canPublish`). Modified: `auth.ts`, the auth store (now exposes
 `roleCodes`/`canPublish`/`displayName`), `useAuth`, the route guard, and the UI.
-The `admin/admin` dev bypass is preserved (mints a synthetic super-admin session).
-Six TDD tasks, each with a commit; the Phase 1 security posture (Secure cookie,
-boot re-verify, 401 logout) carries over unchanged.
+The `admin/admin` dev bypass is preserved (mints a synthetic super-admin session)
+and remains flagged **REMOVE BEFORE DEPLOY**. Six TDD tasks plus one fix commit,
+each with a commit; the Phase 1 security posture (Secure cookie, boot re-verify,
+401 logout) carried over unchanged.
 
-**Why this isn't trivial.** This phase exists *because* of the mid-build
-discovery in §2.9 — it is the concrete consequence of learning that staff are
-admin-panel users and that Strapi enforces the publish rule natively at the admin
-level. It is the unlock for live Content-Manager reads and writes. The fact that
-it is small and surgical is precisely because the discovery was captured cleanly
-and the original code was structured for change.
+**Why this isn't trivial.** This phase is the concrete consequence of the
+mid-build discovery in §2.9 — the realization that staff are admin-panel users and
+that Strapi enforces the publish rule natively at the admin level. Two things make
+it more than a find-and-replace of one URL for another. First, the two doors don't
+just have different addresses; they hand back differently *shaped* answers — the
+admin login returns no roles at all until you ask a second time, roles arrive as
+machine codes rather than display names, and the whole notion of "what this person
+may do" has to be recomputed from that new shape and kept consistent everywhere it
+is consulted. Second, this is the load-bearing change for everything downstream:
+nothing can safely read or write live content until the login hands back the right
+kind of credential, so it had to be correct, not merely working. That it landed
+small and surgical is the dividend of capturing the discovery cleanly and having
+structured the original code so only the door needed to move.
 
-> **Status note (developer):** Plan written
-> (`docs/superpowers/plans/2026-06-20-auth-admin-retarget.md`); not yet executed.
-> Role codes confirmed against the live instance: `strapi-super-admin`,
-> `strapi-editor` (publishers), `strapi-author` (drafts only).
+> **Status note (developer):** Built, tested, and merged to `main` — six TDD tasks
+> plus one fix commit; **84 automated tests passing, `nuxt typecheck` clean**.
+> Plan: `docs/superpowers/plans/2026-06-20-auth-admin-retarget.md`. Role codes
+> confirmed against the live instance: `strapi-super-admin`, `strapi-editor`
+> (publishers), `strapi-author` (drafts only). The `admin/admin` dev bypass
+> remains in `main`, flagged **REMOVE BEFORE DEPLOY**. This unblocks live
+> Content-Manager reads and writes for the phases that follow.
 
 ### Phase 2 — Content Engine / Data Layer  ·  Status: **BUILT (81 tests, merged)**
 
@@ -629,11 +724,12 @@ the substance here.
 
 > **Status note (developer):** 12 TDD tasks complete; **81 automated tests
 > passing, `nuxt typecheck` clean**; merged to `main` (fast-forward to `1d0ca9b`),
-> branch deleted. Two tracked hand-offs remain for later phases: (1) wire the
-> validators / `assertNoBase64` into the live submit path when forms land; (2) the
-> auth retarget (Phase 1.5) must land before live writes, since Content-Manager
-> needs the admin JWT. Relation-write and the publish action were intentionally
-> deferred to later phases.
+> branch deleted. Of the two hand-offs this phase logged, one is now closed: the
+> auth retarget (Phase 1.5) that Content-Manager writes depend on for the admin JWT
+> has since landed and merged. The remaining hand-off — wiring the validators /
+> `assertNoBase64` into the live submit path — is carried to Phase 5 when forms
+> land. Relation-write and the publish action were intentionally deferred to later
+> phases.
 
 ### Phase 3 — Media & Images  ·  Status: **PLANNED**
 
@@ -653,10 +749,20 @@ at the cursor; each insertion also appends `{ title, src, alt?, caption? }` to t
 `images` JSON array (URLs only).
 
 **Why this isn't trivial.** This is where the four hidden image requirements
-from §2.3 (no base64, accessibility, SVG safety, valid formats) become concrete
-UI and upload behavior. The Strapi 5 "no upload at entry creation" rule means
-files must be uploaded standalone first and attached by id — a real change from
-older patterns.
+from §2.3 (no base64, accessibility, SVG safety, valid formats) stop being
+principles and become concrete UI and upload behavior — and the four pull against
+each other. The most natural way to show someone the image they just picked is to
+display it straight from their own machine, which is precisely the embedded-image
+habit the whole project bans; avoiding it means the file must travel to the shared
+library *first* and the preview must come back from there, so the very first thing
+that happens on "choose file" is a network round trip that has to succeed, fail,
+or retry gracefully while the person waits. Layered on top is the content system's
+own rule that a file can't be attached while a record is being created — it must be
+uploaded on its own and then linked by reference — which inverts the order older
+tools used and means the upload and the record-save are two separate moments that
+have to be sequenced correctly. And the SVG-cleaning step sits in the middle of
+all of it, because a dangerous file has to be defused *before* it is stored, not
+after.
 
 ### Phase 4 — Authoring Editor  ·  Status: **PLANNED**
 
@@ -673,11 +779,19 @@ plugin set with the public renderer (footnotes, KaTeX, tables) so what authors s
 matches what publishes. Markdown-source editing is retained (not a lossy
 rich-text serializer) to preserve footnote/LaTeX/table fidelity.
 
-**Why this isn't trivial.** Reusing an existing editor as a layer (rather than
-rebuilding one) is the efficient choice, but it still requires extracting it
-cleanly, adding the missing image capability, and matching the public renderer so
-the preview is faithful. The §2.4 "friendly experience" expectation is delivered
-here.
+**Why this isn't trivial.** Reusing an existing editor rather than rebuilding one
+is the efficient choice and avoids the years-of-work trap described in §2.4, but
+"reuse" is not the same as "free." The editor has to be lifted out of the project
+it lives in today and made into a clean, shared building block that Studio can
+pull in without dragging along the rest of that project — and then extended at a
+seam it doesn't currently expose, so an author dropping a picture into the middle
+of a paragraph triggers the §2.3 upload, gets the file back from the shared
+library, and has the correct reference inserted at exactly the cursor position.
+The subtler half is fidelity: the editor's own live preview and the public site
+have to interpret the author's text by the identical rules — footnotes, math,
+tables — or the comfortable in-editor preview quietly stops matching what
+publishes. Borrowing the editor saves the cost of building one; it does not remove
+the cost of making it Studio's.
 
 ### Phase 5 — Screens, Preview & Onboarding  ·  Status: **PLANNED**
 
@@ -698,10 +812,19 @@ reuses the public renderer's plugin set behind one swappable stylesheet for
 later pixel-exact CSS. Onboarding is gated on first login and backed by the
 approved `studio-profile` Strapi collection type.
 
-**Why this isn't trivial.** This is where the structured-content (§2.2), exact-
-preview (§2.5), and onboarding (§2.8) requirements all turn into real UI, and
-where the zero-base64 guarantee finally guards live writes. It is the densest UI
-phase.
+**Why this isn't trivial.** This is the convergence point: the structured-content
+(§2.2), exact-preview (§2.5), and onboarding (§2.8) requirements all turn into
+real screens here, and the zero-base64 guarantee — proven by tests since Phase 2 —
+finally stands between an author and a live save. The density is the difficulty.
+Three content types, each with its own fields and several of them structured
+rather than flat, become editing forms that have to read an existing record into
+the right inputs, let a person change it, and write it back in exactly the shape
+the content system expects — every type, every field, in both directions, with
+mistakes caught before they reach the server rather than after. Folded into the
+same phase are an exact-as-published preview that has to stay honest, and a
+first-login gate that has to be genuinely closed on every route into the app.
+Each of those is a feature on its own; this phase is where they all have to work
+together and agree.
 
 ### Phase 6 — Publish, Rebuild & Review Email  ·  Status: **PLANNED**
 
@@ -719,9 +842,18 @@ route holding the Mailgun key. Publish/build-hook failures are reported distinct
 ("published but rebuild trigger failed").
 
 **Why this isn't trivial.** The §2.6 (review email) and §2.7 (publish-and-rebuild)
-requirements both live here, and both involve a server-side component to keep
-secrets off the browser and to verify authorization before firing — a small but
-real backend surface in an otherwise client-only app.
+requirements both live here, and both force this otherwise browser-only tool to
+grow a small piece of *server*. The reason is the same in both cases: each one
+depends on a secret the browser cannot be allowed to hold — the key that sends
+mail, the address that triggers a public rebuild — and anything the browser holds,
+a user can read. So a sliver of code has to run somewhere private, take the
+browser's request, confirm the person making it is actually allowed to publish,
+and only then act. On top of that, publish is two steps in two systems (§2.7), so
+this phase also has to handle the honest-but-awkward middle case where the content
+goes live but the public site's rebuild doesn't fire — reporting it as its own
+outcome instead of pretending the click either fully worked or fully failed.
+Standing up even a minimal trustworthy back end inside a front-end project is a
+real shift, not a footnote.
 
 ### Phase 7 — Polish, Accessibility & Launch  ·  Status: **PLANNED**
 
@@ -740,9 +872,19 @@ Sample Article" demo action creates ~2 phony-but-complete draft articles for
 variety.
 
 **Why this isn't trivial.** Accessibility and error handling are exactly the
-"last 20%" that separates a demo from a tool people can rely on, and they cannot
-be bolted on at the end without intention. The sample-article demo also makes the
-whole system's value immediately visible to stakeholders.
+"last 20%" that separates a demo from a tool people can rely on. Accessibility is
+not a coat of paint applied at the end: making the manager queue and the authoring
+forms genuinely usable by keyboard alone and by a screen reader means the order
+elements receive focus, the way controls announce themselves, and the handling of
+every interactive piece all have to be right — work that is far cheaper when it is
+designed in than when it is retrofitted, which is why it gets its own deliberate
+pass rather than being assumed. Error handling is the same kind of unglamorous
+substance: a tool people trust is one that fails *legibly* — every way a save, an
+upload, or a publish can go wrong has to surface as a clear message a non-technical
+author can act on, instead of a dead end. The sample-article demo, meanwhile, does
+quiet double duty: it exercises the entire pipeline end to end with real
+library images and every field populated, which is both a convincing thing to show
+a stakeholder and a stringent test that the whole system actually holds together.
 
 ---
 
@@ -794,8 +936,8 @@ A clean done-vs-planned view of the whole project.
 
 | Area | Status | Notes |
 |---|---|---|
-| Foundation & secure login | **Done** | Built and merged; revised by the auth retarget |
-| Auth retarget (real Strapi roles) | **Planned** | Plan written; small, surgical |
+| Foundation & secure login | **Done** | Built and merged; updated by the auth retarget |
+| Auth retarget (real Strapi roles) | **Done** | Built, 84 tests passing, typecheck clean, merged to `main` |
 | Content engine (read/save 3 types) | **Done** | 81 automated tests, typecheck clean, merged |
 | Zero-base64 guarantee | **Done (enforced by tests)** | Wires into live forms in Phase 5 |
 | Media & images (library, alt, SVG safety) | **Planned** | — |
@@ -804,16 +946,18 @@ A clean done-vs-planned view of the whole project.
 | Publish + rebuild + review email | **Planned** | Needs build-hook URL + Mailgun key |
 | Polish, accessibility & launch | **Planned** | Includes sample-article demo |
 
-**One-line summary for a manager:** the secure front door and the content engine
-are **built and tested**; the screens, image handling, editor, preview,
-publishing, and onboarding are **designed and planned**, ready to build in
-sequence.
+**One-line summary for a manager:** the secure front door — now signing staff in
+with their real Strapi accounts and enforcing who-can-publish by their real role —
+and the content engine are **built and tested**; the screens, image handling,
+editor, preview, publishing, and onboarding are **designed and planned**, ready to
+build in sequence.
 
 > **For developers:** "Done" items are merged to `main` **and pushed to `origin`**
-> (the public GitHub repo) — the foundation and content engine are live on GitHub.
-> Note `main` includes the dev-only `admin/admin` bypass, flagged
-> **REMOVE BEFORE DEPLOY**. Phase 1.5 (auth retarget) is the next recommended
-> execution target, as it unblocks live Content-Manager writes.
+> (the public GitHub repo) — the foundation, the admin-API auth retarget, and the
+> content engine are live on GitHub. Note `main` includes the dev-only
+> `admin/admin` bypass, flagged **REMOVE BEFORE DEPLOY**. With the auth retarget
+> landed, Content-Manager reads and writes are unblocked; **Phase 3 (Media &
+> Images)** is the next recommended execution target.
 
 ---
 

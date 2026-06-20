@@ -23,12 +23,12 @@ export function isSvg(file: File | Blob): boolean {
  * xlink:href stripping covers double-quoted, single-quoted, and unquoted values.
  */
 export function sanitizeSvgText(svg: string): string {
-  const sanitized = DOMPurify.sanitize(`<root>${svg}</root>`, {
+  const sanitized = (DOMPurify.sanitize(`<root>${svg}</root>`, {
     USE_PROFILES: { svg: true, svgFilters: true },
-  })
+  }) ?? '')
     .replace(/\s+xlink:href=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/\s+xmlns:xlink=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
 
   const match = sanitized.match(/<root[^>]*>([\s\S]*?)<\/root>/i)
-  return match ? match[1] : sanitized
+  return match ? match[1]! : sanitized
 }

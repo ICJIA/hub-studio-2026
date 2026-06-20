@@ -49,7 +49,7 @@ describe('MediaPicker', () => {
 
     const events = wrapper.emitted('select')
     expect(events).toBeTruthy()
-    const ref = events![0][0] as MediaRef
+    const ref = events![0]![0] as MediaRef
     expect(ref.url).toBe('/uploads/figure_abc123.png')
     expect(ref.url.startsWith('data:')).toBe(false)
   })
@@ -59,7 +59,7 @@ describe('MediaPicker', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(browseMock).toHaveBeenCalled()
     await wrapper.vm.$.exposed!.choose(uploaded)
-    const ref = wrapper.emitted('select')![0][0] as MediaRef
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
     expect(ref.url.startsWith('data:')).toBe(false)
     expect(ref.id).toBe(42)
   })

@@ -49,7 +49,7 @@ describe('ImageDropzone', () => {
     await new Promise((r) => setTimeout(r, 0))
 
     await wrapper.find('button.thumb').trigger('click')
-    const snippet = wrapper.emitted('insert')![0][0] as string
+    const snippet = wrapper.emitted('insert')![0]![0] as string
     expect(snippet).toBe('![Outcome chart](/uploads/chart_xyz.png "Figure 2.")')
     expect(snippet).not.toMatch(/data:/)
   })

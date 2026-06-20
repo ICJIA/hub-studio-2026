@@ -28,7 +28,11 @@ export function useAuth() {
       const me = await fetchMe($api)
       store.setUser(me)
     } catch {
-      store.clearSession()
+      // Deliberate no-op. A 401 (invalid/expired token) is already handled globally by
+      // the $api interceptor (it clears the session and redirects to /login). For transient
+      // failures (network down, Strapi restarting, 5xx) keep the existing session rather
+      // than logging the user out — the token may still be valid on recovery, and the
+      // server enforces authorization on every real request regardless.
     }
   }
 

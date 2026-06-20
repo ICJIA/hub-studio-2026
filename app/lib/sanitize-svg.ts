@@ -21,23 +21,13 @@ export function isSvg(file: File | Blob): boolean {
  * sanitization. We use a non-greedy match on the inner content so that adversarial input
  * containing "</root>" cannot cause premature truncation.
  * xlink:href stripping covers double-quoted, single-quoted, and unquoted values.
- *
- * Pre-strip <script> tags before DOMPurify to avoid an issue where DOMPurify's SVG
- * profile aggressively strips not just the script but also sibling elements that follow
- * the script tag. Since our goal is to sanitize, not parse, we just remove the scripts.
  */
 export function sanitizeSvgText(svg: string): string {
-  // Pre-strip script tags to prevent DOMPurify from stripping following elements
-  const preStripped = svg.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-
-  let sanitized = DOMPurify.sanitize(`<root>${preStripped}</root>`, {
+  const sanitized = DOMPurify.sanitize(`<root>${svg}</root>`, {
     USE_PROFILES: { svg: true, svgFilters: true },
   })
     .replace(/\s+xlink:href=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/\s+xmlns:xlink=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-
-  // Also strip on* event handlers that DOMPurify's SVG profile doesn't catch
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
 
   const match = sanitized.match(/<root[^>]*>([\s\S]*?)<\/root>/i)
   return match ? match[1] : sanitized

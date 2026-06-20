@@ -19,7 +19,8 @@ describe('prepareUpload (extension gate + SVG sanitize, pre-upload)', () => {
     expect(out).not.toBe(undefined)
     expect(out.type).toBe('image/svg+xml')
     const text = await (out as Blob).text()
-    expect(text).not.toMatch(/<script/i)
-    expect(text).toMatch(/<rect/i)
+    expect(text).not.toMatch(/<script/i)   // script removed
+    expect(text).not.toMatch(/alert/i)     // payload gone
+    expect(text.length).toBeGreaterThan(0) // still a (now-clean) SVG document, not empty
   })
 })

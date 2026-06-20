@@ -8,9 +8,11 @@ Internal authoring &amp; publishing tool (**"Studio"**) for managing **ICJIA Res
 
 This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.com/icjia/researchhub-studio) on a modern stack, with a simplified two-role workflow and proper (non-base64) image handling.
 
-## Status: 🚧 Design phase
+## Status: 🚧 Draft 1 — first iteration (in active development)
 
-Implementation has not started. The full design lives here:
+**This is Draft 1: the first exploratory iteration.** Requirements are being discovered *as the build proceeds*, so design decisions evolve — for example, this iteration moved authentication and content access from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles actually work. Treat everything in this repo — README, spec, and plans — as a **living first draft**, not a frozen final design.
+
+Underway: the project foundation, Strapi 5 authentication, and the typed data layer. The full design lives here:
 
 - 📄 [**Design spec**](docs/superpowers/specs/2026-06-19-researchhub-studio-2026-design.md) — dual-audience: plain-English for managers **and** technical detail for developers.
 

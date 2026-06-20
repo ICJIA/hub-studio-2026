@@ -1,5 +1,9 @@
 # Studio Data Layer — Implementation Plan
 
+> **Revised 2026-06-20: retargeted from the REST API to the Content-Manager API (admin auth); see the SDD ledger for rationale.**
+
+> **Draft 1 — first iteration.** Part of an exploratory first pass; expect the approach to evolve as the build surfaces requirements (this plan itself was revised mid-build from REST → Content-Manager API).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 ---
@@ -21,9 +25,9 @@
 
 ---
 
-**Goal:** Build the typed, tested data-access layer for articles, apps, and datasets — Strapi 5 REST repositories addressed by `documentId`, with mappers (Strapi ⇄ domain), validators (including a hard zero-base64 gate), v1 text-import parsers, and thin `useArticles`/`useApps`/`useDatasets` composables.
+**Goal:** Build the typed, tested data-access layer for articles, apps, and datasets — Strapi 5 **Content-Manager API** repositories addressed by `documentId`, with mappers (Strapi ⇄ domain), validators (including a hard zero-base64 gate), v1 text-import parsers, and thin `useArticles`/`useApps`/`useDatasets` composables. The Content-Manager API is used (not the public REST API) because the Studio authenticates staff as Strapi admin-panel users and the Content-Manager endpoints natively enforce publish-gating (Author cannot publish; Editor + Super Admin can) with zero backend changes.
 
-**Architecture:** Pure, dependency-injected functions hold all logic (mirroring the existing `lib/auth.ts` pattern): mappers and validators are plain functions over plain objects; a generic `createRepository(...)` factory takes the configured `$Fetch` client and returns `list/findOne/create/update/remove`. Composables are one-line wiring that binds `$api`. Everything is unit-tested against fixtures captured from the live Strapi 5 instance — no network in tests.
+**Architecture:** Pure, dependency-injected functions hold all logic (mirroring the existing `lib/auth.ts` pattern): mappers and validators are plain functions over plain objects; a generic `createRepository(...)` factory takes the configured `$Fetch` client (which carries the admin JWT) and returns `list/findOne/create/update/remove` against the Content-Manager API. Composables are one-line wiring that binds `$api`. Everything is unit-tested against fixtures captured from the live Strapi 5 Content-Manager API — no network in tests.
 
 **Tech Stack:** Nuxt 4 (SPA), Vue 3.5, Pinia, TypeScript, `ofetch` (`$api`), Vitest + `@nuxt/test-utils`.
 
@@ -31,18 +35,24 @@
 
 *Every task's requirements implicitly include this section. Values are copied from the design spec (`docs/superpowers/specs/2026-06-19-researchhub-studio-2026-design.md`) and confirmed by read-only introspection on 2026-06-20.*
 
-- **Stack:** Nuxt 4 **SPA** (`ssr: false`), Nuxt UI 4, Pinia, **TypeScript**, Strapi 5 **REST** (`/api/*`).
-- **Identifiers:** entries are addressed by **`documentId`** (string), never numeric `id`. The numeric `id`, `legacyId` (old Strapi 3 Mongo `_id`), and the legacy `status` string are **read-only noise — never sent on writes**.
-- **Draft & Publish:** native. **`publishedAt` is the source of truth** (`null` = draft). Reads filter with `?status=draft|published`. The legacy `status` field is ignored.
+- **Stack:** Nuxt 4 **SPA** (`ssr: false`), Nuxt UI 4, Pinia, **TypeScript**, Strapi 5 **Content-Manager API** (`/content-manager/*`), addressed by content-type `uid` (e.g. `api::article.article`).
+- **Auth model:** the Studio authenticates staff as Strapi **admin-panel users** (roles Super Admin / Editor / Author) via `/admin/login`; every Content-Manager call carries the admin **JWT** via the existing `$api` ofetch client. The data-layer tasks ASSUME `$api` is configured and attaches auth; they do **not** implement auth. The Content-Manager API is used (not the public REST API) because it natively enforces publish-gating (Author cannot publish; Editor + Super Admin can) with zero backend changes.
+- **Identifiers:** entries are addressed by **`documentId`** (string), never numeric `id`. The numeric `id`, `legacyId` (old Strapi 3 Mongo `_id`), the Content-Manager `status` string, and `locale`/`createdBy`/`updatedBy` are **read-only noise — never sent on writes**.
+- **Draft & Publish:** native. **`publishedAt` is the source of truth** (`null` = draft). `create` always produces a **draft** (`publishedAt: null`, `status: "draft"`). Lists may filter with `?status=draft|published`; the publish action (`POST /content-manager/collection-types/:uid/:documentId/actions/publish`) is **deferred to Plan 6**.
 - **ZERO base64 images.** Every image/file is a Media Library upload referenced by relation or URL. `images[].src` is a **Media Library URL only, never a `data:` URI**. This is enforced by `lib/base64-guard.ts` and asserted in validator tests.
-- **No Strapi schema/backend changes.** This layer only reads and writes through the *existing* REST endpoints; it adds no Strapi routes, controllers, or permissions.
-- **Strapi 5 REST envelope (confirmed shape):**
-  - Collection: `{ data: Entity[], meta: { pagination: { page, pageSize, pageCount, total } } }`
-  - Single: `{ data: Entity, meta: {} }`
-  - Entity attributes are **flattened** onto the entity (no v4 `.attributes` wrapper): `{ documentId, title, ... }`.
-  - Populated **media** is a single object `{ id, documentId, name, alternativeText, url, width, height, mime, formats, ... }` (or `null`).
-  - Populated **relations** are an **array** of flattened entities (each has `documentId, title, slug, ...`).
-  - **Writes** wrap the payload in `{ data: { ... } }`. Media fields are set by **numeric file `id`** (or `null` to clear). Relation fields are set by an **array of related `documentId` strings**.
+- **No Strapi schema/backend changes.** This layer only reads and writes through the *existing* Content-Manager endpoints; it adds no Strapi routes, controllers, or permissions.
+- **Strapi 5 Content-Manager API contract (confirmed against the live sandbox 2026-06-20 — use verbatim):**
+  - **List:** `GET /content-manager/collection-types/{uid}?page=1&pageSize=25` → `{ results: Entity[], pagination: { page, pageSize, pageCount, total } }`. The collection key is **`results`** (NOT `data`), and pagination is **top-level** (no `meta` wrapper).
+  - **FindOne:** `GET /content-manager/collection-types/{uid}/{documentId}` → `{ data: Entity }`.
+  - **Entity (flattened):** attributes are flattened onto the entity (no v4 `.attributes` wrapper): `id, documentId, legacyId, status, title, slug, date, external, categories, tags, authors, images, abstract, markdown, mainfiletype, funding, citation, doi, hideFromBanner, type, publishedAt, locale, createdBy, updatedBy, …`. On read, **IGNORE** `id/legacyId/status/locale/createdBy/updatedBy`; **NEVER write** them.
+  - Populated **media** (splash/thumbnail/mainfile/extrafile/image/datafile) is a single object `{ id, documentId, name, alternativeText, caption, width, height, mime, url, formats, … }` populated **inline** (or `null`).
+  - **JSON fields** (images, authors, sources, variables, notes, timeperiod, contributors) are inline plain JSON.
+  - **Relations** (apps/datasets/articles) appear on the entity **INLINE as `{ count: N }` ONLY** (not the items). To fetch the items: `GET /content-manager/relations/{uid}/{documentId}/{field}` → `{ pagination: { page, pageSize, pageCount, total }, results: [{ id, documentId, title, publishedAt, updatedAt, status }] }` (paginated, default pageSize 10). NOTE: relation items have `documentId` + `title` but **no `slug`**.
+  - **Create:** `POST /content-manager/collection-types/{uid}` with a **FLAT** body `{ title, slug, date, … }` (NOT wrapped in `{ data }`) → `201 { data: Entity }`; always creates a **DRAFT** (`publishedAt: null`, `status: "draft"`). Media fields are set by **numeric file `id`** (or `null` to clear).
+  - **Update:** `PUT /content-manager/collection-types/{uid}/{documentId}` **FLAT** body → `{ data: Entity }`.
+  - **Delete:** `DELETE /content-manager/collection-types/{uid}/{documentId}` → 200.
+  - **Auth:** every Content-Manager call carries the admin JWT via the existing `$api` ofetch client (the data-layer tasks ASSUME `$api` attaches auth; they do not implement it).
+  - **Relation WRITE** (connect/disconnect) is **deferred** in this plan — write payloads carry scalars + media-as-id + JSON only, never relation fields.
 - **Config / target:** the Strapi base URL is env-driven — `NUXT_PUBLIC_STRAPI_BASE_URL` → `runtimeConfig.public.strapiBaseUrl` (already wired). Dev default is the **dev Strapi 5** at `https://v2.hub.icjia-api.cloud`; all dev reads **and writes** target the dev instance. Production points elsewhere via a Netlify env var — no code change.
 - **Testability:** all logic lives in pure functions that take their dependencies (`$Fetch`) as arguments; Nuxt composables are thin wrappers. Mirror `app/lib/auth.ts` + `app/composables/useAuth.ts`.
 - **Process:** TDD (red → green → refactor), frequent commits, pristine test output. Commit messages carry **no AI co-author trailer** (per project CLAUDE.md). Do not bump the pinned Pinia 2.x dependency stack.
@@ -67,9 +77,10 @@ app/
 │   ├── field-options.ts      # option constants (categories, units, article types, …)
 │   ├── slug.ts               # slugify(title)
 │   ├── base64-guard.ts       # containsBase64 / assertNoBase64  (zero-base64 invariant)
-│   ├── strapi-rest.ts        # envelope types + media/relation flatten helpers
+│   ├── strapi-rest.ts        # Content-Manager envelope types ({results,pagination} / {data}),
+│   │                         #   inline-media (alt+caption) helpers, relations-endpoint helpers
 │   ├── text-import.ts        # v1 delimited-string parsers/formatters (import convenience)
-│   ├── repository.ts         # generic createRepository(...) factory
+│   ├── repository.ts         # generic createRepository(...) factory (Content-Manager, by uid)
 │   ├── mappers/
 │   │   ├── article.ts        # StrapiArticle ⇄ Article
 │   │   ├── app.ts            # StrapiApp ⇄ App
@@ -89,7 +100,8 @@ app/
 
 tests/
 ├── fixtures/
-│   └── strapi.ts             # rawArticle / rawApp / rawDataset (faithful live shapes)
+│   └── strapi.ts             # rawArticle / rawApp / rawDataset (Content-Manager entity shapes)
+│                             #   + relApps / relDatasets / relArticles (relations-endpoint shapes)
 └── unit/
     ├── field-options.test.ts
     ├── slug.test.ts
@@ -336,7 +348,7 @@ git commit -m "feat(data): add zero-base64 guard"
 
 ---
 
-### Task 4: Domain types + Strapi-5 envelope/media/relation helpers + fixtures
+### Task 4: Domain types + Content-Manager envelope/media/relation helpers + fixtures
 
 **Files:**
 - Create: `app/types/content.ts`
@@ -346,8 +358,14 @@ git commit -m "feat(data): add zero-base64 guard"
 
 **Interfaces:**
 - Produces (types): `ContentStatus`, `MediaRef`, `RelationRef`, `Author`, `Contributor`, `ImageRef`, `Source`, `Variable`, `TimePeriod`, `BaseContent`, `Article`, `App`, `Dataset`, and write payloads `ArticleWrite`, `AppWrite`, `DatasetWrite`.
-- Produces (helpers): `StrapiListResponse<T>`, `StrapiSingleResponse<T>`, `StrapiMedia`, `StrapiRelation`, `unwrapList`, `unwrapOne`, `mediaFromStrapi`, `mediaIdForWrite`, `relationsFromStrapi`, `relationsToWrite`.
-- Produces (fixtures): `rawArticle`, `rawApp`, `rawDataset` — plain objects shaped like live Strapi 5 responses.
+- Produces (helpers): `StrapiPagination`, `StrapiListResponse<T>`, `StrapiSingleResponse<T>`, `StrapiMedia`, `StrapiRelationItem`, `StrapiRelationsResponse`, `unwrapList`, `unwrapOne`, `mediaFromStrapi`, `mediaIdForWrite`, `relationsFromList`, `relationsToWrite`.
+- Produces (fixtures): `rawArticle`, `rawApp`, `rawDataset` (Content-Manager entity shapes — media inline with `caption`, relations as `{ count: N }`) plus relation-endpoint fixtures `relApps`, `relDatasets`, `relArticles`.
+
+> **Content-Manager retarget notes:**
+> - The list envelope is `{ results, pagination }` (key `results`, NOT `data`); `unwrapList` returns `res.results`. The single envelope is `{ data }`; `unwrapOne` returns `res.data`.
+> - Media is populated **inline** and now carries `caption` alongside `alternativeText`.
+> - Relations are **not** inline items — the entity carries `{ count: N }` only. Items come from a separate relations endpoint shaped `{ results: [{ id, documentId, title }], pagination }`; `relationsFromList` maps those items to `RelationRef[]`. Relation items have **no `slug`**, so `RelationRef.slug` is optional and omitted here.
+> - **Relation WRITE is deferred** in this plan: `relationsToWrite` is still exported (for later plans) but is **unused**, and the `*Write` payload types carry **no** relation fields.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -356,28 +374,29 @@ git commit -m "feat(data): add zero-base64 guard"
 import { describe, it, expect } from 'vitest'
 import {
   unwrapList, unwrapOne, mediaFromStrapi, mediaIdForWrite,
-  relationsFromStrapi, relationsToWrite,
+  relationsFromList, relationsToWrite,
 } from '~/lib/strapi-rest'
 
 describe('strapi-rest helpers', () => {
-  it('unwraps collection and single envelopes', () => {
-    expect(unwrapList({ data: [1, 2], meta: { pagination: { page: 1, pageSize: 25, pageCount: 1, total: 2 } } })).toEqual([1, 2])
-    expect(unwrapOne({ data: { documentId: 'x' }, meta: {} })).toEqual({ documentId: 'x' })
+  it('unwraps Content-Manager list ({results,pagination}) and single ({data}) envelopes', () => {
+    expect(unwrapList({ results: [1, 2], pagination: { page: 1, pageSize: 25, pageCount: 1, total: 2 } })).toEqual([1, 2])
+    expect(unwrapOne({ data: { documentId: 'x' } })).toEqual({ documentId: 'x' })
   })
 
-  it('maps a populated media object to a MediaRef and back to its numeric id', () => {
-    const media = { id: 10, documentId: 'm', name: 's.png', alternativeText: null, url: '/uploads/s.png', width: 1200, height: 630, mime: 'image/png' }
-    expect(mediaFromStrapi(media)).toEqual({ id: 10, url: '/uploads/s.png', name: 's.png', alternativeText: null, width: 1200, height: 630, mime: 'image/png' })
+  it('maps an inline media object (with caption) to a MediaRef and back to its numeric id', () => {
+    const media = { id: 10, documentId: 'm', name: 's.png', alternativeText: 'Splash alt', caption: 'Fig. 1', url: '/uploads/s.png', width: 1200, height: 630, mime: 'image/png' }
+    expect(mediaFromStrapi(media)).toEqual({ id: 10, url: '/uploads/s.png', name: 's.png', alternativeText: 'Splash alt', caption: 'Fig. 1', width: 1200, height: 630, mime: 'image/png' })
     expect(mediaFromStrapi(null)).toBeNull()
     expect(mediaIdForWrite(mediaFromStrapi(media))).toBe(10)
     expect(mediaIdForWrite(null)).toBeNull()
   })
 
-  it('maps populated relations to {documentId,title,slug} and back to documentId[]', () => {
-    const rels = [{ id: 5, documentId: 'd1', title: 'Crime Data', slug: 'crime-data', extra: 'ignored' }]
-    expect(relationsFromStrapi(rels)).toEqual([{ documentId: 'd1', title: 'Crime Data', slug: 'crime-data' }])
-    expect(relationsFromStrapi(null)).toEqual([])
-    expect(relationsToWrite([{ documentId: 'd1', title: 'Crime Data', slug: 'crime-data' }])).toEqual(['d1'])
+  it('maps a relations-endpoint response ({results}) to RelationRef[] (no slug) and back to documentId[]', () => {
+    const rel = { results: [{ id: 5, documentId: 'd1', title: 'Crime Data', publishedAt: '2026-03-16T18:45:02.898Z', status: 'published' }], pagination: { page: 1, pageSize: 10, pageCount: 1, total: 1 } }
+    expect(relationsFromList(rel)).toEqual([{ documentId: 'd1', title: 'Crime Data' }])
+    expect(relationsFromList({ results: [], pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 } })).toEqual([])
+    // relationsToWrite is exported for later plans (relation-write is deferred); still verify its shape.
+    expect(relationsToWrite([{ documentId: 'd1', title: 'Crime Data' }])).toEqual(['d1'])
   })
 })
 ```
@@ -399,22 +418,26 @@ export interface MediaRef {
   url: string
   name?: string
   alternativeText?: string | null
+  caption?: string | null
   width?: number | null
   height?: number | null
   mime?: string
 }
 
-/** A related entry, addressed by documentId. */
+/**
+ * A related entry, addressed by documentId. `slug` is OPTIONAL: the Content-Manager
+ * relations endpoint returns `documentId` + `title` but no `slug`.
+ */
 export interface RelationRef {
   documentId: string
   title: string
-  slug: string
+  slug?: string
 }
 
 export interface Author { title: string; description?: string }
 export interface Contributor { title: string; description?: string }
-/** Inline article figure. `src` is a Media Library URL — NEVER base64. */
-export interface ImageRef { title: string; src: string }
+/** Inline article figure. `src` is a Media Library URL — NEVER base64. `alt`/`caption` aid accessibility. */
+export interface ImageRef { title: string; src: string; alt?: string; caption?: string }
 export interface Source { title: string; url: string }
 export interface Variable { name: string; type: string; definition: string; values?: string }
 export interface TimePeriod { yeartype: string; yearmin: number | string; yearmax: number | string }
@@ -472,7 +495,9 @@ export interface Dataset extends BaseContent {
   articles: RelationRef[]
 }
 
-// Write payloads: media → numeric id (or null), relations → documentId[]. No documentId/publishedAt/legacy fields.
+// Write payloads (FLAT body for the Content-Manager API): scalars + media → numeric id (or null) + JSON fields.
+// Relation fields (apps/datasets/articles) are intentionally OMITTED — relation WRITE is deferred to a later plan.
+// No documentId/publishedAt/legacy fields either.
 export interface ArticleWrite {
   title: string; slug: string; date: string | null; external: boolean
   type: string | null; hideFromBanner: boolean
@@ -481,14 +506,12 @@ export interface ArticleWrite {
   splash: number | null; thumbnail: number | null; images: ImageRef[]
   mainfiletype: string | null; mainfile: number | null; extrafile: number | null
   doi: string | null; citation: string | null; funding: string | null
-  apps: string[]; datasets: string[]
 }
 export interface AppWrite {
   title: string; slug: string; date: string | null; external: boolean
   categories: string[]; tags: string[]; contributors: Contributor[]
   image: number | null; description: string | null; url: string | null
   citation: string | null; funding: string | null
-  datasets: string[]; articles: string[]
 }
 export interface DatasetWrite {
   title: string; slug: string; date: string | null; external: boolean
@@ -496,27 +519,37 @@ export interface DatasetWrite {
   sources: Source[]; unit: string | null; timeperiod: TimePeriod | null
   description: string | null; notes: string[]; variables: Variable[]
   citation: string | null; funding: string | null
-  datafile: number | null; apps: string[]; articles: string[]
+  datafile: number | null
 }
 ```
 
 ```ts
 // app/lib/strapi-rest.ts
+// Strapi 5 Content-Manager API envelopes + flatten helpers (validated against the live
+// sandbox 2026-06-20). List → { results, pagination } (key `results`, NOT `data`);
+// single/create/update → { data }. Media is populated inline (with alt + caption).
+// Relations are NOT inline items on the entity (the entity carries { count: N } only) —
+// items come from the separate /content-manager/relations/{uid}/{documentId}/{field}
+// endpoint, shaped { results, pagination }.
 import type { MediaRef, RelationRef } from '~/types/content'
 
 export interface StrapiPagination { page: number; pageSize: number; pageCount: number; total: number }
-export interface StrapiListResponse<T> { data: T[]; meta: { pagination: StrapiPagination } }
-export interface StrapiSingleResponse<T> { data: T; meta: Record<string, unknown> }
 
-export function unwrapList<T>(res: StrapiListResponse<T>): T[] { return res.data }
+/** Content-Manager list envelope: collection key is `results`, pagination is top-level. */
+export interface StrapiListResponse<T> { results: T[]; pagination: StrapiPagination }
+/** Content-Manager single/create/update envelope. */
+export interface StrapiSingleResponse<T> { data: T }
+
+export function unwrapList<T>(res: StrapiListResponse<T>): T[] { return res.results }
 export function unwrapOne<T>(res: StrapiSingleResponse<T>): T { return res.data }
 
-/** Shape of a populated Strapi 5 media object (flattened, not v4 `.data.attributes`). */
+/** Shape of an inline-populated Content-Manager media object (flattened, not v4 `.data.attributes`). */
 export interface StrapiMedia {
   id: number
   url: string
   name?: string
   alternativeText?: string | null
+  caption?: string | null
   width?: number | null
   height?: number | null
   mime?: string
@@ -529,6 +562,7 @@ export function mediaFromStrapi(m: StrapiMedia | null | undefined): MediaRef | n
     url: m.url,
     name: m.name,
     alternativeText: m.alternativeText ?? null,
+    caption: m.caption ?? null,
     width: m.width ?? null,
     height: m.height ?? null,
     mime: m.mime,
@@ -539,13 +573,32 @@ export function mediaIdForWrite(ref: MediaRef | null | undefined): number | null
   return ref?.id ?? null
 }
 
-/** Shape of a populated Strapi 5 relation entry (only the fields we keep). */
-export interface StrapiRelation { documentId: string; title: string; slug: string }
-
-export function relationsFromStrapi(arr: StrapiRelation[] | null | undefined): RelationRef[] {
-  return (arr ?? []).map((r) => ({ documentId: r.documentId, title: r.title, slug: r.slug }))
+/**
+ * Shape of one item from the Content-Manager relations endpoint. It has `documentId`
+ * and `title` but NO `slug`; extra fields (publishedAt/updatedAt/status) are allowed and ignored.
+ */
+export interface StrapiRelationItem {
+  id: number
+  documentId: string
+  title: string
+  [key: string]: unknown
 }
 
+/** Response shape of GET /content-manager/relations/{uid}/{documentId}/{field}. */
+export interface StrapiRelationsResponse {
+  results: StrapiRelationItem[]
+  pagination: StrapiPagination
+}
+
+/** Map a relations-endpoint response to RelationRef[] (slug omitted — the endpoint does not return it). */
+export function relationsFromList(res: StrapiRelationsResponse | null | undefined): RelationRef[] {
+  return (res?.results ?? []).map((r) => ({ documentId: r.documentId, title: r.title }))
+}
+
+/**
+ * Reduce RelationRef[] to documentId[]. Exported for later plans only — relation WRITE
+ * (connect/disconnect) is DEFERRED in this plan, so nothing in this plan calls this.
+ */
 export function relationsToWrite(refs: RelationRef[] | null | undefined): string[] {
   return (refs ?? []).map((r) => r.documentId)
 }
@@ -553,8 +606,11 @@ export function relationsToWrite(refs: RelationRef[] | null | undefined): string
 
 ```ts
 // tests/fixtures/strapi.ts
-// Faithful (trimmed) copies of live Strapi 5 REST entities, captured 2026-06-20 from the
-// dev instance. Used by mapper tests so they verify real shapes, not invented ones.
+// Faithful (trimmed) copies of live Strapi 5 Content-Manager entities, captured 2026-06-20
+// from the dev instance. Used by mapper/repository tests so they verify real shapes, not
+// invented ones. Media is populated INLINE (with alternativeText + caption). Relations on
+// the entity are { count: N } ONLY — the related items live in the separate relations-endpoint
+// fixtures (relApps / relDatasets / relArticles) below.
 
 export const rawArticle = {
   id: 1, documentId: 'igo619j501vpj10sg8ecfv74', legacyId: '5da0c0dd3bb01c36d66f6891', status: 'published',
@@ -562,16 +618,16 @@ export const rawArticle = {
   date: '2015-08-18', external: false, type: null, hideFromBanner: false,
   categories: ['other'], tags: ['juvenile', 'evaluation', 'prevention'],
   authors: [{ title: 'Jessica Reichert', description: "Manages ICJIA's CJRE." }],
-  images: [{ title: 'figure1', src: '/uploads/figure1_fdafcd09e1.png' }],
+  images: [{ title: 'figure1', src: '/uploads/figure1_fdafcd09e1.png', alt: 'Bar chart of outcomes', caption: 'Figure 1.' }],
   abstract: 'An abstract.', markdown: '# Body\n\n![figure1](/uploads/figure1_fdafcd09e1.png)',
   mainfiletype: 'full report', doi: null, citation: null, funding: null,
-  publishedAt: '2026-03-16T18:45:02.898Z',
-  splash: { id: 10, documentId: 'splashdoc', name: 'splash.png', alternativeText: null, url: '/uploads/splash_abc.png', width: 1200, height: 630, mime: 'image/png' },
+  publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  splash: { id: 10, documentId: 'splashdoc', name: 'splash.png', alternativeText: 'Splash alt', caption: null, url: '/uploads/splash_abc.png', width: 1200, height: 630, mime: 'image/png' },
   thumbnail: null,
-  mainfile: { id: 11, documentId: 'mfdoc', name: 'report.pdf', url: '/uploads/report_abc.pdf', mime: 'application/pdf' },
+  mainfile: { id: 11, documentId: 'mfdoc', name: 'report.pdf', alternativeText: null, caption: null, url: '/uploads/report_abc.pdf', mime: 'application/pdf' },
   extrafile: null,
-  apps: [],
-  datasets: [{ id: 5, documentId: 'dsdoc1', title: 'Crime Data', slug: 'crime-data', status: 'published' }],
+  apps: { count: 0 },
+  datasets: { count: 1 },
 }
 
 export const rawApp = {
@@ -579,11 +635,11 @@ export const rawApp = {
   title: 'UCR Index Offense Explorer', slug: 'ucr-index-offense-explorer', date: '2020-01-01', external: false,
   categories: ['crimes'], tags: ['ucr', 'explorer'],
   contributors: [{ title: 'ICJIA R&A staff' }],
-  image: { id: 1046, documentId: 'imgdoc', name: 'app-image.png', alternativeText: null, url: '/uploads/app_image_22cc0163e1.png', width: 720, height: 342, mime: 'image/png' },
+  image: { id: 1046, documentId: 'imgdoc', name: 'app-image.png', alternativeText: 'App screenshot', caption: null, url: '/uploads/app_image_22cc0163e1.png', width: 720, height: 342, mime: 'image/png' },
   description: 'Explore UCR data.', url: 'https://example.org/app', citation: null, funding: null,
-  publishedAt: '2026-03-16T18:45:02.898Z',
-  datasets: [{ id: 5, documentId: 'dsdoc1', title: 'Crime Data', slug: 'crime-data', status: 'published' }],
-  articles: [],
+  publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  datasets: { count: 1 },
+  articles: { count: 0 },
 }
 
 export const rawDataset = {
@@ -598,10 +654,28 @@ export const rawDataset = {
     { name: 'Year', type: 'integer', definition: 'The year events occurred.' },
     { name: 'id', type: 'int', definition: 'Location identifier.' },
   ],
-  citation: null, funding: null, publishedAt: '2026-03-16T18:45:02.898Z',
-  datafile: { id: 99, documentId: 'dfdoc', name: 'crime.csv', url: '/uploads/crime_abc.csv', mime: 'text/csv' },
-  apps: [{ id: 2, documentId: 'appdoc1', title: 'UCR Index Offense Explorer', slug: 'ucr-index-offense-explorer', status: 'published' }],
-  articles: [],
+  citation: null, funding: null, publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  datafile: { id: 99, documentId: 'dfdoc', name: 'crime.csv', alternativeText: null, caption: null, url: '/uploads/crime_abc.csv', mime: 'text/csv' },
+  apps: { count: 1 },
+  articles: { count: 0 },
+}
+
+// --- Relations-endpoint fixtures: GET /content-manager/relations/{uid}/{documentId}/{field} ---
+// Items carry documentId + title (NO slug); status/publishedAt/updatedAt are present and ignored.
+
+export const relDatasets = {
+  results: [{ id: 5, documentId: 'dsdoc1', title: 'Crime Data', publishedAt: '2026-03-16T18:45:02.898Z', updatedAt: '2026-03-16T18:45:02.898Z', status: 'published' }],
+  pagination: { page: 1, pageSize: 10, pageCount: 1, total: 1 },
+}
+
+export const relApps = {
+  results: [{ id: 2, documentId: 'appdoc1', title: 'UCR Index Offense Explorer', publishedAt: '2026-03-16T18:45:02.898Z', updatedAt: '2026-03-16T18:45:02.898Z', status: 'published' }],
+  pagination: { page: 1, pageSize: 10, pageCount: 1, total: 1 },
+}
+
+export const relArticles = {
+  results: [],
+  pagination: { page: 1, pageSize: 10, pageCount: 0, total: 0 },
 }
 ```
 
@@ -768,8 +842,10 @@ git commit -m "feat(data): add v1 delimited-text import/format helpers"
 - Test: `tests/unit/mappers-article.test.ts`
 
 **Interfaces:**
-- Consumes: `Article`, `ArticleWrite` from `~/types/content`; `mediaFromStrapi`, `mediaIdForWrite`, `relationsFromStrapi`, `relationsToWrite`, `StrapiMedia`, `StrapiRelation` from `~/lib/strapi-rest`; `rawArticle` fixture.
-- Produces: `StrapiArticle` (raw type), `articleFromStrapi(raw: StrapiArticle): Article`, `articleToWrite(model: Article): ArticleWrite`.
+- Consumes: `Article`, `ArticleWrite`, `RelationRef` from `~/types/content`; `mediaFromStrapi`, `mediaIdForWrite`, `StrapiMedia` from `~/lib/strapi-rest`; `rawArticle` fixture.
+- Produces: `StrapiArticle` (raw entity type — scalars + inline media + JSON; relations are `{ count }` only and are NOT read here), `ArticleRelations` (`{ apps?: RelationRef[]; datasets?: RelationRef[] }`), `articleFromStrapi(entity: StrapiArticle, relations?: ArticleRelations): Article`, `articleToWrite(model: Article): ArticleWrite`.
+
+> **Content-Manager retarget:** the mapper reads scalars + inline media + JSON from the **entity**, and takes relation arrays from a separate `relations` argument (defaulting to `[]` per field) — it does **not** read relations off the entity (the entity carries `{ count: N }` only). `articleToWrite` returns the **FLAT** write object with **no** relation fields (relation WRITE is deferred).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -777,10 +853,12 @@ git commit -m "feat(data): add v1 delimited-text import/format helpers"
 // tests/unit/mappers-article.test.ts
 import { describe, it, expect } from 'vitest'
 import { articleFromStrapi, articleToWrite } from '~/lib/mappers/article'
-import { rawArticle } from '../fixtures/strapi'
+import { rawArticle, relDatasets } from '../fixtures/strapi'
+import { relationsFromList } from '~/lib/strapi-rest'
 
 describe('articleFromStrapi', () => {
-  const a = articleFromStrapi(rawArticle as never)
+  // Hydrate relations the way the repository will: from the relations endpoint, not the entity.
+  const a = articleFromStrapi(rawArticle as never, { datasets: relationsFromList(relDatasets) })
 
   it('keeps documentId and core fields, ignoring legacy id/status', () => {
     expect(a.documentId).toBe('igo619j501vpj10sg8ecfv74')
@@ -788,23 +866,27 @@ describe('articleFromStrapi', () => {
     expect(a).not.toHaveProperty('status')
     expect(a.publishedAt).toBe('2026-03-16T18:45:02.898Z')
   })
-  it('flattens media to MediaRef and relations to {documentId,title,slug}', () => {
-    expect(a.splash).toEqual({ id: 10, url: '/uploads/splash_abc.png', name: 'splash.png', alternativeText: null, width: 1200, height: 630, mime: 'image/png' })
+  it('flattens inline media (with caption) to MediaRef', () => {
+    expect(a.splash).toEqual({ id: 10, url: '/uploads/splash_abc.png', name: 'splash.png', alternativeText: 'Splash alt', caption: null, width: 1200, height: 630, mime: 'image/png' })
     expect(a.thumbnail).toBeNull()
-    expect(a.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data', slug: 'crime-data' }])
   })
-  it('preserves JSON arrays as-is', () => {
+  it('takes relations from the relations argument ({documentId,title}, no slug); ignores the entity {count}', () => {
+    expect(a.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data' }])
+    expect(a.apps).toEqual([]) // not supplied → defaults to []
+  })
+  it('preserves JSON arrays as-is (images keep alt + caption)', () => {
     expect(a.authors).toEqual([{ title: 'Jessica Reichert', description: "Manages ICJIA's CJRE." }])
-    expect(a.images).toEqual([{ title: 'figure1', src: '/uploads/figure1_fdafcd09e1.png' }])
+    expect(a.images).toEqual([{ title: 'figure1', src: '/uploads/figure1_fdafcd09e1.png', alt: 'Bar chart of outcomes', caption: 'Figure 1.' }])
   })
 })
 
 describe('articleToWrite', () => {
-  it('converts media to numeric id and relations to documentId[]', () => {
-    const w = articleToWrite(articleFromStrapi(rawArticle as never))
+  it('converts media to numeric id and omits relation fields (relation-write deferred)', () => {
+    const w = articleToWrite(articleFromStrapi(rawArticle as never, { datasets: relationsFromList(relDatasets) }))
     expect(w.splash).toBe(10)
     expect(w.thumbnail).toBeNull()
-    expect(w.datasets).toEqual(['dsdoc1'])
+    expect(w).not.toHaveProperty('apps')
+    expect(w).not.toHaveProperty('datasets')
     expect(w).not.toHaveProperty('documentId')
     expect(w).not.toHaveProperty('publishedAt')
   })
@@ -820,12 +902,11 @@ Expected: FAIL — module not found.
 
 ```ts
 // app/lib/mappers/article.ts
-import type { Article, ArticleWrite, Author, ImageRef } from '~/types/content'
-import {
-  mediaFromStrapi, mediaIdForWrite, relationsFromStrapi, relationsToWrite,
-  type StrapiMedia, type StrapiRelation,
-} from '~/lib/strapi-rest'
+import type { Article, ArticleWrite, Author, ImageRef, RelationRef } from '~/types/content'
+import { mediaFromStrapi, mediaIdForWrite, type StrapiMedia } from '~/lib/strapi-rest'
 
+// Content-Manager entity: scalars + inline media + JSON. Relations appear as { count: N }
+// ONLY and are NOT read here — they are hydrated separately and passed via `relations`.
 export interface StrapiArticle {
   documentId: string; title: string; slug: string; date: string | null; external?: boolean
   type?: string | null; hideFromBanner?: boolean
@@ -834,11 +915,13 @@ export interface StrapiArticle {
   splash?: StrapiMedia | null; thumbnail?: StrapiMedia | null
   mainfiletype?: string | null; mainfile?: StrapiMedia | null; extrafile?: StrapiMedia | null
   doi?: string | null; citation?: string | null; funding?: string | null
-  apps?: StrapiRelation[]; datasets?: StrapiRelation[]
   publishedAt?: string | null
 }
 
-export function articleFromStrapi(raw: StrapiArticle): Article {
+/** Relation arrays hydrated from the Content-Manager relations endpoint. */
+export interface ArticleRelations { apps?: RelationRef[]; datasets?: RelationRef[] }
+
+export function articleFromStrapi(raw: StrapiArticle, relations: ArticleRelations = {}): Article {
   return {
     documentId: raw.documentId,
     title: raw.title,
@@ -861,12 +944,14 @@ export function articleFromStrapi(raw: StrapiArticle): Article {
     doi: raw.doi ?? null,
     citation: raw.citation ?? null,
     funding: raw.funding ?? null,
-    apps: relationsFromStrapi(raw.apps),
-    datasets: relationsFromStrapi(raw.datasets),
+    apps: relations.apps ?? [],
+    datasets: relations.datasets ?? [],
     publishedAt: raw.publishedAt ?? null,
   }
 }
 
+// FLAT write body (Content-Manager). Relation fields (apps/datasets) are intentionally
+// omitted — relation WRITE is deferred to a later plan.
 export function articleToWrite(m: Article): ArticleWrite {
   return {
     title: m.title,
@@ -889,8 +974,6 @@ export function articleToWrite(m: Article): ArticleWrite {
     doi: m.doi,
     citation: m.citation,
     funding: m.funding,
-    apps: relationsToWrite(m.apps),
-    datasets: relationsToWrite(m.datasets),
   }
 }
 ```
@@ -1010,8 +1093,10 @@ git commit -m "feat(data): add article validator with zero-base64 gate"
 - Test: `tests/unit/mappers-app.test.ts`; extend `tests/unit/validators.test.ts`
 
 **Interfaces:**
-- Consumes: `App`, `AppWrite`, `Contributor` from `~/types/content`; strapi-rest helpers; `rawApp` fixture; `containsBase64`.
-- Produces: `StrapiApp`, `appFromStrapi(raw): App`, `appToWrite(m: App): AppWrite`; `validateApp(a: App): FieldError[]`.
+- Consumes: `App`, `AppWrite`, `Contributor`, `RelationRef` from `~/types/content`; `mediaFromStrapi`/`mediaIdForWrite`/`StrapiMedia` from strapi-rest; `rawApp` fixture + relation-endpoint fixtures; `containsBase64`.
+- Produces: `StrapiApp` (entity — scalars + inline media + JSON; relations `{ count }` only, not read), `AppRelations` (`{ datasets?: RelationRef[]; articles?: RelationRef[] }`), `appFromStrapi(entity: StrapiApp, relations?: AppRelations): App`, `appToWrite(m: App): AppWrite`; `validateApp(a: App): FieldError[]`.
+
+> **Content-Manager retarget (mapper only):** `appFromStrapi` reads scalars + inline media + JSON from the entity and takes relation arrays from a separate `relations` argument (default `[]`); `appToWrite` returns the FLAT write object with no relation fields. The `validateApp` portion is API-agnostic and unchanged.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1019,19 +1104,22 @@ git commit -m "feat(data): add article validator with zero-base64 gate"
 // tests/unit/mappers-app.test.ts
 import { describe, it, expect } from 'vitest'
 import { appFromStrapi, appToWrite } from '~/lib/mappers/app'
-import { rawApp } from '../fixtures/strapi'
+import { rawApp, relDatasets } from '../fixtures/strapi'
+import { relationsFromList } from '~/lib/strapi-rest'
 
 describe('appFromStrapi / appToWrite', () => {
-  const app = appFromStrapi(rawApp as never)
-  it('maps image + relations + contributors', () => {
-    expect(app.image).toEqual({ id: 1046, url: '/uploads/app_image_22cc0163e1.png', name: 'app-image.png', alternativeText: null, width: 720, height: 342, mime: 'image/png' })
+  const app = appFromStrapi(rawApp as never, { datasets: relationsFromList(relDatasets) })
+  it('maps inline image (with caption) + contributors, and takes relations from the relations arg', () => {
+    expect(app.image).toEqual({ id: 1046, url: '/uploads/app_image_22cc0163e1.png', name: 'app-image.png', alternativeText: 'App screenshot', caption: null, width: 720, height: 342, mime: 'image/png' })
     expect(app.contributors).toEqual([{ title: 'ICJIA R&A staff' }])
-    expect(app.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data', slug: 'crime-data' }])
+    expect(app.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data' }])
+    expect(app.articles).toEqual([]) // not supplied → []
   })
-  it('writes image id and dataset documentId[]', () => {
+  it('writes image id and omits relation fields (relation-write deferred)', () => {
     const w = appToWrite(app)
     expect(w.image).toBe(1046)
-    expect(w.datasets).toEqual(['dsdoc1'])
+    expect(w).not.toHaveProperty('datasets')
+    expect(w).not.toHaveProperty('articles')
   })
 })
 ```
@@ -1068,22 +1156,23 @@ Expected: FAIL — modules not found.
 
 ```ts
 // app/lib/mappers/app.ts
-import type { App, AppWrite, Contributor } from '~/types/content'
-import {
-  mediaFromStrapi, mediaIdForWrite, relationsFromStrapi, relationsToWrite,
-  type StrapiMedia, type StrapiRelation,
-} from '~/lib/strapi-rest'
+import type { App, AppWrite, Contributor, RelationRef } from '~/types/content'
+import { mediaFromStrapi, mediaIdForWrite, type StrapiMedia } from '~/lib/strapi-rest'
 
+// Content-Manager entity: scalars + inline media + JSON. Relations are { count: N } only
+// and are NOT read here — they are hydrated separately and passed via `relations`.
 export interface StrapiApp {
   documentId: string; title: string; slug: string; date?: string | null; external?: boolean
   categories?: string[]; tags?: string[]; contributors?: Contributor[]
   image?: StrapiMedia | null; description?: string | null; url?: string | null
   citation?: string | null; funding?: string | null
-  datasets?: StrapiRelation[]; articles?: StrapiRelation[]
   publishedAt?: string | null
 }
 
-export function appFromStrapi(raw: StrapiApp): App {
+/** Relation arrays hydrated from the Content-Manager relations endpoint. */
+export interface AppRelations { datasets?: RelationRef[]; articles?: RelationRef[] }
+
+export function appFromStrapi(raw: StrapiApp, relations: AppRelations = {}): App {
   return {
     documentId: raw.documentId,
     title: raw.title,
@@ -1098,12 +1187,14 @@ export function appFromStrapi(raw: StrapiApp): App {
     url: raw.url ?? null,
     citation: raw.citation ?? null,
     funding: raw.funding ?? null,
-    datasets: relationsFromStrapi(raw.datasets),
-    articles: relationsFromStrapi(raw.articles),
+    datasets: relations.datasets ?? [],
+    articles: relations.articles ?? [],
     publishedAt: raw.publishedAt ?? null,
   }
 }
 
+// FLAT write body (Content-Manager). Relation fields (datasets/articles) are intentionally
+// omitted — relation WRITE is deferred to a later plan.
 export function appToWrite(m: App): AppWrite {
   return {
     title: m.title,
@@ -1118,8 +1209,6 @@ export function appToWrite(m: App): AppWrite {
     url: m.url,
     citation: m.citation,
     funding: m.funding,
-    datasets: relationsToWrite(m.datasets),
-    articles: relationsToWrite(m.articles),
   }
 }
 ```
@@ -1163,8 +1252,10 @@ git commit -m "feat(data): add app mapper + validator"
 - Test: `tests/unit/mappers-dataset.test.ts`; extend `tests/unit/validators.test.ts`
 
 **Interfaces:**
-- Consumes: `Dataset`, `DatasetWrite`, `Source`, `Variable`, `TimePeriod` from `~/types/content`; strapi-rest helpers; `rawDataset` fixture; `containsBase64`.
-- Produces: `StrapiDataset`, `datasetFromStrapi(raw): Dataset`, `datasetToWrite(m: Dataset): DatasetWrite`; `validateDataset(d: Dataset): FieldError[]`.
+- Consumes: `Dataset`, `DatasetWrite`, `Source`, `Variable`, `TimePeriod`, `RelationRef` from `~/types/content`; `mediaFromStrapi`/`mediaIdForWrite`/`StrapiMedia` from strapi-rest; `rawDataset` fixture + relation-endpoint fixtures; `containsBase64`.
+- Produces: `StrapiDataset` (entity — scalars + inline media + JSON; relations `{ count }` only, not read), `DatasetRelations` (`{ apps?: RelationRef[]; articles?: RelationRef[] }`), `datasetFromStrapi(entity: StrapiDataset, relations?: DatasetRelations): Dataset`, `datasetToWrite(m: Dataset): DatasetWrite`; `validateDataset(d: Dataset): FieldError[]`.
+
+> **Content-Manager retarget (mapper only):** `datasetFromStrapi` reads scalars + inline media + JSON from the entity and takes relation arrays from a separate `relations` argument (default `[]`); `datasetToWrite` returns the FLAT write object with no relation fields. The `validateDataset` portion is API-agnostic and unchanged.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1172,22 +1263,26 @@ git commit -m "feat(data): add app mapper + validator"
 // tests/unit/mappers-dataset.test.ts
 import { describe, it, expect } from 'vitest'
 import { datasetFromStrapi, datasetToWrite } from '~/lib/mappers/dataset'
-import { rawDataset } from '../fixtures/strapi'
+import { rawDataset, relApps } from '../fixtures/strapi'
+import { relationsFromList } from '~/lib/strapi-rest'
 
 describe('datasetFromStrapi / datasetToWrite', () => {
-  const ds = datasetFromStrapi(rawDataset as never)
-  it('maps datafile, timeperiod, sources, variables, notes', () => {
-    expect(ds.datafile).toEqual({ id: 99, url: '/uploads/crime_abc.csv', name: 'crime.csv', alternativeText: null, width: null, height: null, mime: 'text/csv' })
+  const ds = datasetFromStrapi(rawDataset as never, { apps: relationsFromList(relApps) })
+  it('maps inline datafile (with caption), timeperiod, sources, variables, notes, and relations from the relations arg', () => {
+    expect(ds.datafile).toEqual({ id: 99, url: '/uploads/crime_abc.csv', name: 'crime.csv', alternativeText: null, caption: null, width: null, height: null, mime: 'text/csv' })
     expect(ds.timeperiod).toEqual({ yeartype: 'calendar', yearmin: 1982, yearmax: 2020 })
     expect(ds.sources).toEqual([{ title: 'UCR, Illinois State Police', url: 'https://isp.illinois.gov/x' }])
     expect(ds.variables[0]).toEqual({ name: 'Year', type: 'integer', definition: 'The year events occurred.' })
     expect(ds.notes).toEqual(['Counties may not add up to the state total.'])
+    expect(ds.apps).toEqual([{ documentId: 'appdoc1', title: 'UCR Index Offense Explorer' }])
+    expect(ds.articles).toEqual([]) // not supplied → []
   })
-  it('writes datafile id and app documentId[]', () => {
+  it('writes datafile id, keeps timeperiod, and omits relation fields (relation-write deferred)', () => {
     const w = datasetToWrite(ds)
     expect(w.datafile).toBe(99)
-    expect(w.apps).toEqual(['appdoc1'])
     expect(w.timeperiod).toEqual({ yeartype: 'calendar', yearmin: 1982, yearmax: 2020 })
+    expect(w).not.toHaveProperty('apps')
+    expect(w).not.toHaveProperty('articles')
   })
 })
 ```
@@ -1225,23 +1320,25 @@ Expected: FAIL — modules not found.
 
 ```ts
 // app/lib/mappers/dataset.ts
-import type { Dataset, DatasetWrite, Source, Variable, TimePeriod } from '~/types/content'
-import {
-  mediaFromStrapi, mediaIdForWrite, relationsFromStrapi, relationsToWrite,
-  type StrapiMedia, type StrapiRelation,
-} from '~/lib/strapi-rest'
+import type { Dataset, DatasetWrite, Source, Variable, TimePeriod, RelationRef } from '~/types/content'
+import { mediaFromStrapi, mediaIdForWrite, type StrapiMedia } from '~/lib/strapi-rest'
 
+// Content-Manager entity: scalars + inline media + JSON. Relations are { count: N } only
+// and are NOT read here — they are hydrated separately and passed via `relations`.
 export interface StrapiDataset {
   documentId: string; title: string; slug: string; date: string | null; external?: boolean
   project?: boolean; categories?: string[]; tags?: string[]
   sources?: Source[]; unit?: string | null; timeperiod?: TimePeriod | null
   description?: string | null; notes?: string[]; variables?: Variable[]
   citation?: string | null; funding?: string | null
-  datafile?: StrapiMedia | null; apps?: StrapiRelation[]; articles?: StrapiRelation[]
+  datafile?: StrapiMedia | null
   publishedAt?: string | null
 }
 
-export function datasetFromStrapi(raw: StrapiDataset): Dataset {
+/** Relation arrays hydrated from the Content-Manager relations endpoint. */
+export interface DatasetRelations { apps?: RelationRef[]; articles?: RelationRef[] }
+
+export function datasetFromStrapi(raw: StrapiDataset, relations: DatasetRelations = {}): Dataset {
   return {
     documentId: raw.documentId,
     title: raw.title,
@@ -1260,12 +1357,14 @@ export function datasetFromStrapi(raw: StrapiDataset): Dataset {
     citation: raw.citation ?? null,
     funding: raw.funding ?? null,
     datafile: mediaFromStrapi(raw.datafile),
-    apps: relationsFromStrapi(raw.apps),
-    articles: relationsFromStrapi(raw.articles),
+    apps: relations.apps ?? [],
+    articles: relations.articles ?? [],
     publishedAt: raw.publishedAt ?? null,
   }
 }
 
+// FLAT write body (Content-Manager). Relation fields (apps/articles) are intentionally
+// omitted — relation WRITE is deferred to a later plan.
 export function datasetToWrite(m: Dataset): DatasetWrite {
   return {
     title: m.title,
@@ -1284,8 +1383,6 @@ export function datasetToWrite(m: Dataset): DatasetWrite {
     citation: m.citation,
     funding: m.funding,
     datafile: mediaIdForWrite(m.datafile),
-    apps: relationsToWrite(m.apps),
-    articles: relationsToWrite(m.articles),
   }
 }
 ```
@@ -1336,58 +1433,74 @@ git commit -m "feat(data): add dataset mapper + validator"
 - Test: `tests/unit/repository.test.ts`
 
 **Interfaces:**
-- Consumes: `$Fetch` (ofetch); `unwrapList`, `unwrapOne`, `StrapiListResponse`, `StrapiSingleResponse` from `~/lib/strapi-rest`; `ContentStatus` from `~/types/content`.
-- Produces: `ListOptions`, `WriteOptions`, `Repository<TDomain>`, `RepositoryConfig<TRaw, TDomain, TWrite>`, `createRepository(cfg): Repository<TDomain>`.
+- Consumes: `$Fetch` (ofetch); `unwrapList`, `unwrapOne`, `relationsFromList`, `StrapiListResponse`, `StrapiSingleResponse`, `StrapiRelationsResponse` from `~/lib/strapi-rest`; `ContentStatus`, `RelationRef` from `~/types/content`.
+- Produces: `ListOptions`, `FindOptions`, `WriteOptions`, `Relations` (`Record<string, RelationRef[]>`), `Repository<TDomain>`, `RepositoryConfig<TRaw, TDomain, TWrite>`, `createRepository(cfg): Repository<TDomain>`.
 
-*Endpoints (Strapi 5 REST): `GET /api/{plural}` (list, `?status=`), `GET /api/{plural}/{documentId}` (findOne, `?status=&populate=`), `POST /api/{plural}` (create, body `{data}`), `PUT /api/{plural}/{documentId}` (update, body `{data}`), `DELETE /api/{plural}/{documentId}` (remove).*
+*Endpoints (Strapi 5 Content-Manager API), with `base = /content-manager/collection-types/{uid}`:*
+- *`GET {base}?page=&pageSize=` (list, optional `status`) → `{ results, pagination }`.*
+- *`GET {base}/{documentId}` (findOne) → `{ data }`; then for each `field` in `relationFields`: `GET /content-manager/relations/{uid}/{documentId}/{field}` → `{ results, pagination }`.*
+- *`POST {base}` (create) — **FLAT** body (NOT `{data}`) → `201 { data }` (a draft).*
+- *`PUT {base}/{documentId}` (update) — **FLAT** body → `{ data }`.*
+- *`DELETE {base}/{documentId}` (remove).*
+
+> **Deferred (later plans):** relation-**WRITE** (connect/disconnect) and the **publish action** (`POST /content-manager/collection-types/{uid}/{documentId}/actions/publish`, Plan 6) are out of scope here. This factory only reads relations (on `findOne`) and writes scalars + media + JSON.
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
 // tests/unit/repository.test.ts
 import { describe, it, expect, vi } from 'vitest'
-import { createRepository } from '~/lib/repository'
+import { createRepository, type Relations } from '~/lib/repository'
 import type { $Fetch } from 'ofetch'
 
 interface Raw { documentId: string; title: string }
-interface Dom { documentId: string; title: string; loud: string }
-const fromStrapi = (r: Raw): Dom => ({ ...r, loud: r.title.toUpperCase() })
+interface Dom { documentId: string; title: string; loud: string; rels: Relations }
+// fromStrapi now receives (entity, relations); echo the relations so we can assert hydration.
+const fromStrapi = (r: Raw, relations: Relations = {}): Dom => ({ ...r, loud: r.title.toUpperCase(), rels: relations })
 const toWrite = (d: Dom) => ({ title: d.title })
 
+const UID = 'api::article.article'
+const BASE = `/content-manager/collection-types/${UID}`
 const makeRepo = (api: $Fetch) =>
-  createRepository<Raw, Dom, { title: string }>({ api, plural: 'articles', populate: '*', fromStrapi, toWrite })
+  createRepository<Raw, Dom, { title: string }>({ api, uid: UID, relationFields: ['datasets'], fromStrapi, toWrite })
 
-describe('createRepository', () => {
-  it('list() GETs the collection with status and maps each row', async () => {
-    const api = vi.fn().mockResolvedValue({ data: [{ documentId: 'a', title: 'x' }], meta: { pagination: {} } }) as unknown as $Fetch
+describe('createRepository (Content-Manager API)', () => {
+  it('list() GETs the collection ({results}) with status and maps each row (no relations)', async () => {
+    const api = vi.fn().mockResolvedValue({ results: [{ documentId: 'a', title: 'x' }], pagination: {} }) as unknown as $Fetch
     const out = await makeRepo(api).list({ status: 'draft' })
-    expect(api).toHaveBeenCalledWith('/api/articles', expect.objectContaining({ query: expect.objectContaining({ status: 'draft' }) }))
-    expect(out).toEqual([{ documentId: 'a', title: 'x', loud: 'X' }])
+    expect(api).toHaveBeenCalledWith(BASE, expect.objectContaining({ query: expect.objectContaining({ status: 'draft' }) }))
+    expect(out).toEqual([{ documentId: 'a', title: 'x', loud: 'X', rels: {} }])
   })
 
-  it('findOne() GETs by documentId with populate and maps', async () => {
-    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'x' }, meta: {} }) as unknown as $Fetch
-    const out = await makeRepo(api).findOne('a', { status: 'draft' })
-    expect(api).toHaveBeenCalledWith('/api/articles/a', expect.objectContaining({ query: expect.objectContaining({ populate: '*', status: 'draft' }) }))
+  it('findOne() GETs the entity ({data}) then GETs each relation field and merges them', async () => {
+    const api = vi.fn()
+      .mockResolvedValueOnce({ data: { documentId: 'a', title: 'x' } }) // entity
+      .mockResolvedValueOnce({ results: [{ id: 5, documentId: 'd1', title: 'Crime Data' }], pagination: {} }) // datasets relation
+      as unknown as $Fetch
+    const out = await makeRepo(api).findOne('a')
+    expect(api).toHaveBeenNthCalledWith(1, `${BASE}/a`, expect.anything())
+    // The relations GET is called with the URL only (no options); assert the URL.
+    expect(api).toHaveBeenNthCalledWith(2, `/content-manager/relations/${UID}/a/datasets`)
     expect(out.loud).toBe('X')
+    expect(out.rels).toEqual({ datasets: [{ documentId: 'd1', title: 'Crime Data' }] })
   })
 
-  it('create() POSTs a {data} body produced by toWrite', async () => {
-    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'x' }, meta: {} }) as unknown as $Fetch
-    await makeRepo(api).create({ documentId: '', title: 'x', loud: 'X' })
-    expect(api).toHaveBeenCalledWith('/api/articles', expect.objectContaining({ method: 'POST', body: { data: { title: 'x' } } }))
+  it('create() POSTs a FLAT body (NOT wrapped in {data}) produced by toWrite', async () => {
+    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'x' } }) as unknown as $Fetch
+    await makeRepo(api).create({ documentId: '', title: 'x', loud: 'X', rels: {} })
+    expect(api).toHaveBeenCalledWith(BASE, expect.objectContaining({ method: 'POST', body: { title: 'x' } }))
   })
 
-  it('update() PUTs to /{documentId} with a {data} body', async () => {
-    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'y' }, meta: {} }) as unknown as $Fetch
-    await makeRepo(api).update('a', { documentId: 'a', title: 'y', loud: 'Y' })
-    expect(api).toHaveBeenCalledWith('/api/articles/a', expect.objectContaining({ method: 'PUT', body: { data: { title: 'y' } } }))
+  it('update() PUTs to /{documentId} with a FLAT body', async () => {
+    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'y' } }) as unknown as $Fetch
+    await makeRepo(api).update('a', { documentId: 'a', title: 'y', loud: 'Y', rels: {} })
+    expect(api).toHaveBeenCalledWith(`${BASE}/a`, expect.objectContaining({ method: 'PUT', body: { title: 'y' } }))
   })
 
   it('remove() DELETEs by documentId', async () => {
     const api = vi.fn().mockResolvedValue(undefined) as unknown as $Fetch
     await makeRepo(api).remove('a')
-    expect(api).toHaveBeenCalledWith('/api/articles/a', expect.objectContaining({ method: 'DELETE' }))
+    expect(api).toHaveBeenCalledWith(`${BASE}/a`, expect.objectContaining({ method: 'DELETE' }))
   })
 })
 ```
@@ -1401,16 +1514,24 @@ Expected: FAIL — module not found.
 
 ```ts
 // app/lib/repository.ts
+// Generic Content-Manager API repository, addressed by content-type `uid`.
+// base = /content-manager/collection-types/{uid}. list → {results,pagination};
+// findOne/create/update → {data}; create/update bodies are FLAT (NOT wrapped in {data}).
+// findOne additionally hydrates each `relationFields` entry from the relations endpoint.
+// Deferred (later plans): relation-WRITE (connect/disconnect) and the publish action.
 import type { $Fetch } from 'ofetch'
-import type { ContentStatus } from '~/types/content'
+import type { ContentStatus, RelationRef } from '~/types/content'
 import {
-  unwrapList, unwrapOne,
-  type StrapiListResponse, type StrapiSingleResponse,
+  unwrapList, unwrapOne, relationsFromList,
+  type StrapiListResponse, type StrapiSingleResponse, type StrapiRelationsResponse,
 } from '~/lib/strapi-rest'
 
 export interface ListOptions { status?: ContentStatus; page?: number; pageSize?: number; sort?: string }
 export interface FindOptions { status?: ContentStatus }
 export interface WriteOptions { status?: ContentStatus }
+
+/** Relation arrays keyed by field name, as hydrated on findOne. */
+export type Relations = Record<string, RelationRef[]>
 
 export interface Repository<TDomain> {
   list(opts?: ListOptions): Promise<TDomain[]>
@@ -1422,44 +1543,52 @@ export interface Repository<TDomain> {
 
 export interface RepositoryConfig<TRaw, TDomain, TWrite> {
   api: $Fetch
-  plural: string
-  /** Strapi populate spec for findOne (default '*'). */
-  populate?: string
-  fromStrapi: (raw: TRaw) => TDomain
+  /** Content-type uid, e.g. 'api::article.article'. */
+  uid: string
+  /** Relation field names to hydrate on findOne (e.g. ['apps','datasets']). */
+  relationFields: string[]
+  fromStrapi: (raw: TRaw, relations?: Relations) => TDomain
   toWrite: (model: TDomain) => TWrite
 }
 
 export function createRepository<TRaw, TDomain, TWrite>(
   cfg: RepositoryConfig<TRaw, TDomain, TWrite>,
 ): Repository<TDomain> {
-  const base = `/api/${cfg.plural}`
-  const populate = cfg.populate ?? '*'
+  const base = `/content-manager/collection-types/${cfg.uid}`
 
   return {
     async list(opts = {}) {
       const res = await cfg.api<StrapiListResponse<TRaw>>(base, {
         query: {
           status: opts.status,
-          'pagination[page]': opts.page,
-          'pagination[pageSize]': opts.pageSize,
+          page: opts.page,
+          pageSize: opts.pageSize,
           sort: opts.sort,
         },
       })
-      return unwrapList(res).map(cfg.fromStrapi)
+      return unwrapList(res).map((raw) => cfg.fromStrapi(raw))
     },
 
     async findOne(documentId, opts = {}) {
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}`, {
-        query: { populate, status: opts.status },
+        query: { status: opts.status },
       })
-      return cfg.fromStrapi(unwrapOne(res))
+      const entity = unwrapOne(res)
+      const relations: Relations = {}
+      for (const field of cfg.relationFields) {
+        const relRes = await cfg.api<StrapiRelationsResponse>(
+          `/content-manager/relations/${cfg.uid}/${documentId}/${field}`,
+        )
+        relations[field] = relationsFromList(relRes)
+      }
+      return cfg.fromStrapi(entity, relations)
     },
 
     async create(model, opts = {}) {
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(base, {
         method: 'POST',
         query: { status: opts.status },
-        body: { data: cfg.toWrite(model) },
+        body: cfg.toWrite(model),
       })
       return cfg.fromStrapi(unwrapOne(res))
     },
@@ -1468,7 +1597,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}`, {
         method: 'PUT',
         query: { status: opts.status },
-        body: { data: cfg.toWrite(model) },
+        body: cfg.toWrite(model),
       })
       return cfg.fromStrapi(unwrapOne(res))
     },
@@ -1480,7 +1609,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
 }
 ```
 
-*Note: `ofetch` omits `query` keys whose value is `undefined`, so unset options produce a clean URL.*
+*Note: `ofetch` omits `query` keys whose value is `undefined`, so unset options produce a clean URL. The `relations` object is keyed by field name (e.g. `{ datasets: [...] }`); each per-type mapper reads the keys it cares about and defaults missing ones to `[]`.*
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1515,30 +1644,43 @@ import { describe, it, expect, vi } from 'vitest'
 import { createArticlesRepository } from '~/repositories/articles'
 import { createAppsRepository } from '~/repositories/apps'
 import { createDatasetsRepository } from '~/repositories/datasets'
-import { rawArticle, rawApp, rawDataset } from '../fixtures/strapi'
+import { rawArticle, rawApp, rawDataset, relDatasets, relApps, relArticles } from '../fixtures/strapi'
 import type { $Fetch } from 'ofetch'
 
-describe('per-type repositories', () => {
-  it('articles repo hits /api/articles and maps via articleFromStrapi', async () => {
-    const api = vi.fn().mockResolvedValue({ data: rawArticle, meta: {} }) as unknown as $Fetch
+describe('per-type repositories (Content-Manager API)', () => {
+  it('articles repo hits the article uid, hydrates apps+datasets relations, and maps via articleFromStrapi', async () => {
+    const api = vi.fn()
+      .mockResolvedValueOnce({ data: rawArticle }) // entity
+      .mockResolvedValueOnce(relApps) // apps relation
+      .mockResolvedValueOnce(relDatasets) // datasets relation
+      as unknown as $Fetch
     const a = await createArticlesRepository(api).findOne('igo619j501vpj10sg8ecfv74')
-    expect(api).toHaveBeenCalledWith('/api/articles/igo619j501vpj10sg8ecfv74', expect.objectContaining({ query: expect.objectContaining({ populate: '*' }) }))
+    expect(api).toHaveBeenNthCalledWith(1, '/content-manager/collection-types/api::article.article/igo619j501vpj10sg8ecfv74', expect.anything())
+    // Relation GETs are URL-only (no options).
+    expect(api).toHaveBeenNthCalledWith(2, '/content-manager/relations/api::article.article/igo619j501vpj10sg8ecfv74/apps')
+    expect(api).toHaveBeenNthCalledWith(3, '/content-manager/relations/api::article.article/igo619j501vpj10sg8ecfv74/datasets')
     expect(a.splash?.id).toBe(10)
     expect(a.datasets[0].documentId).toBe('dsdoc1')
+    expect(a.datasets[0]).not.toHaveProperty('slug') // relations endpoint returns no slug
   })
 
-  it('apps repo hits /api/apps and maps contributors', async () => {
-    const api = vi.fn().mockResolvedValue({ data: [rawApp], meta: { pagination: {} } }) as unknown as $Fetch
+  it('apps repo lists the app uid ({results}) and maps contributors', async () => {
+    const api = vi.fn().mockResolvedValue({ results: [rawApp], pagination: {} }) as unknown as $Fetch
     const [app] = await createAppsRepository(api).list({ status: 'published' })
-    expect(api).toHaveBeenCalledWith('/api/apps', expect.anything())
+    expect(api).toHaveBeenCalledWith('/content-manager/collection-types/api::app.app', expect.anything())
     expect(app.contributors).toEqual([{ title: 'ICJIA R&A staff' }])
   })
 
-  it('datasets repo hits /api/datasets and maps timeperiod', async () => {
-    const api = vi.fn().mockResolvedValue({ data: rawDataset, meta: {} }) as unknown as $Fetch
+  it('datasets repo hits the dataset uid, hydrates apps+articles relations, and maps timeperiod', async () => {
+    const api = vi.fn()
+      .mockResolvedValueOnce({ data: rawDataset }) // entity
+      .mockResolvedValueOnce(relApps) // apps relation
+      .mockResolvedValueOnce(relArticles) // articles relation
+      as unknown as $Fetch
     const ds = await createDatasetsRepository(api).findOne('dsdoc1')
-    expect(api).toHaveBeenCalledWith('/api/datasets/dsdoc1', expect.anything())
+    expect(api).toHaveBeenNthCalledWith(1, '/content-manager/collection-types/api::dataset.dataset/dsdoc1', expect.anything())
     expect(ds.timeperiod).toEqual({ yeartype: 'calendar', yearmin: 1982, yearmax: 2020 })
+    expect(ds.apps[0].documentId).toBe('appdoc1')
   })
 })
 ```
@@ -1559,7 +1701,8 @@ import type { Article, ArticleWrite } from '~/types/content'
 
 export function createArticlesRepository(api: $Fetch): Repository<Article> {
   return createRepository<StrapiArticle, Article, ArticleWrite>({
-    api, plural: 'articles', populate: '*', fromStrapi: articleFromStrapi, toWrite: articleToWrite,
+    api, uid: 'api::article.article', relationFields: ['apps', 'datasets'],
+    fromStrapi: articleFromStrapi, toWrite: articleToWrite,
   })
 }
 ```
@@ -1573,7 +1716,8 @@ import type { App, AppWrite } from '~/types/content'
 
 export function createAppsRepository(api: $Fetch): Repository<App> {
   return createRepository<StrapiApp, App, AppWrite>({
-    api, plural: 'apps', populate: '*', fromStrapi: appFromStrapi, toWrite: appToWrite,
+    api, uid: 'api::app.app', relationFields: ['datasets', 'articles'],
+    fromStrapi: appFromStrapi, toWrite: appToWrite,
   })
 }
 ```
@@ -1587,7 +1731,8 @@ import type { Dataset, DatasetWrite } from '~/types/content'
 
 export function createDatasetsRepository(api: $Fetch): Repository<Dataset> {
   return createRepository<StrapiDataset, Dataset, DatasetWrite>({
-    api, plural: 'datasets', populate: '*', fromStrapi: datasetFromStrapi, toWrite: datasetToWrite,
+    api, uid: 'api::dataset.dataset', relationFields: ['apps', 'articles'],
+    fromStrapi: datasetFromStrapi, toWrite: datasetToWrite,
   })
 }
 ```
@@ -1644,26 +1789,28 @@ git commit -m "feat(data): add per-type repositories and composables"
 
 ## Post-plan verification (user-gated)
 
-These are **not** unit-testable offline and require a real Users & Permissions login token, so they run as a controlled manual check after the plan lands — they do **not** block merge:
+These are **not** unit-testable offline and require a real admin-panel login (the Content-Manager API rejects unauthenticated calls — reads included), so they run as a controlled manual check after the plan lands — they do **not** block merge:
 
-1. **Live read smoke (dev instance):** with the dev server running, in the browser console after dev-admin login, call `await useArticles().findOne('<a real documentId>')` and confirm a mapped `Article` (correct `splash.url`, `datasets[].documentId`). Read endpoints are public, so this works without a token.
-2. **Live write smoke (needs a real U&P token):** with a real `author`/`admin` U&P user logged in (the dev-admin bypass mints a synthetic token Strapi rejects, so it cannot exercise writes), `create` a throwaway draft, confirm `publishedAt: null`, then `remove` it. **Target the dev Strapi 5 only.** Requires the user to provide/confirm a U&P test user — see Open items.
-3. **Zero-base64 end-to-end:** confirm `validateArticle` blocks a payload whose `markdown`/`images[].src` carries a `data:` URI before any write is attempted.
+1. **Live read smoke (dev instance):** with the dev server running, signed in as a Strapi admin user (any of Super Admin / Editor / Author), in the browser console call `await useArticles().findOne('<a real documentId>')` and confirm a mapped `Article` (correct `splash.url`, `datasets[].documentId`, `datasets[].title` with no `slug`). Requires a real admin JWT on `$api` — Content-Manager reads are **not** public.
+2. **Live write smoke (draft, then delete):** signed in as an **Author** (or Editor/Super Admin), `create` a throwaway draft, confirm `publishedAt: null` and `status: "draft"`, then `remove` it. **Target the dev Strapi 5 only.** Requires the user to provide/confirm an admin test user — see Open items.
+3. **Publish-gating sanity (deferred action, observe only):** confirm the Content-Manager publish endpoint is **not** exercised by this layer (it is Plan 6); note that when it is added, an Author will be denied publish while Editor/Super Admin succeed — enforced server-side, no client change.
+4. **Zero-base64 end-to-end:** confirm `validateArticle` blocks a payload whose `markdown`/`images[].src` carries a `data:` URI before any write is attempted.
 
 ## Open items carried into later plans
 
-- **U&P test user** (`author` + `admin`) for live write/publish verification — user-provided; never created by the implementer (no Strapi changes without approval).
-- **Confirm role names** (`author`/`admin`) against the dev instance (design spec §14 #1).
+- **Admin test user** (an **Author** plus an **Editor**/**Super Admin**) for live write + publish-gating verification — user-provided; never created by the implementer (no Strapi changes without approval).
+- **Relation WRITE** (connect/disconnect via the Content-Manager relation payload) — deferred; `relationsToWrite` is exported but unused, and `*Write` payloads carry no relation fields. Wire up when forms need it (later plan).
 - **Media upload** that mints the numeric file `id` consumed by `*ToWrite` mappers — Plan 3 (media & zero-base64).
-- **Publish/unpublish** writes (`?status=published`) + Netlify build-hook proxy — Plan 6.
-- **List populate narrowing** (lists currently rely on no populate; `findOne` uses `populate=*`) — optimize when building views (Plan 5).
+- **Publish/unpublish** via the Content-Manager action endpoints (`POST /content-manager/collection-types/{uid}/{documentId}/actions/publish` | `/unpublish`) + Netlify build-hook proxy — Plan 6.
+- **Relation pagination** (`findOne` hydrates the first page of each relation field, default pageSize 10) — page through when a record exceeds the first page (later plan).
+- **List field narrowing** (lists read the entity as the Content-Manager returns it; `findOne` additionally hydrates relation fields) — optimize per view when building screens (Plan 5).
 
 ## Self-review (performed against the design spec)
 
-- **Spec coverage:** §5 data model → types (Task 4) + mappers (6/8/9); §5.4 typed models/mappers → Tasks 4/6/8/9; §7 zero-base64 → Task 3 + validator gates (7/8/9); §10 validation/parsing → slug (Task 2), text-import (Task 5), validators (7/8/9); §4 REST contract (documentId, status, `{data}`, media-by-id, relations-by-documentId) → strapi-rest (Task 4) + repository (Task 10/11). Media *upload* (§4 two-step) is correctly deferred to Plan 3; this layer only consumes the numeric id.
+- **Spec coverage:** §5 data model → types (Task 4) + mappers (6/8/9); §5.4 typed models/mappers → Tasks 4/6/8/9; §7 zero-base64 → Task 3 + validator gates (7/8/9); §10 validation/parsing → slug (Task 2), text-import (Task 5), validators (7/8/9); §4 API contract — now the **Content-Manager API** (documentId, `{results,pagination}`/`{data}` envelopes, inline media-by-id with alt+caption, relations-as-`{count}` + a separate relations endpoint, FLAT write body, create→draft, admin-JWT-via-`$api`) → strapi-rest (Task 4) + repository (Task 10/11). Media *upload* (two-step) is correctly deferred to Plan 3; relation **WRITE** and the **publish action** are likewise deferred; this layer reads relations and writes scalars + media-id + JSON only.
 - **Placeholder scan:** none — every step ships real code and exact commands.
-- **Type consistency:** `MediaRef`/`RelationRef`/`FieldError` and the `*FromStrapi`/`*ToWrite` names are used identically across Tasks 4→11; `createRepository` signature matches its callers in Task 11; `FieldError` is defined once (Task 7) and imported by Tasks 8/9.
+- **Type consistency:** `MediaRef` (now with `caption`), `RelationRef` (now `slug?` optional), `ImageRef` (now `alt?`/`caption?`), `FieldError`, and the `*FromStrapi(entity, relations?)`/`*ToWrite` names are used identically across Tasks 4→11; the `RepositoryConfig.fromStrapi: (raw, relations?: Relations)` slot accepts each mapper's typed `(raw, relations?: XRelations)` form (verified: `Record<string, RelationRef[]>` is assignable to the optional-keyed relations object under `--strict`); `createRepository`'s `uid`/`relationFields` config matches its callers in Task 11; `FieldError` is defined once (Task 7) and imported by Tasks 8/9.
 
 ---
 
-**Plan complete.** Eleven TDD tasks producing a tested, typed, `documentId`-addressed data layer for articles, apps, and datasets — with the zero-base64 rule enforced by tests.
+**Plan complete.** Eleven TDD tasks producing a tested, typed, `documentId`-addressed data layer for articles, apps, and datasets, reading and writing through the Strapi 5 **Content-Manager API** (admin auth) — with the zero-base64 rule enforced by tests.

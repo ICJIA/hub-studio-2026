@@ -1,7 +1,7 @@
 # ICJIA Research Hub Studio 2026 — Design Spec
 
 - **Date:** 2026-06-19
-- **Status:** Draft for review
+- **Status:** **Draft 1 — first iteration.** Exploratory; requirements are discovered *while building*, so this is a **living document**, not a frozen design. (E.g. mid-build, auth + content access were retargeted from the public REST API to Strapi's admin Content-Manager API; alt/caption, an onboarding profile, a review/email workflow, and SVG sanitization were added as they surfaced.)
 - **Replaces:** ICJIA Research Hub Studio v1 (Vue 2 / Vuetify 2 → Strapi 3)
 - **Backend:** Strapi 5 at `https://v2.hub.icjia-api.cloud` (GraphQL + REST). Schema already modernized; content at parity with the old Strapi 3 data.
 

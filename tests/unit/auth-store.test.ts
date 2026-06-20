@@ -1,16 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '~/stores/auth'
-import type { StrapiUser } from '~/types/strapi'
+import type { AdminUser } from '~/types/admin'
 
-const adminUser: StrapiUser = {
-  id: 1, username: 'boss', email: 'boss@example.com',
-  role: { id: 1, name: 'admin', type: 'admin' },
-}
-const authorUser: StrapiUser = {
-  id: 2, username: 'writer', email: 'writer@example.com',
-  role: { id: 2, name: 'author', type: 'author' },
-}
+const mk = (codes: string[], over: Partial<AdminUser> = {}): AdminUser => ({
+  id: 1, email: 'chris@e.gov', firstname: 'Chris', lastname: 'Schweda',
+  roles: codes.map((c, i) => ({ id: i, name: c, code: c })), ...over,
+})
 
 describe('auth store', () => {
   beforeEach(() => setActivePinia(createPinia()))
@@ -18,36 +14,30 @@ describe('auth store', () => {
   it('starts logged out', () => {
     const s = useAuthStore()
     expect(s.isLoggedIn).toBe(false)
-    expect(s.role).toBeNull()
-    expect(s.isAdmin).toBe(false)
+    expect(s.roleCodes).toEqual([])
+    expect(s.canPublish).toBe(false)
   })
-
-  it('setSession stores jwt + user and marks logged in', () => {
+  it('setSession stores jwt + user and exposes role codes', () => {
     const s = useAuthStore()
-    s.setSession({ jwt: 'jwt-1', user: authorUser })
+    s.setSession({ jwt: 'jwt-1', user: mk(['strapi-author']) })
     expect(s.isLoggedIn).toBe(true)
-    expect(s.jwt).toBe('jwt-1')
-    expect(s.role).toBe('author')
-    expect(s.isAdmin).toBe(false)
+    expect(s.roleCodes).toEqual(['strapi-author'])
+    expect(s.canPublish).toBe(false)
+    expect(s.displayName).toBe('Chris Schweda')
   })
-
-  it('isAdmin is true only for the admin role', () => {
+  it('canPublish is true for editor/super-admin', () => {
     const s = useAuthStore()
-    s.setSession({ jwt: 'jwt-2', user: adminUser })
-    expect(s.isAdmin).toBe(true)
+    s.setSession({ jwt: 'j', user: mk(['strapi-editor']) })
+    expect(s.canPublish).toBe(true)
   })
-
-  it('setUser updates the user without touching the jwt', () => {
+  it('displayName falls back to username then email', () => {
     const s = useAuthStore()
-    s.setSession({ jwt: 'jwt-3', user: authorUser })
-    s.setUser(adminUser)
-    expect(s.jwt).toBe('jwt-3')
-    expect(s.role).toBe('admin')
+    s.setSession({ jwt: 'j', user: mk([], { firstname: undefined, lastname: undefined, username: 'cschweda' }) })
+    expect(s.displayName).toBe('cschweda')
   })
-
   it('clearSession resets everything', () => {
     const s = useAuthStore()
-    s.setSession({ jwt: 'jwt-4', user: adminUser })
+    s.setSession({ jwt: 'j', user: mk(['strapi-super-admin']) })
     s.clearSession()
     expect(s.isLoggedIn).toBe(false)
     expect(s.jwt).toBeNull()

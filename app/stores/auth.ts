@@ -1,29 +1,31 @@
 import { defineStore } from 'pinia'
-import type { StrapiUser } from '~/types/strapi'
+import type { AdminUser } from '~/types/admin'
+import { roleCodesOf, canPublish as canPublishFromCodes } from '~/lib/admin-roles'
 
 interface AuthState {
   jwt: string | null
-  user: StrapiUser | null
+  user: AdminUser | null
 }
-
-/** Role names (lowercased) that may publish. Confirm against the live instance. */
-const ADMIN_ROLE_NAMES = ['admin']
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({ jwt: null, user: null }),
   getters: {
     isLoggedIn: (state): boolean => Boolean(state.jwt && state.user),
-    role: (state): string | null => state.user?.role?.name ?? null,
-    isAdmin(): boolean {
-      return this.role ? ADMIN_ROLE_NAMES.includes(this.role.toLowerCase()) : false
+    roleCodes: (state): string[] => roleCodesOf(state.user),
+    canPublish(): boolean { return canPublishFromCodes(this.roleCodes) },
+    displayName: (state): string | null => {
+      const u = state.user
+      if (!u) return null
+      const full = `${u.firstname ?? ''} ${u.lastname ?? ''}`.trim()
+      return full || u.username || u.email
     },
   },
   actions: {
-    setSession(payload: { jwt: string; user: StrapiUser }) {
+    setSession(payload: { jwt: string; user: AdminUser }) {
       this.jwt = payload.jwt
       this.user = payload.user
     },
-    setUser(user: StrapiUser) {
+    setUser(user: AdminUser) {
       this.user = user
     },
     clearSession() {
@@ -35,7 +37,7 @@ export const useAuthStore = defineStore('auth', {
     storage: piniaPluginPersistedstate.cookies({
       sameSite: 'strict',
       secure: !import.meta.dev,
-      maxAge: 60 * 60 * 24 * 30, // ~30 days, matches Strapi JWT lifespan
+      maxAge: 60 * 60 * 24 * 30,
     }),
   },
 })

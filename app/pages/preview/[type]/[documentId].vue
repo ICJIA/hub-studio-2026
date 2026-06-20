@@ -6,7 +6,7 @@
   drops in later for pixel-exact parity). Shareable by link (private behind the global guard).
 -->
 <script setup lang="ts">
-import { ref, onMounted } from '#imports'
+import { ref, computed, onMounted } from '#imports'
 import type { Article, App, Dataset } from '~/types/content'
 
 const route = useRoute()
@@ -33,7 +33,7 @@ const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset |
 <template>
   <div class="max-w-3xl mx-auto">
     <p v-if="loading" class="text-muted">Loading…</p>
-    <article v-else-if="entry">
+    <article v-else-if="entry" class="prose-preview">
       <p class="text-xs text-muted mb-2">Draft preview</p>
       <h1 class="text-3xl font-semibold mb-4">{{ entry.title }}</h1>
 
@@ -54,8 +54,8 @@ const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset |
 
       <template v-if="asDataset">
         <p v-if="asDataset.description" class="mb-3">{{ asDataset.description }}</p>
-        <h2 v-if="asDataset.variables.length" class="text-xl font-semibold mt-4 mb-2">Variables</h2>
-        <ul v-if="asDataset.variables.length" class="list-disc pl-5 text-sm">
+        <h2 v-if="asDataset.variables?.length" class="text-xl font-semibold mt-4 mb-2">Variables</h2>
+        <ul v-if="asDataset.variables?.length" class="list-disc pl-5 text-sm">
           <li v-for="(v, i) in asDataset.variables" :key="i"><strong>{{ v.name }}</strong> ({{ v.type }}): {{ v.definition }}</li>
         </ul>
       </template>

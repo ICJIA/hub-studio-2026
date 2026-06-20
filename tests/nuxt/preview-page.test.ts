@@ -2,7 +2,7 @@
 // @vitest-environment nuxt
 import { describe, it, expect, vi } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
-import type { Article } from '~/types/content'
+import type { Article, Dataset } from '~/types/content'
 
 const article: Partial<Article> = {
   documentId: 'a1', title: 'Evaluation of Youth Summer Job Program',
@@ -11,12 +11,20 @@ const article: Partial<Article> = {
 }
 const findOneMock = vi.fn().mockResolvedValue(article)
 mockNuxtImport('useArticles', () => () => ({ list: vi.fn(), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
-mockNuxtImport('useRoute', () => () => ({ params: { type: 'article', documentId: 'a1' } }))
+
+// Dataset mock (variables omitted — the sparse-draft crash case)
+const datasetFindOneMock = vi.fn().mockResolvedValue({ documentId: 'd1', title: 'Crime Dataset' } as Partial<Dataset>)
+mockNuxtImport('useDatasets', () => () => ({ list: vi.fn(), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
+
+// useRoute is mocked per test by replacing routeParams
+let routeParams: { type: string; documentId: string } = { type: 'article', documentId: 'a1' }
+mockNuxtImport('useRoute', () => () => ({ params: routeParams }))
 
 import PreviewPage from '~/pages/preview/[type]/[documentId].vue'
 
 describe('preview page', () => {
   it('findOne the draft and renders markdown via renderMarkdown (url images, no data:)', async () => {
+    routeParams = { type: 'article', documentId: 'a1' }
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     expect(findOneMock).toHaveBeenCalledWith('a1', expect.objectContaining({ status: 'draft' }))
@@ -24,5 +32,24 @@ describe('preview page', () => {
     expect(html).toMatch(/<h1[^>]*>Findings<\/h1>/)
     expect(html).toMatch(/<img[^>]+src="\/uploads\/figure_abc\.png"/)
     expect(html).not.toMatch(/data:/)
+  })
+
+  it('renders not-found state and does not crash when findOne returns null', async () => {
+    routeParams = { type: 'article', documentId: 'missing-doc' }
+    findOneMock.mockResolvedValueOnce(null)
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.text()).toContain('Not found.')
+    expect(wrapper.find('article').exists()).toBe(false)
+  })
+
+  it('renders dataset with sparse draft (variables undefined) without crashing', async () => {
+    routeParams = { type: 'dataset', documentId: 'd1' }
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(datasetFindOneMock).toHaveBeenCalledWith('d1', expect.objectContaining({ status: 'draft' }))
+    expect(wrapper.text()).toContain('Crime Dataset')
+    // variables section must NOT appear (undefined → falsy length guard)
+    expect(wrapper.text()).not.toContain('Variables')
   })
 })

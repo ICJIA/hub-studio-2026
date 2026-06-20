@@ -29,4 +29,12 @@ describe('renderMarkdown', () => {
   it('returns an empty string for empty input', () => {
     expect(renderMarkdown('')).toBe('')
   })
+
+  it('renders inline KaTeX math ($x^2$) to KaTeX HTML output', () => {
+    expect(renderMarkdown('$x^2$')).toMatch(/class="katex/)
+  })
+
+  it('renders a GFM table to <table> with <td> cells', () => {
+    expect(renderMarkdown('| a | b |\n|---|---|\n| 1 | 2 |')).toMatch(/<table/)
+  })
 })

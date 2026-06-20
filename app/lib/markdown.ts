@@ -6,7 +6,7 @@
 // author-supplied markdown (security default); only trusted plugin output is emitted.
 import MarkdownIt from 'markdown-it'
 import footnote from 'markdown-it-footnote'
-import katex from 'markdown-it-katex'
+import katex from '@vscode/markdown-it-katex'
 import multimdTable from 'markdown-it-multimd-table'
 
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true })

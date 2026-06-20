@@ -18,10 +18,10 @@
   "dependencies": {
     "@nuxt/ui": "^4.0.1",
     "@pinia/nuxt": "^0.6.1",
+    "@vscode/markdown-it-katex": "^1.1.2",
     "dompurify": "^3.4.11",
     "markdown-it": "^14.2.0",
     "markdown-it-footnote": "^4.0.0",
-    "markdown-it-katex": "^2.0.3",
     "markdown-it-multimd-table": "^4.2.3",
     "nuxt": "^4.0.0",
     "pinia": "^2.2.0",

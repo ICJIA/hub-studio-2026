@@ -48,6 +48,12 @@ describe('validateApp', () => {
     expect(validateApp(baseApp({ description: 'data:image/png;base64,AAAA' })))
       .toContainEqual(expect.objectContaining({ field: 'description' }))
   })
+  it('rejects javascript: url in the url field', () => {
+    expect(validateApp(baseApp({ url: 'javascript:alert(1)' }))).toContainEqual(expect.objectContaining({ field: 'url' }))
+  })
+  it('accepts a normal https: url', () => {
+    expect(validateApp(baseApp({ url: 'https://icjia.illinois.gov/research' }))).not.toContainEqual(expect.objectContaining({ field: 'url' }))
+  })
 })
 
 const baseDataset = (over: Partial<Dataset> = {}): Dataset => ({

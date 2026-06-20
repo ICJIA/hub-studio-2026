@@ -8,6 +8,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from '#imports'
 import type { Article, App, Dataset } from '~/types/content'
+import { safeHref } from '~/lib/safe-url'
 
 const route = useRoute()
 const type = route.params.type as 'article' | 'app' | 'dataset'
@@ -49,7 +50,7 @@ const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset |
 
       <template v-if="asApp">
         <p v-if="asApp.description" class="mb-3">{{ asApp.description }}</p>
-        <p v-if="asApp.url"><a :href="asApp.url" class="text-primary underline">Open app</a></p>
+        <p v-if="asApp.url"><a :href="safeHref(asApp.url)" target="_blank" rel="noopener noreferrer" class="text-primary underline">Open app</a></p>
       </template>
 
       <template v-if="asDataset">

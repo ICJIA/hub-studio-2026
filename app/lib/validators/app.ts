@@ -9,5 +9,8 @@ export function validateApp(a: App): FieldError[] {
   if (a.description && containsBase64(a.description)) {
     errors.push({ field: 'description', message: 'Embedded base64 images are not allowed; use a Media Library URL.' })
   }
+  if (a.url && /^\s*(javascript|data|vbscript|file):/i.test(a.url.trim())) {
+    errors.push({ field: 'url', message: 'That link type is not allowed; use an http(s) URL.' })
+  }
   return errors
 }

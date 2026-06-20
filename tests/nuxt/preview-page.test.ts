@@ -16,6 +16,12 @@ mockNuxtImport('useArticles', () => () => ({ list: vi.fn(), findOne: findOneMock
 const datasetFindOneMock = vi.fn().mockResolvedValue({ documentId: 'd1', title: 'Crime Dataset' } as Partial<Dataset>)
 mockNuxtImport('useDatasets', () => () => ({ list: vi.fn(), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
 
+// App mock for XSS test
+const appFindOneMock = vi.fn().mockResolvedValue({
+  documentId: 'app1', title: 'Test App', url: 'javascript:alert(1)',
+})
+mockNuxtImport('useApps', () => () => ({ list: vi.fn(), findOne: appFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
+
 // useRoute is mocked per test by replacing routeParams
 let routeParams: { type: string; documentId: string } = { type: 'article', documentId: 'a1' }
 mockNuxtImport('useRoute', () => () => ({ params: routeParams }))
@@ -51,5 +57,15 @@ describe('preview page', () => {
     expect(wrapper.text()).toContain('Crime Dataset')
     // variables section must NOT appear (undefined → falsy length guard)
     expect(wrapper.text()).not.toContain('Variables')
+  })
+
+  it('sanitizes javascript: url to # in Open app link', async () => {
+    routeParams = { type: 'app', documentId: 'app1' }
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    const link = wrapper.find('a')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('#')
+    expect(link.attributes('href')).not.toBe('javascript:alert(1)')
   })
 })

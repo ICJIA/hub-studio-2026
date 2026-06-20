@@ -102,6 +102,10 @@ defineExpose({ submit, setField, errors, model })
       <UTextarea v-model="notesText" :rows="3" class="w-full" />
     </UFormField>
 
+    <UFormField label="Project dataset">
+      <USwitch v-model="model.project" />
+    </UFormField>
+
     <MediaField v-model="model.datafile" label="Data file" />
 
     <RelationList label="Linked apps" :items="model.apps" />

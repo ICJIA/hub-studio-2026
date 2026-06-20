@@ -33,6 +33,18 @@ describe('DatasetForm', () => {
     expect(createMock.mock.calls[0]![0].variables).toHaveLength(1)
   })
 
+  it('carries project:true through to the create payload', async () => {
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'Project Dataset')
+    wrapper.vm.$.exposed!.setField('date', '2021-01-01')
+    wrapper.vm.$.exposed!.setField('project', true)
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(createMock).toHaveBeenCalledOnce()
+    const call = createMock.mock.calls[0]
+    expect(call![0].project).toBe(true)
+  })
+
   it('blocks create when description contains base64', async () => {
     const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'create' } })
     wrapper.vm.$.exposed!.setField('title', 'My Dataset')

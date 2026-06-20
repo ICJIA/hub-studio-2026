@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { APP_NAME } from '~/lib/constants'
 
-const { user, role, logout } = useAuth()
+const auth = useAuthStore()
+const { logout } = useAuth()
 </script>
 
 <template>
@@ -9,9 +10,9 @@ const { user, role, logout } = useAuth()
     <header class="border-b border-default">
       <div class="max-w-5xl mx-auto w-full px-4 h-14 flex items-center justify-between">
         <NuxtLink to="/" class="font-semibold">{{ APP_NAME }}</NuxtLink>
-        <div v-if="user" class="flex items-center gap-3">
-          <UBadge v-if="role" :label="role" variant="subtle" />
-          <span class="text-sm text-muted">{{ user.email }}</span>
+        <div v-if="auth.isLoggedIn" class="flex items-center gap-3">
+          <span class="text-sm text-muted">{{ auth.displayName }}</span>
+          <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" variant="subtle" />
           <UButton size="sm" variant="ghost" label="Log out" @click="logout" />
         </div>
       </div>

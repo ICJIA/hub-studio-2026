@@ -8,8 +8,7 @@ mockNuxtImport('useAuth', () => () => ({
   logout: vi.fn(),
   isLoggedIn: computed(() => false),
   user: computed(() => null),
-  role: computed(() => null),
-  isAdmin: computed(() => false),
+  canPublish: computed(() => false),
 }))
 
 // NOTE: mocking navigateTo breaks the global auth middleware in the nuxt test env

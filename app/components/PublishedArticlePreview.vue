@@ -96,8 +96,13 @@ function findScrollParent(el: HTMLElement): HTMLElement | null {
 function readTocTop(el: HTMLElement): number {
   const raw = window.getComputedStyle(el).getPropertyValue('--published-toc-top').trim()
   if (!raw) return 16
-  const px = parseFloat(raw)
-  return Number.isFinite(px) ? px : 16
+  const num = parseFloat(raw)
+  if (!Number.isFinite(num)) return 16
+  // getComputedStyle returns CSS custom properties UNRESOLVED (e.g. "5rem", not "80px"),
+  // so convert rem/em to px ourselves; bare numbers/px pass through.
+  if (raw.endsWith('rem')) return num * (parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16)
+  if (raw.endsWith('em')) return num * (parseFloat(window.getComputedStyle(el).fontSize) || 16)
+  return num
 }
 
 /** Collect h2[id] headings and compute their top relative to the container viewport top. */

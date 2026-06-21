@@ -5,10 +5,12 @@ import { roleCodesOf, canPublish as canPublishFromCodes } from '~/lib/admin-role
 interface AuthState {
   jwt: string | null
   user: AdminUser | null
+  /** First-login onboarding gate: true=has profile, false=needs onboarding, null=unknown/skip-gate. */
+  hasProfile: boolean | null
 }
 
 export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({ jwt: null, user: null }),
+  state: (): AuthState => ({ jwt: null, user: null, hasProfile: null }),
   getters: {
     isLoggedIn: (state): boolean => Boolean(state.jwt && state.user),
     roleCodes: (state): string[] => roleCodesOf(state.user),
@@ -28,9 +30,13 @@ export const useAuthStore = defineStore('auth', {
     setUser(user: AdminUser) {
       this.user = user
     },
+    setHasProfile(value: boolean | null) {
+      this.hasProfile = value
+    },
     clearSession() {
       this.jwt = null
       this.user = null
+      this.hasProfile = null
     },
   },
   persist: {

@@ -31,6 +31,12 @@ function toggleColorMode() {
           <span class="hidden sm:inline">{{ APP_NAME }}</span>
         </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-3">
+          <template v-if="auth.isLoggedIn">
+            <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
+            <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
+            <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
+          </template>
+          <!-- Theme toggle is always the last button -->
           <UButton
             size="sm" variant="ghost" color="neutral"
             :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
@@ -38,11 +44,6 @@ function toggleColorMode() {
             title="Toggle light / dark"
             @click="toggleColorMode"
           />
-          <template v-if="auth.isLoggedIn">
-            <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
-            <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
-            <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
-          </template>
         </div>
       </div>
     </header>

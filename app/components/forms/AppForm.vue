@@ -64,7 +64,7 @@ defineExpose({ submit, setField, errors, model })
     <div class="grid gap-6 lg:grid-cols-3 items-start">
       <!-- Writing column -->
       <div class="lg:col-span-2 space-y-5">
-        <TextField v-model="model.description" label="Description" />
+        <MarkdownField :model-value="model.description ?? ''" label="Description" @update:model-value="model.description = $event" />
       </div>
 
       <!-- Details sidebar -->

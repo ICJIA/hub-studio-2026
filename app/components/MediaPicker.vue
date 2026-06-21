@@ -25,8 +25,10 @@ const alt = ref('')
 const caption = ref('')
 const busy = ref(false)
 const error = ref<string | null>(null)
+const submitted = ref(false)
 
 const canSubmit = computed(() => !!file.value && alt.value.trim().length > 0 && !busy.value)
+const altError = computed(() => (submitted.value && !alt.value.trim() ? 'Alt text is required' : undefined))
 
 function setFile(f: File | null) { file.value = f; error.value = null }
 function setAlt(v: string) { alt.value = v }
@@ -42,6 +44,7 @@ function onDrop(e: DragEvent) {
 }
 
 async function submit() {
+  submitted.value = true
   if (!canSubmit.value || !file.value) return // alt-required gate
   busy.value = true
   error.value = null
@@ -54,6 +57,7 @@ async function submit() {
     file.value = null
     alt.value = ''
     caption.value = ''
+    submitted.value = false
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Upload failed.'
   } finally {
@@ -70,7 +74,7 @@ function choose(ref: MediaRef) { emit('select', ref) }
 onMounted(() => { if (props.mode === 'browse') loadLibrary() })
 
 // Exposed for component tests (and for parent-driven control in later plans).
-defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit })
+defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError })
 </script>
 
 <template>
@@ -87,14 +91,22 @@ defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit })
         <p v-else>Drag an image here, or choose a file.</p>
       </div>
 
-      <label>
-        Alt text (required)
-        <input :value="alt" type="text" @input="setAlt(($event.target as HTMLInputElement).value)">
-      </label>
-      <label>
-        Caption (optional)
-        <input :value="caption" type="text" @input="setCaption(($event.target as HTMLInputElement).value)">
-      </label>
+      <UFormField label="Alt text (required)" :error="altError" class="mt-3">
+        <UInput
+          :model-value="alt"
+          placeholder="Describe the image for screen readers"
+          class="w-full"
+          @update:model-value="setAlt($event)"
+        />
+      </UFormField>
+      <UFormField label="Caption (optional)" class="mt-3">
+        <UInput
+          :model-value="caption"
+          placeholder="Optional caption shown beneath the image"
+          class="w-full"
+          @update:model-value="setCaption($event)"
+        />
+      </UFormField>
 
       <p v-if="error" role="alert">{{ error }}</p>
       <UButton :disabled="!canSubmit" @click="submit">Upload</UButton>

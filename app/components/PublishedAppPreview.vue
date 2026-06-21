@@ -49,9 +49,7 @@ const hasTags = computed(() => Boolean(props.app.categories?.length || props.app
 
       <hr class="published-rule">
 
-      <div v-if="app.description" class="prose-preview">
-        <p>{{ app.description }}</p>
-      </div>
+      <MarkdownPreview v-if="app.description" :source="app.description" />
 
       <div v-if="appUrl && appUrl !== '#'" class="published-app-link">
         <a :href="appUrl" target="_blank" rel="noopener noreferrer" class="published-open-link">Open app</a>

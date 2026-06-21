@@ -69,6 +69,70 @@ describe('MediaField', () => {
     })
   })
 
+  describe('selected image — editable alt text and caption (kind="image")', () => {
+    it('renders editable alt text and caption inputs when an image MediaRef is selected', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash' } })
+      // Alt and caption inputs must be visible in the selected state.
+      const inputs = wrapper.findAll('input')
+      const altInput = inputs.find((i) => {
+        const p = i.attributes('placeholder') ?? ''
+        return p.toLowerCase().includes('screen reader') || p.toLowerCase().includes('alt')
+      })
+      const captionInput = inputs.find((i) => {
+        const p = i.attributes('placeholder') ?? ''
+        return p.toLowerCase().includes('caption')
+      })
+      expect(altInput).toBeTruthy()
+      expect(captionInput).toBeTruthy()
+    })
+
+    it('pre-fills alt text from the MediaRef alternativeText', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash' } })
+      const altInput = wrapper.find('[data-test="selected-alt"]')
+      expect(altInput.exists()).toBe(true)
+      // Check via attributes (model-value binding) or element cast.
+      const inputEl = altInput.element as HTMLInputElement
+      const displayedValue = inputEl.value ?? altInput.attributes('value') ?? altInput.attributes('model-value') ?? ''
+      expect(displayedValue).toContain('Splash alt')
+    })
+
+    it('emits an updated MediaRef when alt text is changed', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash' } })
+      const altInput = wrapper.find('[data-test="selected-alt"]')
+      await altInput.setValue('New alt text')
+      await altInput.trigger('input')
+      await new Promise((r) => setTimeout(r, 0))
+      const events = wrapper.emitted('update:modelValue')
+      expect(events).toBeTruthy()
+      const emitted = events!.at(-1)![0] as MediaRef
+      expect(emitted.alternativeText).toBe('New alt text')
+      // Other fields preserved.
+      expect(emitted.id).toBe(picked.id)
+      expect(emitted.url).toBe(picked.url)
+    })
+
+    it('emits an updated MediaRef when caption is changed', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash' } })
+      const captionInput = wrapper.find('[data-test="selected-caption"]')
+      await captionInput.setValue('A new caption')
+      await captionInput.trigger('input')
+      await new Promise((r) => setTimeout(r, 0))
+      const events = wrapper.emitted('update:modelValue')
+      expect(events).toBeTruthy()
+      const emitted = events!.at(-1)![0] as MediaRef
+      expect(emitted.caption).toBe('A new caption')
+      expect(emitted.id).toBe(picked.id)
+    })
+
+    it('does NOT show alt/caption inputs for kind="image" when no MediaRef is selected', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: null, label: 'Splash' } })
+      // When nothing is selected the picker is shown; the alt/caption are INSIDE the picker, not the field.
+      // The selected-state inputs (data-test="selected-alt") must NOT appear.
+      expect(wrapper.find('[data-test="selected-alt"]').exists()).toBe(false)
+      expect(wrapper.find('[data-test="selected-caption"]').exists()).toBe(false)
+    })
+  })
+
   describe('kind="file"', () => {
     it('renders no alt input when kind="file"', async () => {
       const wrapper = await mountSuspended(MediaField, { props: { modelValue: null, label: 'Data file', kind: 'file' } })
@@ -100,6 +164,12 @@ describe('MediaField', () => {
       expect(wrapper.html()).toContain('data.pdf')
       // Should NOT show an img thumbnail (it's a doc, not an image).
       expect(wrapper.find('img').exists()).toBe(false)
+    })
+
+    it('does NOT render alt or caption inputs for kind="file" even when a doc is selected', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: pickedDoc, label: 'Data file', kind: 'file' } })
+      expect(wrapper.find('[data-test="selected-alt"]').exists()).toBe(false)
+      expect(wrapper.find('[data-test="selected-caption"]').exists()).toBe(false)
     })
   })
 })

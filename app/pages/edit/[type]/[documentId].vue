@@ -38,7 +38,7 @@ onMounted(async () => {
             :type="(type as 'article' | 'app' | 'dataset')"
             :document-id="documentId"
             :published="entry.publishedAt != null"
-            @published="entry.publishedAt = ($event as typeof entry).publishedAt"
+            @published="entry.publishedAt = ($event as Article | App | Dataset).publishedAt"
           />
           <span v-if="entry.publishedAt" class="text-sm text-muted">Published.</span>
         </div>

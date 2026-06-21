@@ -31,7 +31,7 @@
 ## TL;DR — the 30-second version
 
 - **What it is:** Hub Studio 2.0 — the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets). It is the authoring-and-publishing component of the wider **Hub 2.0 publishing project**, the modernization of the ICJIA Research Hub.
-- **Why it matters:** the Research Hub is the most-read content on the agency's public site — roughly **45% of all pageviews and 57% of all visitors** to icjia.illinois.gov over the last six months. The Studio is the tool staff use to produce it.
+- **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (and up to ~66% of visitors) on icjia.illinois.gov. **Hub 2.0** carries that track record forward: the same publishing mission for Research & Analysis (R&A) authors, rebuilt on a modern web stack and content management system, with a faster, friendlier authoring experience.
 - **Status:** built and working in development — a complete demo is clickable today.
 - **How it works:** authors draft in a formatting editor (no formatting codes to learn) with a live "exactly-as-published" preview; an editor clicks **Publish**.
 - **Security:** independently red/blue-team audited — **0 critical issues**; the in-repo fixes are done and covered by 375 automated tests (`docs/security-audit.md`).

@@ -6,13 +6,14 @@
 
 ## TL;DR — the 30-second version
 
-- **What it is:** the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets).
+- **What it is:** Hub Studio 2.0 — the internal tool Research & Analysis (R&A) staff use to write, preview, and publish Research Hub content (articles, apps, datasets); the authoring-and-publishing component of the wider **Hub 2.0** project.
+- **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
 - **Security:** independently red/blue-team audited — **0 critical issues**; in-repo fixes done and covered by 375 automated tests ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
-*That's the whole project in five lines. Everything below is supporting detail — read only what you need.*
+*That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
 
 ## Why this matters — the audience the Studio serves
 

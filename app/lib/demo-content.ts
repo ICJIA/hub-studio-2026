@@ -178,8 +178,10 @@ function buildDemoTitle(i: number, form: number = i): string {
   switch (form % 8) {
     case 0: // "An Evaluation of <subject> in <context>"
       return `${opener} ${subj} in ${ctx}`
-    case 1: // "Trends in <subject>, <year>–<year>"
-      return `${opener} ${subj}, ${pick(YEARS, i)}–${pick(YEARS, i + 3)}`
+    case 1: { // "Trends in <subject>, <year>–<year>" (always ascending — never e.g. 2024–2020)
+      const y1 = pick(YEARS, i), y2 = pick(YEARS, i + 3)
+      return `${opener} ${subj}, ${Math.min(y1, y2)}–${Math.max(y1, y2)}`
+    }
     case 2: // colon review form — "<subject>: a lorem review"
       return `${subj}: ${label}`
     case 3: // composed question form

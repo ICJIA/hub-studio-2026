@@ -1,7 +1,8 @@
 /**
- * Builds a complete, realistic ICJIA-style app draft for demos — every field populated so an
- * author can one-click a full app entry (and open the published preview) instead of typing it
- * piece by piece. Rotates through several topics.
+ * Builds a complete sample app draft for demos — every field populated so an author can
+ * one-click a full app entry (and open the published preview) instead of typing it piece by piece.
+ * Rotates through several phony lorem-ipsum topics. ALL content is fabricated; no real people,
+ * organizations, or data are referenced.
  *
  * Pure function (only Math.random for variety) — no network, no base64. Image is a hosted url.
  * The image is a DISPLAY-ONLY ref (id 0): it shows in the preview but maps to null on Save
@@ -35,39 +36,39 @@ interface AppTopic {
 
 const APP_TOPICS: AppTopic[] = [
   {
-    title: 'Illinois Crime Trends Explorer',
+    title: 'Lorem Ipsum Sample Data Explorer',
     description:
-      'An interactive dashboard that visualizes county-level crime trends across Illinois from 2010 to the present. Users can explore Uniform Crime Reporting (UCR) data by offense category, jurisdiction, and year, and download formatted data tables for further analysis.',
+      'A sample interactive dashboard that visualizes placeholder data trends from 0000 to the present. Users can explore demonstration data by offense category, jurisdiction, and year, and download formatted placeholder tables for further analysis. This is sample content for demonstration purposes only.',
     categories: ['crimes', 'law enforcement'],
-    tags: ['crime trends', 'Illinois', 'UCR', 'interactive', 'dashboard'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     contributors: [
-      { title: 'Amanda L. Vasquez, MA', description: 'Senior Research Analyst, ICJIA' },
-      { title: 'Caleb Schaffner, PhD', description: 'Research Director, ICJIA' },
+      { title: 'Lorem Ipsum, PhD', description: 'is a sample contributor listed for demonstration purposes only' },
+      { title: 'Dolor A. Amet, MA', description: 'is a sample contributor listed for demonstration purposes only' },
     ],
-    url: 'https://icjia.illinois.gov/apps/crime-trends',
+    url: 'https://example.com/sample-app/lorem-ipsum-explorer',
   },
   {
-    title: 'Victim Services Program Locator',
+    title: 'Placeholder Resource Locator Sample App',
     description:
-      'A map-based tool that helps survivors and service providers locate publicly funded domestic violence and sexual assault programs across all 102 Illinois counties. Listings include contact information, service hours, and populations served.',
+      'A sample map-based tool that demonstrates how placeholder service providers could be located across fictitious regions. Listings in this demonstration include sample contact information, service hours, and populations served. All data is fabricated for demonstration purposes only.',
     categories: ['victims'],
-    tags: ['victim services', 'domestic violence', 'sexual assault', 'map', 'resource finder'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     contributors: [
-      { title: 'Lucia F. Gonzalez, MA', description: 'Research Analyst, ICJIA' },
+      { title: 'Consectetur Elit, MS', description: 'is a sample contributor listed for demonstration purposes only' },
     ],
-    url: 'https://icjia.illinois.gov/apps/victim-services-locator',
+    url: 'https://example.com/sample-app/placeholder-locator',
   },
   {
-    title: 'Illinois Juvenile Justice Data Hub',
+    title: 'Demonstration Data Hub Sample Application',
     description:
-      'A data hub that aggregates and presents youth justice outcomes — referrals, diversions, adjudications, and commitments — for all Illinois judicial circuits. Designed for practitioners, policymakers, and researchers who need quick access to comparable circuit-level indicators.',
+      'A sample data hub that demonstrates how placeholder outcomes — referrals, diversions, adjudications, and commitments — could be presented for fictitious sample units. Designed for demonstration purposes only; all data, names, and statistics are entirely fabricated.',
     categories: ['courts', 'corrections'],
-    tags: ['juvenile justice', 'diversion', 'courts', 'data hub', 'Illinois'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     contributors: [
-      { title: 'Marcus T. Reedy, JD', description: 'Senior Policy Analyst, ICJIA' },
-      { title: 'Priya N. Anand, PhD', description: 'Evaluation Lead, ICJIA' },
+      { title: 'Vivamus Tincidunt, JD', description: 'is a sample contributor listed for demonstration purposes only' },
+      { title: 'Pellentesque Habitant, PhD', description: 'is a sample contributor listed for demonstration purposes only' },
     ],
-    url: 'https://icjia.illinois.gov/apps/juvenile-justice-hub',
+    url: 'https://example.com/sample-app/demonstration-data-hub',
   },
 ]
 

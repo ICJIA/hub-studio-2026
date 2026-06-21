@@ -1,7 +1,8 @@
 /**
- * Builds a complete, realistic ICJIA-style dataset draft for demos — every field populated so an
- * author can one-click a full dataset entry instead of typing it piece by piece. Rotates through
- * several topics.
+ * Builds a complete sample dataset draft for demos — every field populated so an author can
+ * one-click a full dataset entry instead of typing it piece by piece. Rotates through several
+ * phony lorem-ipsum topics. ALL content is fabricated; no real people, organizations, or data
+ * are referenced.
  *
  * Pure function (only Math.random for variety) — no network, no base64. Passes validateDataset()
  * with zero errors (title + slug + date required; unit and timeperiod.yeartype must be valid enum
@@ -29,75 +30,76 @@ interface DatasetTopic {
 
 const DATASET_TOPICS: DatasetTopic[] = [
   {
-    title: 'Illinois UCR Crime Data 2015–2024',
+    title: 'Lorem Ipsum Sample Data 0000–0000',
     description:
-      'County-level Uniform Crime Reporting (UCR) data for Illinois from 2015 through 2024. Includes offense counts and rates per 100,000 residents for Part I violent and property crimes, sourced from the Illinois State Police annual UCR submissions.',
+      'Sample placeholder data for demonstration purposes. Includes fictitious counts and rates per 000,000 sample units for placeholder offense categories. All variable definitions, source attributions, and statistics are entirely fabricated for demonstration only.',
     categories: ['crimes', 'law enforcement'],
-    tags: ['crime', 'UCR', 'Illinois', 'county', 'rates'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     unit: 'county',
     sources: [
-      { title: 'Illinois State Police UCR Program', url: 'https://isp.illinois.gov/CrimeReporting' },
-      { title: 'ICJIA Research Hub', url: 'https://icjia.illinois.gov/researchhub' },
+      { title: 'Sample Placeholder Program', url: 'https://example.com/sample-source' },
+      { title: 'Demonstration Data Hub', url: 'https://example.com/demo-hub' },
     ],
     variables: [
-      { name: 'county_fips', type: 'string', definition: 'Five-digit FIPS code for the Illinois county.' },
-      { name: 'county_name', type: 'string', definition: 'County name as reported in UCR submissions.' },
-      { name: 'year', type: 'integer', definition: 'Calendar year of the reported offenses.' },
-      { name: 'violent_crime_count', type: 'integer', definition: 'Total Part I violent crimes reported to police.' },
-      { name: 'violent_crime_rate', type: 'float', definition: 'Violent crimes per 100,000 residents (intercensal estimate denominator).' },
-      { name: 'property_crime_count', type: 'integer', definition: 'Total Part I property crimes reported to police.' },
+      { name: 'sample_id', type: 'string', definition: 'Placeholder identifier for the sample unit. Fabricated for demonstration only.' },
+      { name: 'unit_name', type: 'string', definition: 'Sample unit name as reported in placeholder submissions.' },
+      { name: 'year', type: 'integer', definition: 'Placeholder calendar year of the sample offenses.' },
+      { name: 'placeholder_count', type: 'integer', definition: 'Total placeholder sample records reported. Entirely fictitious.' },
+      { name: 'placeholder_rate', type: 'float', definition: 'Sample records per 000,000 demonstration units (fictitious denominator).' },
+      { name: 'secondary_count', type: 'integer', definition: 'Total secondary sample placeholder records. All values are fabricated.' },
     ],
     notes: [
-      'Rates use intercensal population estimates; 2020 Census denominators applied from 2020 onward.',
-      'Jurisdictions that did not submit complete UCR data are excluded from rate calculations.',
-      'Motor vehicle theft figures were revised for Cook County in 2022 following a reporting correction.',
+      'All data in this sample dataset is fabricated for demonstration purposes only.',
+      'Sample units that did not submit complete placeholder data are excluded from demonstration calculations.',
+      'This is sample content and does not represent any real dataset, organization, or statistics.',
     ],
   },
   {
-    title: 'Illinois Victim Services InfoNet Program Data 2000–2024',
+    title: 'Consectetur Adipiscing Sample Dataset 0000–0000',
     description:
-      'Aggregate program-level data from the InfoNet statewide administrative data system, covering publicly funded domestic violence and sexual assault service providers in Illinois. Includes annual service counts, client demographics, and shelter bed utilization from 2000 through 2024.',
+      'Aggregate placeholder data from a fictitious sample administrative data system, covering demonstration service providers. Includes annual sample counts, placeholder demographics, and utilization figures. All content is entirely fabricated for demonstration purposes only and does not represent any real program or organization.',
     categories: ['victims'],
-    tags: ['InfoNet', 'victim services', 'domestic violence', 'sexual assault', 'Illinois'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     unit: 'state',
     sources: [
-      { title: 'ICJIA InfoNet System', url: 'https://icjia.illinois.gov/infonetweb' },
+      { title: 'Sample Placeholder System', url: 'https://example.com/sample-system' },
     ],
     variables: [
-      { name: 'fiscal_year', type: 'integer', definition: 'Illinois fiscal year (July 1 – June 30).' },
-      { name: 'program_type', type: 'string', definition: 'Program category: "DV" (domestic violence) or "SA" (sexual assault).', values: 'DV, SA' },
-      { name: 'clients_served', type: 'integer', definition: 'Unduplicated clients served during the fiscal year.' },
-      { name: 'shelter_beds_used', type: 'integer', definition: 'Aggregate emergency shelter bed-nights provided (DV programs only).' },
-      { name: 'hotline_contacts', type: 'integer', definition: 'Total hotline and crisis contacts received.' },
+      { name: 'sample_year', type: 'integer', definition: 'Placeholder fiscal year (sample dates only).' },
+      { name: 'program_type', type: 'string', definition: 'Sample program category: placeholder type A or placeholder type B.', values: 'TYPE_A, TYPE_B' },
+      { name: 'clients_placeholder', type: 'integer', definition: 'Unduplicated placeholder clients served during the sample period. Entirely fictitious.' },
+      { name: 'placeholder_beds', type: 'integer', definition: 'Aggregate placeholder bed-nights provided (sample programs only). All values fabricated.' },
+      { name: 'hotline_placeholder', type: 'integer', definition: 'Total placeholder and sample contacts received. Entirely fictitious.' },
     ],
     notes: [
-      'Client counts are unduplicated within fiscal year; a client served by multiple programs is counted once.',
-      'Data prior to 2005 may reflect gaps due to incomplete electronic submission by early adopters.',
+      'All placeholder counts are fabricated within the sample period; this content is for demonstration only.',
+      'Data prior to sample year 0000 may reflect placeholder gaps due to incomplete demonstration entry.',
+      'This is sample content and does not represent any real dataset, organization, or statistics.',
     ],
   },
   {
-    title: 'Illinois Juvenile Diversion Outcomes 2018–2024',
+    title: 'Sed Do Eiusmod Sample Outcomes 0000–0000',
     description:
-      'Circuit-level juvenile diversion data collected from Illinois judicial circuits for fiscal years 2018 through 2024. Includes referral counts, program completion rates, and 12-month recidivism indicators for youth diverted from formal court processing.',
+      'Sample unit-level placeholder outcomes data collected from fictitious demonstration units. Includes sample referral counts, placeholder completion rates, and fictional recidivism indicators for participants in sample programs. All content is entirely fabricated for demonstration purposes only.',
     categories: ['courts', 'corrections'],
-    tags: ['juvenile justice', 'diversion', 'recidivism', 'Illinois', 'courts'],
+    tags: ['sample', 'demo', 'lorem ipsum', 'placeholder', 'example'],
     unit: 'other',
     sources: [
-      { title: 'Illinois Juvenile Justice Leadership Council', url: 'https://ijjlc.org' },
-      { title: 'Administrative Office of the Illinois Courts', url: 'https://www.illinoiscourts.gov/courts/administrative-office/' },
+      { title: 'Placeholder Sample Council', url: 'https://example.com/placeholder-council' },
+      { title: 'Demonstration Administrative Office', url: 'https://example.com/demo-office' },
     ],
     variables: [
-      { name: 'circuit', type: 'integer', definition: 'Illinois judicial circuit number (1–24).' },
-      { name: 'fiscal_year', type: 'integer', definition: 'Illinois fiscal year (July 1 – June 30).' },
-      { name: 'referrals', type: 'integer', definition: 'Youth referred to diversion during the fiscal year.' },
-      { name: 'completions', type: 'integer', definition: 'Youth who successfully completed a diversion program.' },
-      { name: 'completion_rate', type: 'float', definition: 'Completions as a proportion of referrals (0.0–1.0).' },
-      { name: 'recidivism_12mo', type: 'float', definition: 'Proportion of completers with a new referral within 12 months.' },
+      { name: 'sample_unit', type: 'integer', definition: 'Placeholder sample unit number (0–00). Entirely fictitious.' },
+      { name: 'sample_year', type: 'integer', definition: 'Placeholder fiscal year (sample dates only).' },
+      { name: 'referrals', type: 'integer', definition: 'Placeholder participants referred to demonstration programs. All values fabricated.' },
+      { name: 'completions', type: 'integer', definition: 'Placeholder participants who successfully completed a sample program. All values fictitious.' },
+      { name: 'completion_rate', type: 'float', definition: 'Sample completions as a proportion of placeholder referrals (0.0–1.0). Entirely fabricated.' },
+      { name: 'recidivism_sample', type: 'float', definition: 'Proportion of placeholder completers with a new sample referral within 00 months. All values fictitious.' },
     ],
     notes: [
-      'Recidivism is defined as any new juvenile referral within 12 months of diversion program exit.',
-      'Circuit 1 (Cook County) reports separately through the Juvenile Probation department; figures are aggregated here.',
-      'Completion rates below 0.50 in any circuit should be interpreted with caution due to small cell sizes.',
+      'Sample recidivism is defined as any new placeholder referral within 00 months of demonstration program exit.',
+      'Sample units with below-threshold values should be interpreted with caution due to placeholder cell sizes.',
+      'This is sample content and does not represent any real dataset, organization, or statistics.',
     ],
   },
 ]

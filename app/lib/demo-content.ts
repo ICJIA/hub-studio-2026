@@ -1,6 +1,7 @@
 // app/lib/demo-content.ts
 // Deterministic demo content for the dev admin/admin session.
 // NO Math.random — all variation is by modular index arithmetic.
+// ALL content is phony (lorem ipsum / fake names); no real people, organizations, or data referenced.
 import type { Article, App, Dataset } from '~/types/content'
 import { blankArticle, blankApp, blankDataset } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
@@ -8,18 +9,18 @@ import { slugify } from '~/lib/slug'
 // ── Shared pools ──────────────────────────────────────────────────────────────
 
 const TOPIC_STEMS = [
-  'Crime Trends in Illinois',
-  'Victim Service Data Quality',
-  'Juvenile Diversion Outcomes',
-  'Recidivism and Re-entry Programs',
-  'Drug Policy and Public Health',
-  'Domestic Violence Intervention Strategies',
-  'Law Enforcement Training Standards',
-  'Court-Based Mental Health Diversion',
-  'School Safety and Prevention',
-  'Human Trafficking in the Midwest',
-  'Racial Disparities in Sentencing',
-  'Community Violence Interruption',
+  'Lorem Ipsum Dolor Sit Amet',
+  'Consectetur Adipiscing Elit',
+  'Sed Do Eiusmod Tempor',
+  'Incididunt Ut Labore Et Dolore',
+  'Magna Aliqua Ut Enim',
+  'Ad Minim Veniam Quis',
+  'Nostrud Exercitation Ullamco',
+  'Laboris Nisi Ut Aliquip',
+  'Ex Ea Commodo Consequat',
+  'Duis Aute Irure Dolor',
+  'Reprehenderit In Voluptate',
+  'Excepteur Sint Occaecat',
 ] as const
 
 const ARTICLE_TYPES = [
@@ -39,39 +40,39 @@ const CATEGORIES_POOL = [
 ] as const
 
 const TAGS_POOL = [
-  ['crime trends', 'Illinois', 'UCR'],
-  ['InfoNet', 'victim services', 'domestic violence'],
-  ['juvenile justice', 'diversion', 'recidivism'],
-  ['drug policy', 'opioid', 'public health'],
-  ['reentry', 'corrections', 'recidivism'],
-  ['mental health', 'diversion', 'courts'],
-  ['trafficking', 'exploitation', 'midwest'],
-  ['sentencing', 'disparities', 'race'],
+  ['sample', 'demo', 'lorem ipsum'],
+  ['placeholder', 'example', 'demonstration'],
+  ['lorem ipsum', 'sample', 'placeholder'],
+  ['demo', 'example', 'lorem ipsum'],
+  ['placeholder', 'sample', 'demonstration'],
+  ['example', 'demo', 'placeholder'],
+  ['lorem ipsum', 'demonstration', 'sample'],
+  ['demo', 'placeholder', 'example'],
 ] as const
 
 const AUTHORS_POOL = [
-  { title: 'Amanda L. Vasquez, MA', description: 'Senior Research Analyst, ICJIA' },
-  { title: 'Caleb Schaffner, PhD', description: 'Research Director, ICJIA' },
-  { title: 'Lucia F. Gonzalez, MA', description: 'Research Analyst, ICJIA' },
-  { title: 'Jennifer Hiselman, MA', description: 'Program Director, ICJIA' },
-  { title: 'Marcus T. Reedy, JD', description: 'Senior Policy Analyst, ICJIA' },
-  { title: 'Priya N. Anand, PhD', description: 'Evaluation Lead, ICJIA' },
-  { title: 'Samuel D. Park, MPA', description: 'Data Analyst, ICJIA' },
-  { title: 'Theresa M. Walsh, MA', description: 'Research Coordinator, ICJIA' },
-  { title: 'Deon R. Jackson, MA', description: 'Policy Analyst, ICJIA' },
-  { title: 'Connie L. Eberhart, PhD', description: 'Senior Evaluation Scientist, ICJIA' },
+  { title: 'Lorem Ipsum, PhD', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Dolor A. Amet, MA', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Consectetur Elit, MS', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Vivamus Tincidunt, JD', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Pellentesque Habitant, PhD', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Nullam Volutpat, MA', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Aenean Commodo, MSW', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Tempor Incididunt, MPA', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Labore Et Dolore, MA', description: 'is a sample author listed for demonstration purposes only' },
+  { title: 'Magna Aliqua, PhD', description: 'is a sample author listed for demonstration purposes only' },
 ] as const
 
 const ABSTRACTS = [
-  'This report examines statewide crime trends in Illinois, drawing on Uniform Crime Reporting (UCR) data submitted by law enforcement agencies across all 102 counties. Key findings include a continued decline in violent crime rates, shifting patterns in property crime, and notable regional disparities in drug-related offenses.',
-  'This study assesses the quality and completeness of victim service data in the InfoNet system and offers targeted recommendations for strengthening data collection and reporting practices across publicly funded domestic violence and sexual assault service providers.',
-  'This evaluation examines outcomes for youth referred to community-based diversion programs across Illinois judicial circuits. Drawing on three years of case-level data, it assesses recidivism, program completion, and disparities in referral, and identifies practices associated with successful diversion.',
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. This is sample content for demonstration purposes only.',
+  'Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit. This is sample content for demonstration purposes only.',
+  'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. This is sample content for demonstration purposes only.',
 ] as const
 
 const MARKDOWNS = [
-  `## Executive Summary\n\nIllinois recorded significant changes in crime patterns during the study period. Property crimes declined for the fifth consecutive year, while drug-related offenses showed more complex geographic variation.\n\n## Key Findings\n\n- Violent crime decreased 3.4% statewide\n- Homicides declined in urban counties\n- Motor vehicle theft increased 11.2%, reversing a four-year downward trend\n\n## Conclusion\n\nTargeted policy engagement remains essential for addressing persistent crime trends.`,
-  `## Background\n\nThe InfoNet system contains over 25 years of victim service data, including approximately 900,000 domestic violence and 180,000 sexual assault client records.\n\n## Assessing Data Quality\n\n- Most data fields are consistent and complete\n- Five recurring challenges relate to data collection and reporting\n- Client care appropriately takes precedence over data entry\n\n## Recommendations\n\n1. Streamline data entry to reduce burden on front-line staff\n2. Expand training on standardized data collection practices\n3. Add validation prompts for the highest-priority fields`,
-  `## Overview\n\nCommunity-based diversion redirects eligible youth away from formal court processing and toward locally administered services.\n\n## Outcomes\n\n- Program completion exceeded 70 percent in most circuits\n- 12-month recidivism was lower among completers than a matched comparison group\n- Referral rates varied substantially by circuit and demographic group\n\n## Disparities and Practice\n\nWe identified disparities in referral that merit attention from court stakeholders. Circuits with structured eligibility screening showed the strongest outcomes.`,
+  `## Executive Summary\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**.\n\n## Key Findings\n\n- Lorem ipsum dolor sit amet, consectetur adipiscing elit\n- Sed do eiusmod tempor incididunt ut labore et dolore\n- Ut enim ad minim veniam, quis nostrud exercitation\n\n## Conclusion\n\n_Lorem ipsum dolor sit amet_, consectetur adipiscing elit. Sed do eiusmod tempor. This is sample content for demonstration purposes only.`,
+  `## Background\n\nConsectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**.\n\n## Sample Methodology\n\n- Consectetur adipiscing elit sed do eiusmod tempor\n- Incididunt ut labore et dolore magna aliqua\n- Ut enim ad minim veniam quis nostrud exercitation\n\n## Sample Recommendations\n\n1. Lorem ipsum dolor sit amet consectetur adipiscing\n2. Sed do eiusmod tempor incididunt ut labore et dolore\n3. _Ut enim ad minim veniam_ quis nostrud exercitation`,
+  `## Overview\n\nSed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**. Lorem ipsum dolor sit amet.\n\n## Sample Outcomes\n\n- Lorem ipsum dolor sit amet consectetur adipiscing elit\n- Sed do eiusmod tempor incididunt ut labore et dolore\n- Ut enim ad minim veniam quis nostrud exercitation\n\n## Sample Discussion\n\n_Lorem ipsum_ dolor sit amet, consectetur adipiscing elit. We identified placeholder disparities that merit attention from sample stakeholders. This is sample content for demonstration purposes only.`,
 ] as const
 
 // ── Helper: deterministic pick by index ──────────────────────────────────────
@@ -114,7 +115,7 @@ function isPublished(i: number): boolean { return i % 5 !== 0 }
 function makeArticle(i: number): Article {
   const stem = pick(TOPIC_STEMS, i)
   const year = pick(YEARS, i)
-  const title = `${stem}: ${year} Analysis (${String(i + 1).padStart(3, '0')})`
+  const title = `${stem}: ${year} Sample Report (${String(i + 1).padStart(3, '0')})`
   const numAuthors = (i % 3) + 1  // 1, 2, or 3 authors
   const authors = Array.from({ length: numAuthors }, (_, j) => AUTHORS_POOL[(i + j) % AUTHORS_POOL.length]!)
   const pub = isPublished(i)
@@ -134,7 +135,7 @@ function makeArticle(i: number): Article {
     splash: {
       id: 0,
       url: `https://picsum.photos/seed/demo${String(i + 1).padStart(3, '0')}/1200/600`,
-      alternativeText: `${stem} — feature image`,
+      alternativeText: `${stem} — sample feature image`,
       width: 1200,
       height: 600,
       mime: 'image/jpeg',
@@ -142,15 +143,15 @@ function makeArticle(i: number): Article {
     thumbnail: {
       id: 0,
       url: `https://picsum.photos/seed/thumb${String(i + 1).padStart(3, '0')}/600/400`,
-      alternativeText: `${stem} — thumbnail`,
+      alternativeText: `${stem} — sample thumbnail`,
       width: 600,
       height: 400,
       mime: 'image/jpeg',
     },
     mainfiletype: pick(['full report', 'pdf version'] as const, i),
     doi: `10.13140/RG.${2000 + i}.${String(i).padStart(5, '0')}`,
-    citation: `ICJIA. (${year}). ${title}. Illinois Criminal Justice Information Authority.`,
-    funding: 'Prepared with support from the Illinois Criminal Justice Information Authority.',
+    citation: `Ipsum, L. (${year}). ${title}. Sample Organization.`,
+    funding: 'This is sample content for demonstration only and is not associated with any real funding source or organization.',
     hideFromBanner: false,
     external: false,
     publishedAt: pub ? publishedAt(i) : null,
@@ -162,22 +163,22 @@ function makeArticle(i: number): Article {
 // ── Contributor pool (for Apps) ───────────────────────────────────────────────
 
 const CONTRIBUTORS_POOL = [
-  { title: 'ICJIA Research Team', description: 'Illinois Criminal Justice Information Authority' },
-  { title: 'Amanda L. Vasquez, MA', description: 'Senior Research Analyst, ICJIA' },
-  { title: 'Samuel D. Park, MPA', description: 'Data Analyst, ICJIA' },
-  { title: 'Marcus T. Reedy, JD', description: 'Senior Policy Analyst, ICJIA' },
-  { title: 'Priya N. Anand, PhD', description: 'Evaluation Lead, ICJIA' },
+  { title: 'Sample Demonstration Team', description: 'is a sample contributor listed for demonstration purposes only' },
+  { title: 'Lorem Ipsum, PhD', description: 'is a sample contributor listed for demonstration purposes only' },
+  { title: 'Dolor A. Amet, MA', description: 'is a sample contributor listed for demonstration purposes only' },
+  { title: 'Vivamus Tincidunt, JD', description: 'is a sample contributor listed for demonstration purposes only' },
+  { title: 'Magna Aliqua, PhD', description: 'is a sample contributor listed for demonstration purposes only' },
 ] as const
 
 const APP_TITLES = [
-  'Illinois Crime Data Explorer',
-  'Victim Service Locator',
-  'Juvenile Diversion Program Finder',
-  'Reentry Resource Map',
-  'Drug Treatment Capacity Dashboard',
-  'Court Data Visualization Tool',
-  'Law Enforcement Training Tracker',
-  'Community Safety Index',
+  'Lorem Ipsum Sample Explorer',
+  'Placeholder Resource Locator',
+  'Demonstration Program Finder',
+  'Sample Resource Map',
+  'Consectetur Data Dashboard',
+  'Dolor Visualization Tool',
+  'Sed Do Sample Tracker',
+  'Lorem Community Index',
 ] as const
 
 function makeApp(i: number): App {
@@ -195,10 +196,10 @@ function makeApp(i: number): App {
     categories: [...pick(CATEGORIES_POOL, i)] as string[],
     tags: [...pick(TAGS_POOL, i)] as string[],
     contributors: [CONTRIBUTORS_POOL[(i) % CONTRIBUTORS_POOL.length]!],
-    description: `An interactive data visualization tool for ${stem.toLowerCase()} in Illinois.`,
-    url: `https://icjia.illinois.gov/researchhub/apps/${slugify(stem)}`,
-    citation: `ICJIA. (${year}). ${title}. Illinois Criminal Justice Information Authority.`,
-    funding: 'Prepared with support from the Illinois Criminal Justice Information Authority.',
+    description: `A sample interactive data visualization tool for ${stem.toLowerCase()}. This is placeholder content for demonstration purposes only.`,
+    url: `https://example.com/sample-apps/${slugify(stem)}`,
+    citation: `Ipsum, L. (${year}). ${title}. Sample Organization.`,
+    funding: 'This is sample content for demonstration only and is not associated with any real funding source or organization.',
     external: false,
     publishedAt: pub ? publishedAt(i) : null,
     datasets: [],
@@ -207,14 +208,14 @@ function makeApp(i: number): App {
 }
 
 const DATASET_TITLES = [
-  'Illinois UCR Crime Statistics',
-  'InfoNet Victim Services Data',
-  'Juvenile Court Dispositions',
-  'Drug Arrests by County',
-  'Corrections Population Data',
-  'Victim Compensation Claims',
-  'Law Enforcement Personnel Survey',
-  'Court Case Processing Times',
+  'Lorem Ipsum Sample Statistics',
+  'Placeholder Sample Services Data',
+  'Demonstration Sample Dispositions',
+  'Dolor Sample Records by Unit',
+  'Consectetur Population Data',
+  'Adipiscing Sample Claims',
+  'Sed Do Sample Personnel Survey',
+  'Eiusmod Case Processing Sample',
 ] as const
 
 function makeDataset(i: number): Dataset {
@@ -231,7 +232,7 @@ function makeDataset(i: number): Dataset {
     date: demoDate(i),
     categories: [...pick(CATEGORIES_POOL, i)] as string[],
     tags: [...pick(TAGS_POOL, i)] as string[],
-    description: `Comprehensive dataset covering ${stem.toLowerCase()} for Illinois.`,
+    description: `Comprehensive sample placeholder dataset covering ${stem.toLowerCase()}. This is demonstration content only.`,
     unit: pick(['state', 'county', 'municipal', 'national'] as const, i),
     project: i % 4 === 0,
     timeperiod: {
@@ -239,13 +240,13 @@ function makeDataset(i: number): Dataset {
       yearmin: year - 2,
       yearmax: year,
     },
-    notes: [`Data sourced from Illinois administrative records for ${year}.`],
+    notes: [`Sample placeholder data sourced from demonstration administrative records for ${year}. This is sample content only.`],
     variables: [
-      { name: 'count', type: 'integer', definition: 'Number of incidents or records', values: '>= 0' },
-      { name: 'year', type: 'integer', definition: 'Calendar or fiscal year', values: '2000–2025' },
+      { name: 'count', type: 'integer', definition: 'Number of placeholder incidents or sample records', values: '>= 0' },
+      { name: 'year', type: 'integer', definition: 'Sample calendar or placeholder fiscal year', values: '0000–0000' },
     ],
-    citation: `ICJIA. (${year}). ${title}. Illinois Criminal Justice Information Authority.`,
-    funding: 'Prepared with support from the Illinois Criminal Justice Information Authority.',
+    citation: `Ipsum, L. (${year}). ${title}. Sample Organization.`,
+    funding: 'This is sample content for demonstration only and is not associated with any real funding source or organization.',
     external: false,
     publishedAt: pub ? publishedAt(i) : null,
     apps: [],

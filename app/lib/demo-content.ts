@@ -69,11 +69,42 @@ const ABSTRACTS = [
   'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. This is sample content for demonstration purposes only.',
 ] as const
 
-const MARKDOWNS = [
-  `## Executive Summary\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**.\n\n## Key Findings\n\n- Lorem ipsum dolor sit amet, consectetur adipiscing elit\n- Sed do eiusmod tempor incididunt ut labore et dolore\n- Ut enim ad minim veniam, quis nostrud exercitation\n\n## Conclusion\n\n_Lorem ipsum dolor sit amet_, consectetur adipiscing elit. Sed do eiusmod tempor. This is sample content for demonstration purposes only.`,
-  `## Background\n\nConsectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**.\n\n## Sample Methodology\n\n- Consectetur adipiscing elit sed do eiusmod tempor\n- Incididunt ut labore et dolore magna aliqua\n- Ut enim ad minim veniam quis nostrud exercitation\n\n## Sample Recommendations\n\n1. Lorem ipsum dolor sit amet consectetur adipiscing\n2. Sed do eiusmod tempor incididunt ut labore et dolore\n3. _Ut enim ad minim veniam_ quis nostrud exercitation`,
-  `## Overview\n\nSed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**. Lorem ipsum dolor sit amet.\n\n## Sample Outcomes\n\n- Lorem ipsum dolor sit amet consectetur adipiscing elit\n- Sed do eiusmod tempor incididunt ut labore et dolore\n- Ut enim ad minim veniam quis nostrud exercitation\n\n## Sample Discussion\n\n_Lorem ipsum_ dolor sit amet, consectetur adipiscing elit. We identified placeholder disparities that merit attention from sample stakeholders. This is sample content for demonstration purposes only.`,
+// A LONG, deterministic lorem-ipsum article body with ACTIVE footnote references, generic
+// section headings (so the Table of Contents reads realistically), lists, a quote, bold/italic,
+// a link, and inline sample images. Every demo article gets one (varied by index) — so the
+// demo-list articles are full-length, just like the "Add sample article" topics.
+const LOREM_SENTENCES = [
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+  'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+  'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+  'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+  'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium totam rem aperiam.',
+  'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos.',
 ] as const
+
+function loremPara(i: number, sentences: number): string {
+  return Array.from({ length: sentences }, (_, k) => LOREM_SENTENCES[(i + k) % LOREM_SENTENCES.length]!).join(' ')
+}
+
+const DEMO_SECTIONS = ['Introduction', 'Background', 'Methodology', 'Findings', 'Analysis', 'Discussion', 'Limitations', 'Conclusion'] as const
+
+function buildLoremBody(i: number): string {
+  const figure = (n: number) => `![Sample figure ${n}](https://picsum.photos/seed/demobody${i}-${n}/1000/520 "Sample figure ${n} — placeholder")`
+  const sections = DEMO_SECTIONS.map((heading, s) => {
+    const blocks = [`## ${heading}`, `${loremPara(i + s, 3)}[^${s + 1}]`, loremPara(i + s + 1, 2)]
+    if (s === 0) blocks.push('Key terms include **lorem ipsum** and _dolor sit amet_. See the [sample reference](https://example.com).')
+    if (s === 1) blocks.push(figure(1))
+    if (s === 2) blocks.push(`> ${loremPara(i + 2, 1)} — _Sample Source, Demonstration Presentation_`)
+    if (s === 3) blocks.push(`- ${loremPara(i, 1)}\n- ${loremPara(i + 1, 1)}\n- ${loremPara(i + 2, 1)}`)
+    if (s === 4) blocks.push(figure(2))
+    if (s === 5) blocks.push(`1. ${loremPara(i, 1)}\n2. ${loremPara(i + 1, 1)}\n3. ${loremPara(i + 2, 1)}`)
+    return blocks.join('\n\n')
+  })
+  const refs = DEMO_SECTIONS.map((_, k) =>
+    `[^${k + 1}]: Ipsum, L. (20${20 + (k % 6)}). Lorem ipsum dolor sit amet consectetur. Sample Journal of Placeholder Studies, ${k + 1}(${(k % 4) + 1}), ${100 + k * 7}–${118 + k * 7}.`,
+  ).join('\n\n')
+  return `${sections.join('\n\n')}\n\n## References\n\n${refs}`
+}
 
 // ── Helper: deterministic pick by index ──────────────────────────────────────
 
@@ -131,7 +162,7 @@ function makeArticle(i: number): Article {
     tags: [...pick(TAGS_POOL, i)] as string[],
     authors,
     abstract: pick(ABSTRACTS, i),
-    markdown: pick(MARKDOWNS, i),
+    markdown: buildLoremBody(i),
     splash: {
       id: 0,
       url: `https://picsum.photos/seed/demo${String(i + 1).padStart(3, '0')}/1200/600`,

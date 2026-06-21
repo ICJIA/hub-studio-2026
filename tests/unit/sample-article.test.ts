@@ -1,6 +1,6 @@
 // tests/unit/sample-article.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildSampleArticle } from '~/lib/sample-article'
+import { buildSampleArticle, renderAllSampleBodies } from '~/lib/sample-article'
 import { validateArticle } from '~/lib/validators/article'
 import { containsBase64 } from '~/lib/base64-guard'
 
@@ -87,9 +87,16 @@ describe('buildSampleArticle', () => {
     const article = buildSampleArticle()
     expect(article.markdown).toContain('*Figure 1.')
     expect(article.markdown).toContain('*Figure 2.')
+    // Each topic carries two captioned figures; one topic adds a third, uncaptioned figure.
     const figureImgs = article.markdown.match(/!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)/g) ?? []
     expect(figureImgs.length).toBeGreaterThanOrEqual(1)
-    expect(figureImgs.length).toBeLessThanOrEqual(2)
+    expect(figureImgs.length).toBeLessThanOrEqual(3)
+  })
+
+  it('caption numbers are sequential within an article (Figure 1, 2, … with no gaps)', () => {
+    const article = buildSampleArticle()
+    const nums = [...article.markdown.matchAll(/\*Figure (\d+)\./g)].map((m) => Number(m[1]))
+    for (let k = 0; k < nums.length; k++) expect(nums[k]).toBe(k + 1)
   })
 
   it('fills every field for a one-click demo (type, doi, citation, funding, mainfiletype, categories, tags)', () => {
@@ -138,5 +145,47 @@ describe('buildSampleArticle', () => {
     const article = buildSampleArticle()
     const withBio = article.authors.filter((a) => a.description && a.description.trim() !== '')
     expect(withBio.length).toBeGreaterThan(0)
+  })
+})
+
+// Deterministic coverage of the figure/caption/table VARIETY across the sample templates, so the
+// "Add sample" demos showcase all three caption positions plus a Markdown table (mirrors the
+// DEMO_ARTICLES conventions). Uses renderAllSampleBodies() — no Math.random.
+describe('sample-article templates — caption-position & table variety', () => {
+  const bodies = renderAllSampleBodies()
+  const FIG = /!\[[^\]]*\]\(\/images\/demo\/figures\/figure-[\w-]+\.svg\)/
+  const BELOW = /!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)\n\n\*Figure \d+\./
+  const ABOVE = /\*Figure \d+\.[^\n]*\*\n\n!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)/
+  const TABLE_SEP = /^\|[\s:|-]*-[\s:|-]*\|$/m
+  const CAPTION = /^\*Figure \d+\..*\*$/gm
+
+  it('renders one body per topic, each with an inline figure', () => {
+    expect(bodies.length).toBeGreaterThanOrEqual(3)
+    for (const b of bodies) expect(FIG.test(b)).toBe(true)
+  })
+
+  it('shows caption-BELOW (default) in at least one template', () => {
+    expect(bodies.some((b) => BELOW.test(b))).toBe(true)
+  })
+
+  it('shows caption-ABOVE in at least one template', () => {
+    expect(bodies.some((b) => ABOVE.test(b))).toBe(true)
+  })
+
+  it('shows a NO-caption figure in at least one template (more figure images than captions)', () => {
+    const someUncaptioned = bodies.some((b) => {
+      const imgs = (b.match(/!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)/g) ?? []).length
+      const caps = (b.match(CAPTION) ?? []).length
+      return imgs > caps
+    })
+    expect(someUncaptioned).toBe(true)
+  })
+
+  it('includes a Markdown pipe TABLE in at least one template', () => {
+    expect(bodies.some((b) => TABLE_SEP.test(b))).toBe(true)
+  })
+
+  it('no template body contains base64 data URIs', () => {
+    for (const b of bodies) expect(containsBase64(b)).toBe(false)
   })
 })

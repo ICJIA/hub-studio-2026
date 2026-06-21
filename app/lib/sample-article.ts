@@ -43,6 +43,35 @@ function bodyImage(alt: string, caption: string): string {
   return `![${alt}](${sampleFigureUrl(n)})\n\n*Figure ${num}. ${caption} — illustrative sample data.*`
 }
 
+/** Same figure, but the emphasis-only caption paragraph sits ABOVE the image (caption-above form). */
+function bodyImageCaptionAbove(alt: string, caption: string): string {
+  const n = _imgCounter++
+  const num = ++_figureNum
+  return `*Figure ${num}. ${caption} — illustrative sample data.*\n\n![${alt}](${sampleFigureUrl(n)})`
+}
+
+/** A figure with NO caption (just the image) — the author would add their own caption. */
+function bodyImageNoCaption(alt: string): string {
+  const n = _imgCounter++
+  return `![${alt}](${sampleFigureUrl(n)})`
+}
+
+/**
+ * A small Markdown results/summary TABLE (multimd pipe syntax: header row + 3–5 data rows × 2–4
+ * columns) with phony headers + invented numbers, for the body flow. Renderer enables
+ * markdown-it-multimd-table, so standard pipe tables render.
+ */
+function resultsTable(): string {
+  return [
+    '| Sample Category | Placeholder Count | Share (%) |',
+    '| --- | ---: | ---: |',
+    '| Lorem alpha | 1,284 | 38.2 |',
+    '| Dolor beta | 942 | 28.0 |',
+    '| Amet gamma | 631 | 18.8 |',
+    '| Elit delta | 503 | 15.0 |',
+  ].join('\n')
+}
+
 interface Topic {
   title: string
   abstract: string
@@ -109,7 +138,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
 Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[^4]
 
-${bodyImage('Line chart of the placeholder annual rate trend', 'Annual rate per 1,000 across the placeholder study window')}
+${bodyImageCaptionAbove('Line chart of the placeholder annual rate trend', 'Annual rate per 1,000 across the placeholder study window')}
 
 ## Methodology
 
@@ -136,7 +165,9 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 - **Magna aliqua:** Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
 - **Aliquip ex ea:** Commodo consequat duis aute irure dolor in reprehenderit in voluptate
 
-Placeholder data completeness varied by category, with **sample counts** documented across all demonstration fields.
+Placeholder data completeness varied by category, with **sample counts** documented across all demonstration fields. **Table 1** summarizes the placeholder counts for the sample reporting period.
+
+${resultsTable()}
 
 ### Secondary Sample Findings
 
@@ -306,6 +337,8 @@ The five sample challenge areas identified are:
 
 Sample completeness has improved significantly over the demonstration period. The average placeholder field completion rate increased from **00 percent** in the first sample period to **00 percent** in the most recent period.[^1]
 
+${bodyImageNoCaption('Line chart of the placeholder completion-rate trend (no caption — author would add one)')}
+
 ### Sample Provider Size Effects
 
 Consistent with placeholder research, provider size strongly moderated sample data quality.[^4] Organizations with **dedicated sample staff** showed higher mean field completion rates than those without.
@@ -382,7 +415,7 @@ The sample placeholder system is a strong demonstration asset. Five recurring pl
 
 Sample-based programs redirect eligible placeholder participants away from formal processing and toward **locally administered services** — counseling, mentoring, restorative practices, and skill-building. This evaluation covers _three years_ of placeholder case-level data (0000–0000) across 00 sample units that volunteered to participate in the demonstration initiative.
 
-${bodyImage('Bar chart of placeholder program enrollment by cohort year', 'Program enrollment by cohort year across the sample units')}
+${bodyImageCaptionAbove('Bar chart of placeholder program enrollment by cohort year', 'Program enrollment by cohort year across the sample units')}
 
 Key placeholder findings:
 
@@ -552,6 +585,19 @@ These findings can inform sample efforts to expand effective, equitable demonstr
 `,
   },
 ]
+
+/**
+ * Render EVERY sample-topic body once (each with its own "Figure 1, 2, …" numbering), in order.
+ * Deterministic — no Math.random — so tests can assert the collective figure/caption/table variety
+ * across the templates (caption-below, caption-above, no-caption, and a Markdown table) without
+ * depending on which topic buildSampleArticle() happens to pick.
+ */
+export function renderAllSampleBodies(): string[] {
+  return TOPICS.map((t) => {
+    _figureNum = 0
+    return t.body()
+  })
+}
 
 export function buildSampleArticle(): Article {
   const t = pick(TOPICS)

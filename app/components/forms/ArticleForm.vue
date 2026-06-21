@@ -82,7 +82,7 @@ defineExpose({ submit, setField, errors, model })
           <ChipsField v-model="model.tags" label="Tags" />
           <MediaField v-model="model.splash" label="Splash image" />
           <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
-          <MediaField v-model="model.mainfile" label="Main file" />
+          <MediaField v-model="model.mainfile" label="Main file" kind="file" />
           <RelationList label="Linked datasets" :items="model.datasets" />
           <RelationList label="Linked apps" :items="model.apps" />
         </div>

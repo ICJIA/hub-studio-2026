@@ -116,7 +116,7 @@ defineExpose({ submit, setField, errors, model })
           <UFormField label="Project dataset">
             <USwitch v-model="model.project" />
           </UFormField>
-          <MediaField v-model="model.datafile" label="Data file" />
+          <MediaField v-model="model.datafile" label="Data file" kind="file" />
           <RelationList label="Linked apps" :items="model.apps" />
           <RelationList label="Linked articles" :items="model.articles" />
         </div>

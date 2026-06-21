@@ -8,7 +8,7 @@ import {
   type UploadInfo, type BrowseOptions,
 } from '~/lib/upload'
 import { isSvg, sanitizeSvgText } from '~/lib/sanitize-svg'
-import { hasAllowedImageExtension } from '~/lib/image-types'
+import { hasAllowedImageExtension, hasAllowedDocumentExtension } from '~/lib/image-types'
 import type { MediaRef } from '~/types/content'
 
 /**
@@ -26,6 +26,17 @@ export async function prepareUpload(file: File): Promise<File | Blob> {
   return file
 }
 
+/**
+ * Gate a document file for upload. Throws on a disallowed extension; no image processing
+ * is applied (documents are not SVG-sanitized). Pure — no $api.
+ */
+export function prepareDocumentUpload(file: File): File {
+  if (!hasAllowedDocumentExtension(file.name)) {
+    throw new Error('Unsupported document type. Allowed formats: pdf, doc, docx, xlsx, csv.')
+  }
+  return file
+}
+
 export function useUpload() {
   const { $api } = useNuxtApp()
 
@@ -35,6 +46,15 @@ export function useUpload() {
     // Preserve the original filename for the SVG re-wrap (Blob carries no name).
     const filename = prepared instanceof File ? undefined : file.name
     return uploadFile($api, prepared, info, filename)
+  }
+
+  /**
+   * Eager-upload one document (PDF/office): gate by extension, then POST to the Media Library.
+   * No alt/caption info is passed — documents have no image metadata.
+   */
+  async function uploadDocument(file: File): Promise<MediaRef> {
+    const prepared = prepareDocumentUpload(file)
+    return uploadFile($api, prepared)
   }
 
   /** Browse the Media Library (optional name search). */
@@ -47,5 +67,5 @@ export function useUpload() {
     return deleteMediaFile($api, id)
   }
 
-  return { upload, browse, remove }
+  return { upload, uploadDocument, browse, remove }
 }

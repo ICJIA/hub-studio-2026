@@ -118,9 +118,14 @@ We used internal consistency across related fields as the primary indicator of d
 
 ## Recommendations
 
-We offer targeted recommendations including potential [system upgrades](https://icjia.illinois.gov/researchhub) and
-expanded training on data collection standards. While findings are specific to InfoNet, the
-recommendations apply broadly to administrative data systems documenting sensitive services.[^2]
+We offer targeted recommendations to strengthen InfoNet data quality:
+
+1. Streamline data entry to reduce burden on front-line staff
+2. Expand training on standardized [data collection](https://icjia.illinois.gov/researchhub) practices
+3. Add validation prompts for the highest-priority fields
+
+While findings are specific to InfoNet, the recommendations apply broadly to administrative data
+systems documenting sensitive services.[^2]
 
 [^1]: Internal consistency measures whether related fields agree, not whether client reports are accurate.
 

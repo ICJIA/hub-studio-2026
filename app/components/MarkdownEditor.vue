@@ -15,6 +15,7 @@
 import { ref, watch, onMounted, onBeforeUnmount, useId } from '#imports'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
+import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
 import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
@@ -80,6 +81,102 @@ function onFileInput(e: Event) {
   if (fileInput.value) fileInput.value.value = ''
 }
 
+// ── Formatting toolbar commands (mirror the ICJIA markdown-editor's useEditor) ──
+/** Wrap the selection with before/after markers, keeping the inner text selected. */
+function wrapSelection(before: string, after: string) {
+  if (!view) return
+  const { from, to } = view.state.selection.main
+  const selected = view.state.sliceDoc(from, to)
+  view.dispatch({
+    changes: { from, to, insert: `${before}${selected}${after}` },
+    selection: { anchor: from + before.length, head: from + before.length + selected.length },
+  })
+  view.focus()
+}
+/** Replace the selection (or insert at the cursor); cursor lands after the text. */
+function insertText(text: string) {
+  if (!view) return
+  const { from, to } = view.state.selection.main
+  view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } })
+  view.focus()
+}
+/** Prepend a marker to the start of the cursor's line (lists, blockquote). */
+function prefixLine(prefix: string) {
+  if (!view) return
+  const line = view.state.doc.lineAt(view.state.selection.main.from)
+  view.dispatch({ changes: { from: line.from, insert: prefix } })
+  view.focus()
+}
+function toggleBold() { wrapSelection('**', '**') }
+function toggleItalic() { wrapSelection('_', '_') }
+function toggleInlineCode() { wrapSelection('`', '`') }
+function insertCodeBlock(language = '') {
+  if (!view) return
+  const { from, to } = view.state.selection.main
+  const selected = view.state.sliceDoc(from, to)
+  const block = `\`\`\`${language}\n${selected || 'code here'}\n\`\`\``
+  view.dispatch({
+    changes: { from, to, insert: block },
+    selection: { anchor: from + 4 + language.length, head: from + 4 + language.length + (selected.length || 9) },
+  })
+  view.focus()
+}
+function insertLink() {
+  if (!view) return
+  const { from, to } = view.state.selection.main
+  const text = view.state.sliceDoc(from, to) || 'link text'
+  const markdown = `[${text}](https://example.com)`
+  view.dispatch({ changes: { from, to, insert: markdown }, selection: { anchor: from + markdown.length } })
+  view.focus()
+}
+function insertHeading(level: number) {
+  if (!view || level < 1 || level > 6) return
+  const line = view.state.doc.lineAt(view.state.selection.main.from)
+  const existing = line.text.match(/^(#{1,6})\s/)
+  const prefix = '#'.repeat(level) + ' '
+  view.dispatch(
+    existing
+      ? { changes: { from: line.from, to: line.from + existing[0].length, insert: prefix } }
+      : { changes: { from: line.from, insert: prefix } },
+  )
+  view.focus()
+}
+function insertBlockquote() { prefixLine('> ') }
+function insertBulletList() { prefixLine('- ') }
+function insertNumberedList() { prefixLine('1. ') }
+function insertHorizontalRule() { insertText('\n---\n') }
+function undo() { if (view) cmUndo({ state: view.state, dispatch: view.dispatch }) }
+function redo() { if (view) cmRedo({ state: view.state, dispatch: view.dispatch }) }
+
+/** The formatting toolbar, grouped (mirrors the ICJIA editor's button set). */
+const toolbarGroups: { icon: string; label: string; run: () => void }[][] = [
+  [
+    { icon: 'i-lucide-bold', label: 'Bold', run: toggleBold },
+    { icon: 'i-lucide-italic', label: 'Italic', run: toggleItalic },
+    { icon: 'i-lucide-code', label: 'Inline code', run: toggleInlineCode },
+  ],
+  [
+    { icon: 'i-lucide-heading-1', label: 'Heading 1', run: () => insertHeading(1) },
+    { icon: 'i-lucide-heading-2', label: 'Heading 2', run: () => insertHeading(2) },
+    { icon: 'i-lucide-heading-3', label: 'Heading 3', run: () => insertHeading(3) },
+  ],
+  [
+    { icon: 'i-lucide-list', label: 'Bullet list', run: insertBulletList },
+    { icon: 'i-lucide-list-ordered', label: 'Numbered list', run: insertNumberedList },
+    { icon: 'i-lucide-quote', label: 'Blockquote', run: insertBlockquote },
+    { icon: 'i-lucide-square-code', label: 'Code block', run: () => insertCodeBlock() },
+    { icon: 'i-lucide-minus', label: 'Horizontal rule', run: insertHorizontalRule },
+  ],
+  [
+    { icon: 'i-lucide-link', label: 'Link', run: insertLink },
+    { icon: 'i-lucide-image', label: 'Insert image', run: onToolbarPick },
+  ],
+  [
+    { icon: 'i-lucide-undo-2', label: 'Undo', run: undo },
+    { icon: 'i-lucide-redo-2', label: 'Redo', run: redo },
+  ],
+]
+
 // Named handlers so onBeforeUnmount can remove the exact same references.
 let onPaste: ((e: ClipboardEvent) => void) | null = null
 let onDrop: ((e: DragEvent) => void) | null = null
@@ -138,9 +235,22 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 <template>
   <div class="markdown-editor">
     <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
-    <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="flex items-center gap-2">
-        <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
+    <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+      <div class="flex items-center gap-0.5 flex-wrap rounded-md border border-default bg-elevated/40 px-1 py-0.5">
+        <template v-for="(group, gi) in toolbarGroups" :key="gi">
+          <span v-if="gi > 0" class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+          <UButton
+            v-for="btn in group"
+            :key="btn.label"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            :icon="btn.icon"
+            :aria-label="btn.label"
+            :title="btn.label"
+            @click="btn.run"
+          />
+        </template>
         <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
       </div>
       <UButton

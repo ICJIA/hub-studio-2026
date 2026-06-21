@@ -12,17 +12,19 @@
 import type { App, MediaRef } from '~/types/content'
 import { blankApp } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
+import { sampleImageUrl } from '~/lib/sample-images'
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
 }
-function seed(): string {
-  return Math.floor(Math.random() * 1_000_000).toString(36)
-}
+
+/** Module-level counter so each demoImage call gets a stable, unique per-call seed. */
+let _imgCounter = 0
+
 /** A display-only Media Library ref (id 0 → never written; see mediaIdForWrite) with a real photo. */
 function demoImage(w: number, h: number, alt: string): MediaRef {
-  const s = seed()
-  return { id: 0, url: `https://picsum.photos/seed/${s}/${w}/${h}`, name: `demo-${s}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
+  const n = _imgCounter++
+  return { id: 0, url: sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
 }
 
 interface AppTopic {

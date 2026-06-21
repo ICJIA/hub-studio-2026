@@ -5,6 +5,7 @@
 import type { Article, App, Dataset } from '~/types/content'
 import { blankArticle, blankApp, blankDataset } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
+import { sampleImageUrl } from '~/lib/sample-images'
 
 // ── Shared pools ──────────────────────────────────────────────────────────────
 
@@ -89,7 +90,7 @@ function loremPara(i: number, sentences: number): string {
 const DEMO_SECTIONS = ['Introduction', 'Background', 'Methodology', 'Findings', 'Analysis', 'Discussion', 'Limitations', 'Conclusion'] as const
 
 function buildLoremBody(i: number): string {
-  const figure = (n: number) => `![Sample figure ${n}](https://picsum.photos/seed/demobody${i}-${n}/1000/520 "Sample figure ${n} — placeholder")`
+  const figure = (n: number) => `![Sample figure ${n}](${sampleImageUrl(i + n * 50)} "Sample figure ${n} — placeholder")`
   const sections = DEMO_SECTIONS.map((heading, s) => {
     const blocks = [`## ${heading}`, `${loremPara(i + s, 3)}[^${s + 1}]`, loremPara(i + s + 1, 2)]
     if (s === 0) blocks.push('Key terms include **lorem ipsum** and _dolor sit amet_. See the [sample reference](https://example.com).')
@@ -165,7 +166,7 @@ function makeArticle(i: number): Article {
     markdown: buildLoremBody(i),
     splash: {
       id: 0,
-      url: `https://picsum.photos/seed/demo${String(i + 1).padStart(3, '0')}/1200/600`,
+      url: sampleImageUrl(i),
       alternativeText: `${stem} — sample feature image`,
       width: 1200,
       height: 600,
@@ -173,7 +174,7 @@ function makeArticle(i: number): Article {
     },
     thumbnail: {
       id: 0,
-      url: `https://picsum.photos/seed/thumb${String(i + 1).padStart(3, '0')}/600/400`,
+      url: sampleImageUrl(i + 1),
       alternativeText: `${stem} — sample thumbnail`,
       width: 600,
       height: 400,

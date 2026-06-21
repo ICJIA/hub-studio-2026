@@ -22,6 +22,25 @@ export default defineNuxtConfig({
       { name: 'JetBrains Mono', provider: 'google', weights: [400, 500, 700], styles: ['normal'] },
     ],
   },
+  // Bundle the lucide icons INTO the client build so the static SPA never fetches them from
+  // api.iconify.design at runtime. Keeps the app self-contained (works offline / behind a tight
+  // CSP connect-src 'self') and avoids missing icons. `scan` picks up the i-lucide-* used in app
+  // templates; the explicit `icons` list covers Nuxt UI's internal indicators (chevrons, check,
+  // loader, …) that a source scan cannot see because they live in node_modules.
+  icon: {
+    clientBundle: {
+      scan: true,
+      icons: [
+        'lucide:check', 'lucide:chevron-down', 'lucide:chevron-up', 'lucide:chevron-left',
+        'lucide:chevron-right', 'lucide:chevrons-left', 'lucide:chevrons-right',
+        'lucide:x', 'lucide:search', 'lucide:loader-circle', 'lucide:minus', 'lucide:plus',
+        'lucide:arrow-left', 'lucide:arrow-right', 'lucide:moon', 'lucide:sun',
+        'lucide:circle-check', 'lucide:info', 'lucide:triangle-alert', 'lucide:circle-alert',
+        'lucide:ellipsis', 'lucide:external-link',
+      ],
+      sizeLimitKb: 512,
+    },
+  },
   runtimeConfig: {
     // Server-only secrets (NEVER exposed to the client). Auto-populated from the matching
     // MAILGUN_* env vars at runtime; empty defaults keep typecheck/build green without them.

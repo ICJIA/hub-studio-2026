@@ -8,10 +8,11 @@
   the form (the editor modal) or from a saved draft (the /preview/:type/:documentId page / link).
 -->
 <script setup lang="ts">
-import { computed } from '#imports'
+import { computed, ref, onMounted, onBeforeUnmount } from '#imports'
 import type { Article } from '~/types/content'
 import { renderArticleBody, renderInline } from '~/lib/markdown'
 import { safeHref } from '~/lib/safe-url'
+import { pickActiveHeadingId } from '~/lib/toc-scrollspy'
 
 const props = defineProps<{ article: Partial<Article> }>()
 
@@ -47,10 +48,161 @@ const hasTags = computed(() => Boolean(props.article.categories?.length || props
 function printArticle() {
   if (import.meta.client) window.print()
 }
+
+// ---------------------------------------------------------------------------
+// Scroll-spy + smooth scroll
+// ---------------------------------------------------------------------------
+
+/** The root element of this component (<article class="published-article">). */
+const rootEl = ref<HTMLElement | null>(null)
+
+/** The resolved scroll container (an overflow-y:auto/scroll ancestor, or window). */
+let scrollContainer: HTMLElement | Window | null = null
+
+/** The scroll offset in px: --published-toc-top value + 16px margin. */
+let scrollOffset = 32 // sensible default before mount
+
+/** Active TOC id for the scroll-spy highlight. */
+const activeId = ref<string | null>(null)
+
+/** rAF handle for throttling. */
+let rafId: number | null = null
+
+/** Bound event listeners so we can remove them. */
+let scrollListener: (() => void) | null = null
+let resizeListener: (() => void) | null = null
+
+/**
+ * Walk up from `el` to find the nearest scrollable overflow-y ancestor.
+ * Returns null if none found before <html>.
+ */
+function findScrollParent(el: HTMLElement): HTMLElement | null {
+  let node: HTMLElement | null = el.parentElement
+  while (node && node !== document.documentElement) {
+    const style = window.getComputedStyle(node)
+    const oy = style.overflowY
+    if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+/**
+ * Read --published-toc-top off the component root and parse its px value.
+ * Falls back to 16 if not set or not parseable.
+ */
+function readTocTop(el: HTMLElement): number {
+  const raw = window.getComputedStyle(el).getPropertyValue('--published-toc-top').trim()
+  if (!raw) return 16
+  const px = parseFloat(raw)
+  return Number.isFinite(px) ? px : 16
+}
+
+/** Collect h2[id] headings and compute their top relative to the container viewport top. */
+function collectHeadings(): { id: string; top: number }[] {
+  if (!import.meta.client || !rootEl.value) return []
+
+  const headings = Array.from(rootEl.value.querySelectorAll<HTMLElement>('h2[id]'))
+  let containerTop = 0
+
+  if (scrollContainer && scrollContainer !== window) {
+    const container = scrollContainer as HTMLElement
+    containerTop = container.getBoundingClientRect().top
+  }
+  // For window, containerTop stays 0 (viewport top is 0).
+
+  return headings.map((h) => ({
+    id: h.id,
+    top: h.getBoundingClientRect().top - containerTop,
+  }))
+}
+
+/** rAF-throttled scroll handler — updates activeId. */
+function onScroll() {
+  if (rafId !== null) return
+  rafId = requestAnimationFrame(() => {
+    rafId = null
+    const headings = collectHeadings()
+    activeId.value = pickActiveHeadingId(headings, scrollOffset)
+  })
+}
+
+/**
+ * Smooth-scroll the container so that the heading with `id` lands `scrollOffset`
+ * from the top of the container's viewport. Sets activeId immediately.
+ */
+function scrollToHeading(id: string) {
+  if (!import.meta.client) return
+
+  activeId.value = id
+
+  const target = rootEl.value?.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
+  if (!target) return
+
+  if (!scrollContainer || scrollContainer === window) {
+    // Window scroll: use getBoundingClientRect relative to the viewport.
+    const targetTop = target.getBoundingClientRect().top + window.scrollY
+    window.scrollTo({ top: targetTop - scrollOffset, behavior: 'smooth' })
+  } else {
+    const container = scrollContainer as HTMLElement
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    // Current scroll position + delta to align target at scrollOffset from container top.
+    const delta = targetRect.top - containerRect.top - scrollOffset
+    container.scrollBy({ top: delta, behavior: 'smooth' })
+  }
+}
+
+onMounted(() => {
+  if (!import.meta.client || !rootEl.value) return
+
+  // Resolve scroll container.
+  const parent = findScrollParent(rootEl.value)
+  scrollContainer = parent ?? window
+
+  // Resolve offset: --published-toc-top (inherited from ancestor, readable via rootEl) + 16px margin.
+  // We read off the closest ancestor that might set the property, which is the component root
+  // (the property cascades down from the page wrapper).
+  scrollOffset = readTocTop(rootEl.value) + 16
+
+  // Initial active section.
+  const headings = collectHeadings()
+  activeId.value = pickActiveHeadingId(headings, scrollOffset)
+
+  // Attach listeners.
+  scrollListener = onScroll
+  resizeListener = () => {
+    const headings = collectHeadings()
+    activeId.value = pickActiveHeadingId(headings, scrollOffset)
+  }
+
+  const target = scrollContainer === window ? window : (scrollContainer as HTMLElement)
+  target.addEventListener('scroll', scrollListener, { passive: true })
+  window.addEventListener('resize', resizeListener, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+  if (scrollListener && scrollContainer) {
+    const target = scrollContainer === window ? window : (scrollContainer as HTMLElement)
+    target.removeEventListener('scroll', scrollListener)
+  }
+  if (resizeListener) {
+    window.removeEventListener('resize', resizeListener)
+  }
+  scrollListener = null
+  resizeListener = null
+  scrollContainer = null
+})
 </script>
 
 <template>
-  <article class="published-article">
+  <article ref="rootEl" class="published-article">
     <img v-if="splashUrl" :src="splashUrl" :alt="article.splash?.alternativeText ?? ''" class="published-splash">
 
     <div class="published-layout">
@@ -59,7 +211,12 @@ function printArticle() {
         <p class="published-toc-heading">Table of Contents</p>
         <ul>
           <li v-for="item in rendered.toc" :key="item.id">
-            <a :href="`#${item.id}`">{{ item.text }}</a>
+            <a
+              :href="`#${item.id}`"
+              :class="{ 'published-toc-link--active': item.id === activeId }"
+              :aria-current="item.id === activeId ? 'location' : undefined"
+              @click.prevent="scrollToHeading(item.id)"
+            >{{ item.text }}</a>
           </li>
         </ul>
       </nav>

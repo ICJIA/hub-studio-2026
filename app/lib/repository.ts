@@ -3,7 +3,7 @@
 // base = /content-manager/collection-types/{uid}. list → {results,pagination};
 // findOne/create/update → {data}; create/update bodies are FLAT (NOT wrapped in {data}).
 // findOne additionally hydrates each `relationFields` entry from the relations endpoint.
-// Deferred (later plans): relation-WRITE (connect/disconnect) and the publish action.
+// Deferred (later plans): relation-WRITE (connect/disconnect). The publish action is added in Plan 6.
 import type { $Fetch } from 'ofetch'
 import type { ContentStatus, RelationRef } from '~/types/content'
 import {
@@ -24,6 +24,8 @@ export interface Repository<TDomain> {
   create(model: TDomain, opts?: WriteOptions): Promise<TDomain>
   update(documentId: string, model: TDomain, opts?: WriteOptions): Promise<TDomain>
   remove(documentId: string): Promise<void>
+  /** Publish a draft via the Content-Manager publish action; returns the now-published entity. */
+  publish(documentId: string): Promise<TDomain>
 }
 
 export interface RepositoryConfig<TRaw, TDomain, TWrite> {
@@ -89,6 +91,17 @@ export function createRepository<TRaw, TDomain, TWrite>(
 
     async remove(documentId) {
       await cfg.api(`${base}/${documentId}`, { method: 'DELETE' })
+    },
+
+    async publish(documentId) {
+      // Content-Manager publish action (LOCKED Plan-6 decision): POST .../actions/publish.
+      // Same admin-API family the data layer validated; sets publishedAt and returns the entry
+      // ({data} envelope, like update). Strapi ALSO enforces the publisher role server-side
+      // (an author's JWT → 403) — the Studio's canPublish UI gate is defense-in-depth.
+      const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}/actions/publish`, {
+        method: 'POST',
+      })
+      return cfg.fromStrapi(unwrapOne(res))
     },
   }
 }

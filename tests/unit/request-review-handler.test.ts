@@ -5,10 +5,18 @@ import type { MailMessage } from '~/lib/review-email'
 const config = { mailgunFrom: 'Studio <noreply@studio.example.gov>', publicBaseUrl: 'https://studio.example.gov' }
 const okBody = { type: 'article', documentId: 'a1', reviewers: ['reviewer@icjia.illinois.gov'], message: 'Please review.' }
 
-function deps(over: Partial<{ verify: boolean; send: (m: MailMessage) => Promise<void> }> = {}) {
+function deps(
+  over: Partial<{
+    verify: boolean
+    send: (m: MailMessage) => Promise<void>
+    checkRateLimit: (key: string) => { allowed: boolean }
+  }> = {},
+) {
   return {
-    verifyCaller: vi.fn().mockResolvedValue(over.verify ?? true),
+    // verifyCaller now returns a per-user key (or null when invalid).
+    verifyCaller: vi.fn().mockResolvedValue((over.verify ?? true) ? 'user:1' : null),
     sendEmail: vi.fn(over.send ?? (async () => {})),
+    checkRateLimit: vi.fn(over.checkRateLimit ?? (() => ({ allowed: true }))),
     config,
   }
 }
@@ -73,5 +81,20 @@ describe('handleRequestReview (anti-abuse + validation + send)', () => {
     const d = deps({ send: async () => { throw new Error('Mailgun send failed (401).') } })
     const res = await handleRequestReview({ authorization: 'Bearer good', body: okBody }, d)
     expect(res.status).toBe(502)
+  })
+
+  it('429 when the per-user rate limit is exceeded (no send) — audit M-5', async () => {
+    const d = deps({ checkRateLimit: () => ({ allowed: false }) })
+    const res = await handleRequestReview({ authorization: 'Bearer good', body: okBody }, d)
+    expect(res.status).toBe(429)
+    expect(d.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('does NOT consume the rate limit before auth passes (auth-first ordering)', async () => {
+    const d = deps({ verify: false })
+    const res = await handleRequestReview({ authorization: 'Bearer bad', body: okBody }, d)
+    expect(res.status).toBe(401)
+    // An unauthenticated probe must never touch the rate limiter.
+    expect(d.checkRateLimit).not.toHaveBeenCalled()
   })
 })

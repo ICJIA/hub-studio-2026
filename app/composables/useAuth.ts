@@ -3,6 +3,15 @@ import { resolveHasProfile } from '~/lib/profile-gate'
 // DEV-ONLY — remove before production (see app/lib/dev-auth.ts header).
 import { matchesDevAdmin, isDevAdminToken, makeDevAdminSession } from '~/lib/dev-auth'
 
+/** Best-effort HTTP status from a thrown fetch error (ofetch FetchError carries both shapes). */
+export function statusOf(e: unknown): number | undefined {
+  if (e && typeof e === 'object') {
+    const err = e as { statusCode?: number; status?: number; response?: { status?: number } }
+    return err.statusCode ?? err.response?.status ?? err.status
+  }
+  return undefined
+}
+
 export function useAuth() {
   const store = useAuthStore()
   const { $api } = useNuxtApp()
@@ -47,10 +56,17 @@ export function useAuth() {
       const me = await fetchMe($api)
       store.setUser(me)
       await refreshProfileGate()    // FAIL-OPEN: errors ⇒ hasProfile null ⇒ never gate
-    } catch {
-      // Deliberate no-op: a 401 is handled globally by the $api interceptor (clears session,
-      // redirects to /login). For transient failures (network/5xx) keep the session — the
-      // token may still be valid on recovery, and the server enforces authz on every request.
+    } catch (e) {
+      // Audit M-1: on a DEFINITIVE 403 from /admin/users/me (deactivated/forbidden user), clear
+      // the session — same teardown the 401 path uses — so we never show a logged-in shell to a
+      // user the server has rejected. A 401 is already handled by the $api interceptor.
+      if (statusOf(e) === 403) {
+        store.clearSession()
+        return
+      }
+      // Deliberate no-op for everything else: for transient failures (network/5xx) KEEP the
+      // session — the token may still be valid on recovery, and the server enforces authz on
+      // every request.
     }
   }
 

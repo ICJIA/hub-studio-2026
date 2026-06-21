@@ -1,5 +1,6 @@
 import type { App } from '~/types/content'
 import { containsBase64 } from '~/lib/base64-guard'
+import { hasHostileScheme } from '~/lib/validators/url-scheme'
 import type { FieldError } from '~/lib/validators/article'
 
 export function validateApp(a: App): FieldError[] {
@@ -9,7 +10,7 @@ export function validateApp(a: App): FieldError[] {
   if (a.description && containsBase64(a.description)) {
     errors.push({ field: 'description', message: 'Embedded base64 images are not allowed; use a Media Library URL.' })
   }
-  if (a.url && /^\s*(javascript|data|vbscript|file):/i.test(a.url.trim())) {
+  if (hasHostileScheme(a.url)) {
     errors.push({ field: 'url', message: 'That link type is not allowed; use an http(s) URL.' })
   }
   return errors

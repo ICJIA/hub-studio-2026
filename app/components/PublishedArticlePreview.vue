@@ -10,31 +10,14 @@
 <script setup lang="ts">
 import { computed } from '#imports'
 import type { Article } from '~/types/content'
-import { renderMarkdown, renderInline } from '~/lib/markdown'
+import { renderArticleBody, renderInline } from '~/lib/markdown'
 import { safeHref } from '~/lib/safe-url'
 
 const props = defineProps<{ article: Partial<Article> }>()
 
-/** Heading-text → anchor id (used both to id the <h2> and to link the TOC at it). */
-function slugify(s: string): string {
-  return s.toLowerCase().trim().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '')
-}
-
-/** Render the body and, in one pass, give each <h2> an id and collect it for the TOC. */
-const rendered = computed(() => {
-  const toc: { id: string; text: string }[] = []
-  const html = renderMarkdown(props.article.markdown ?? '').replace(
-    /<h2>([\s\S]*?)<\/h2>/g,
-    (_m, inner: string) => {
-      const text = inner.replace(/<[^>]+>/g, '').trim()
-      if (!text) return `<h2>${inner}</h2>`
-      const id = slugify(text)
-      toc.push({ id, text })
-      return `<h2 id="${id}">${inner}</h2>`
-    },
-  )
-  return { html, toc }
-})
+/** Render the body and collect the h2 Table of Contents from the markdown AST (audit M-2:
+ *  ids are assigned + escaped at the token level, NOT by regex-rewriting rendered HTML). */
+const rendered = computed(() => renderArticleBody(props.article.markdown ?? ''))
 
 /** "A, B and C" — the byline format the public site uses (shows ALL authors). */
 const authorLine = computed(() => {
@@ -104,7 +87,7 @@ function printArticle() {
 
         <hr class="published-rule">
 
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted: renderMarkdown runs markdown-it with html:false -->
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted: renderArticleBody runs markdown-it with html:false; h2 ids are AST-derived + escaped -->
         <div class="prose-preview" v-html="rendered.html" />
 
         <!-- End matter (parity with the published article footer). -->

@@ -1,6 +1,7 @@
 import type { Dataset } from '~/types/content'
 import { UNIT_OPTIONS, TIMEPERIOD_TYPE_OPTIONS } from '~/lib/field-options'
 import { containsBase64 } from '~/lib/base64-guard'
+import { hasHostileScheme } from '~/lib/validators/url-scheme'
 import type { FieldError } from '~/lib/validators/article'
 
 export function validateDataset(d: Dataset): FieldError[] {
@@ -16,6 +17,14 @@ export function validateDataset(d: Dataset): FieldError[] {
   }
   if (d.description && containsBase64(d.description)) {
     errors.push({ field: 'description', message: 'Embedded base64 images are not allowed; use a Media Library URL.' })
+  }
+  // Audit L-4: reject javascript:/data:/vbscript:/file: on the source + datafile URLs at save
+  // time (parity with validateApp), keeping a hostile scheme out of the store.
+  if ((d.sources ?? []).some((s) => hasHostileScheme(s?.url))) {
+    errors.push({ field: 'sources', message: 'A source link uses a disallowed type; use an http(s) URL.' })
+  }
+  if (hasHostileScheme(d.datafile?.url)) {
+    errors.push({ field: 'datafile', message: 'That link type is not allowed; use an http(s) URL.' })
   }
   return errors
 }

@@ -1,0 +1,36 @@
+# Netlify HTTP response headers (https://docs.netlify.com/routing/headers/).
+# Netlify serves files under public/ at the site root, so this file is published as `/_headers`
+# and applied to every response. Comment syntax is `#`.
+#
+# Security-hardening header set for the ICJIA Research Hub Studio (audit finding H-1:
+# "No security headers / no CSP; admin JWT in a JS-readable cookie"). The Studio is a pure
+# client-side SPA (ssr:false) that stores a Strapi ADMIN JWT in a JS-readable cookie, so the
+# blast radius of any future HTML/URL-sink regression is a full admin-session theft. A strict
+# CSP turns that single point of failure into defense-in-depth.
+#
+# ============================================================================================
+# VERIFY ON A NETLIFY DEPLOY PREVIEW: load the app, watch the browser console for CSP
+# violations; if a Nuxt bootstrap inline script is blocked, add its sha256 hash to script-src
+# (e.g. script-src 'self' 'sha256-...'). NEVER use 'unsafe-inline' for script-src — that would
+# defeat the entire XSS-mitigation purpose of the CSP. If the Studio is NOT hosted on Netlify,
+# port these headers to the host's response-header config or to Nuxt/Nitro `routeRules` headers.
+# ============================================================================================
+
+/*
+  # Block MIME-type sniffing so a response is only ever interpreted as its declared Content-Type
+  # (defends uploaded/served files from being re-typed into active content).
+  X-Content-Type-Options: nosniff
+  # Refuse to be framed anywhere (clickjacking defense). Belt-and-suspenders with CSP frame-ancestors.
+  X-Frame-Options: DENY
+  # Trim the Referer on cross-origin navigations (don't leak full Studio paths to third parties).
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Force HTTPS for a year, including subdomains (defends the Bearer-cookie transport from downgrade).
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  # Content-Security-Policy — the H-1 blast-radius control. The tight `connect-src` is the core of
+  # it: even if script ran in the origin, it could only reach 'self', the Strapi admin API, and
+  # Mailgun — not an attacker exfil endpoint. default-src locks everything to same-origin first;
+  # script-src 'self' (NO 'unsafe-inline') blocks injected inline script; style-src allows inline
+  # styles (Nuxt UI / scoped styles emit them); img-src permits https + data: for the Media Library
+  # and placeholder images; object-src 'none' + base-uri 'none' + frame-ancestors 'none' close off
+  # plugin, <base>-hijack, and framing vectors; form-action 'self' keeps form posts same-origin.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self' https://v2.hub.icjia-api.cloud https://api.mailgun.net; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'

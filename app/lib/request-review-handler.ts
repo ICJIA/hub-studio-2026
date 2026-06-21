@@ -7,16 +7,21 @@
 import { buildReviewEmail, isValidEmail, type MailMessage } from '~/lib/review-email'
 
 export interface RequestReviewDeps {
-  /** True iff the caller's Bearer token is a valid Studio (admin) session. */
-  verifyCaller: (token: string) => Promise<boolean>
+  /** Verify the caller's Bearer token; returns a stable per-user key (e.g. the Strapi user id)
+   *  on success, or null when the session is invalid. The key throttles per authenticated user. */
+  verifyCaller: (token: string) => Promise<string | null>
   /** Send the built message (Mailgun). Throws on failure. */
   sendEmail: (msg: MailMessage) => Promise<void>
+  /** Record one send for `key` and report whether it is within the rate limit (audit M-5). */
+  checkRateLimit: (key: string) => { allowed: boolean }
   config: { mailgunFrom: string; publicBaseUrl: string }
 }
 
 export interface RequestReviewInput {
   authorization: string | undefined
   body: unknown
+  /** Fallback identity (client IP) used to key the rate limit when no user id is available. */
+  clientIp?: string
 }
 
 export interface HandlerResult {
@@ -74,7 +79,18 @@ export async function handleRequestReview(
   // 1) Auth FIRST — never an open relay.
   const token = bearerToken(input.authorization)
   if (!token) return { status: 401, body: { error: 'Authentication required.' } }
-  if (!(await deps.verifyCaller(token))) return { status: 401, body: { error: 'Invalid or expired session.' } }
+  const userKey = await deps.verifyCaller(token)
+  if (!userKey) return { status: 401, body: { error: 'Invalid or expired session.' } }
+
+  // 1b) Rate-limit per authenticated user (fallback: client IP) AFTER auth so unauthenticated
+  // probes never consume a real user's allowance (audit M-5). Exceeding the window → 429.
+  const limitKey = userKey || input.clientIp || 'anonymous'
+  if (!deps.checkRateLimit(limitKey).allowed) {
+    return {
+      status: 429,
+      body: { error: 'Too many review emails sent. Please wait a few minutes and try again.' },
+    }
+  }
 
   // 2) Validate the body shape (including documentId boundary check + email format).
   const parsed = parseBody(input.body)

@@ -470,6 +470,54 @@ config** (Strapi roles, upload limits, JWT TTL), and **abuse controls** (email r
 - [ ] Stand up `npm audit` / Dependabot in CI for transitive-CVE coverage (out of scope for this
       static review).
 
+### Remediation status (2026-06-21)
+
+In-repo hardening landed this date (commit on `main`). Strapi-side items and the dev-bypass removal
+remain open and are deferred to launch (as designed — the `admin/admin` bypass is intentionally kept
+for demos until launch). Each item below was implemented WITH a test; the suite is green
+(375 passing) and `npm run typecheck` exits 0.
+
+**Addressed in-repo:**
+- [x] **H-1 — Security headers / CSP added.** `public/_headers` (Netlify) sets CSP, HSTS,
+      `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`. The CSP pins
+      `connect-src` to `'self' https://v2.hub.icjia-api.cloud https://api.mailgun.net` (the
+      blast-radius control) and uses `script-src 'self'` (no `'unsafe-inline'`).
+      **PENDING DEPLOY-VERIFY:** confirm on a Netlify deploy preview that no Nuxt bootstrap inline
+      script is blocked (add its `sha256` to `script-src` if so — never `'unsafe-inline'`). If the
+      Studio is not on Netlify, port the headers to the host / Nitro `routeRules`. Test:
+      `tests/unit/security-headers.test.ts`.
+- [x] **M-5 — Review-email rate limit.** Pure fixed-window limiter (`app/lib/rate-limit.ts`, 5
+      sends / 10 min) wired into the handler keyed by the authenticated user (fallback IP) →
+      HTTP 429 when exceeded. Per-instance (resets on restart; multi-instance needs a shared store).
+      Tests: `tests/unit/rate-limit.test.ts`, `tests/unit/request-review-handler.test.ts`.
+- [x] **M-2 — AST-based, escaped TOC ids.** `renderArticleBody` (`app/lib/markdown.ts`) assigns h2
+      ids + collects the TOC from the markdown-it token AST (core rule), not by regex-rewriting
+      rendered HTML; ids use the strict `slugify` allowlist and markdown-it's native attribute
+      escaping. `PublishedArticlePreview.vue` now uses it (the `/<h2>…<\/h2>/g` regex is gone).
+      Test: `tests/unit/markdown.test.ts`.
+- [x] **L-5 — Generic production error page.** `app/error.vue` renders a generic body in production
+      (heading + "something went wrong" + a link home); only `import.meta.dev` surfaces
+      `error.message`. Logic extracted to `app/lib/error-display.ts`. Test:
+      `tests/unit/error-display.test.ts`.
+- [x] **L-4 — Dataset save-time URL rejection.** `validateDataset` now rejects
+      `javascript:/data:/vbscript:/file:` on `sources[].url` and `datafile.url`, via the shared
+      `app/lib/validators/url-scheme.ts` helper (which `validateApp` also now uses). Test:
+      `tests/unit/validators.test.ts`.
+- [x] **I-5 — Hard zero-base64 write guard.** `assertNoBase64` is now called inside
+      `repository.create`/`update` (`app/lib/repository.ts`), so a `data:`/base64 payload is
+      rejected at the write boundary, not just by the form. Test: `tests/unit/repository.test.ts`.
+- [x] **M-1 — Clear session on a definitive 403 in `init()`.** `app/composables/useAuth.ts` tears
+      down the session (same teardown the 401 path uses) on a 403 from `/admin/users/me`, while
+      keeping the existing keep-session behavior for transient/5xx/network errors. Tests:
+      `tests/nuxt/use-auth-init.test.ts`, `tests/unit/auth-status-of.test.ts`.
+- [x] **Dependabot.** `.github/dependabot.yml` (npm + github-actions, weekly).
+
+**Still open (launch-time / Strapi-side — unchanged):**
+- [ ] Remove the dev `admin/admin` bypass end-to-end (P0; intentionally kept until launch).
+- [ ] Verify Strapi server-side authz; lock down the Media Library (MIME/size; SVG/HTML served
+      `attachment`/`nosniff`, never inline as active content). (I-1, M-3, M-4, §4)
+- [ ] (Optional) recipient-allowlist + server-side send auditing for the review email. (M-5)
+
 ---
 
 ## 6. Blue-Team Scorecard (what's already done right)

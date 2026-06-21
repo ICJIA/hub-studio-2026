@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderMarkdown, renderInline } from '~/lib/markdown'
+import { renderMarkdown, renderInline, renderArticleBody, slugify } from '~/lib/markdown'
 
 describe('renderMarkdown', () => {
   it('renders a heading and a link', () => {
@@ -42,6 +42,66 @@ describe('renderMarkdown', () => {
     const html = renderMarkdown('[x](https://y)')
     expect(html).toMatch(/target="_blank"/)
     expect(html).toMatch(/rel="noopener noreferrer"/)
+  })
+})
+
+describe('renderArticleBody (AST-derived TOC + escaped h2 ids — audit M-2)', () => {
+  it('assigns each h2 a slugified id and collects the TOC in document order', () => {
+    const { html, toc } = renderArticleBody('## First Section\n\nbody\n\n## Second Section')
+    expect(html).toMatch(/<h2 id="first-section">/)
+    expect(html).toMatch(/<h2 id="second-section">/)
+    expect(toc).toEqual([
+      { id: 'first-section', text: 'First Section' },
+      { id: 'second-section', text: 'Second Section' },
+    ])
+  })
+
+  it('does NOT id non-h2 headings (h1/h3 carry no id, only h2 feeds the TOC)', () => {
+    const { html, toc } = renderArticleBody('# Title\n\n## Real Section\n\n### Sub')
+    expect(html).toMatch(/<h1>Title<\/h1>/)
+    expect(html).toMatch(/<h3>Sub<\/h3>/)
+    expect(toc).toEqual([{ id: 'real-section', text: 'Real Section' }])
+  })
+
+  it('a heading with markup/special chars yields a safe, escaped id and correct TOC text', () => {
+    // Inline code + a quote + angle brackets in the heading. The id must stay within the strict
+    // slug allowlist (no quote/angle-bracket can survive to break the id="..." attribute), and
+    // the TOC carries the source text.
+    const { html, toc } = renderArticleBody('## Using `<img>` "tags" & more')
+    const idMatch = /<h2 id="([^"]*)">/.exec(html)
+    expect(idMatch).not.toBeNull()
+    const id = idMatch![1]!
+    // Strict allowlist: only [a-z0-9_-]. No raw quote, <, >, & survived into the id.
+    expect(id).toMatch(/^[a-z0-9_-]+$/)
+    expect(html).not.toMatch(/<h2 id="[^"]*["<>][^"]*">/)
+    // No attribute-breakout: there is no stray un-escaped quote inside the opening h2 tag.
+    expect(toc).toHaveLength(1)
+    expect(toc[0]!.id).toBe(id)
+    expect(toc[0]!.text).toContain('img')
+  })
+
+  it('de-duplicates colliding heading ids deterministically', () => {
+    const { toc } = renderArticleBody('## Notes\n\nx\n\n## Notes')
+    expect(toc.map((t) => t.id)).toEqual(['notes', 'notes-2'])
+  })
+
+  it('escapes raw HTML in the body (html:false carried over) and ignores empty headings', () => {
+    const { html, toc } = renderArticleBody('## \n\n<script>alert(1)</script>')
+    expect(html).not.toMatch(/<script>alert\(1\)<\/script>/)
+    expect(html).toMatch(/&lt;script&gt;/)
+    // An empty h2 contributes nothing to the TOC.
+    expect(toc).toEqual([])
+  })
+
+  it('returns no TOC for body with no h2', () => {
+    expect(renderArticleBody('just a paragraph').toc).toEqual([])
+  })
+})
+
+describe('slugify', () => {
+  it('lowercases, replaces non-word runs with -, and trims stray dashes', () => {
+    expect(slugify('  Hello, World!  ')).toBe('hello-world')
+    expect(slugify('A & B')).toBe('a-b')
   })
 })
 

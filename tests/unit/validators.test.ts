@@ -82,4 +82,20 @@ describe('validateDataset', () => {
     expect(validateDataset(baseDataset({ description: 'data:image/png;base64,AAAA' })))
       .toContainEqual(expect.objectContaining({ field: 'description' }))
   })
+  it('rejects a javascript: source url at save time (audit L-4, parity with validateApp)', () => {
+    expect(validateDataset(baseDataset({ sources: [{ title: 'Bad', url: 'javascript:alert(1)' }] })))
+      .toContainEqual(expect.objectContaining({ field: 'sources' }))
+  })
+  it('rejects a data:/file: datafile url at save time (audit L-4)', () => {
+    expect(validateDataset(baseDataset({ datafile: { id: 0, url: 'data:text/csv;base64,QQ==' } })))
+      .toContainEqual(expect.objectContaining({ field: 'datafile' }))
+  })
+  it('accepts normal https: source + datafile urls', () => {
+    const errs = validateDataset(baseDataset({
+      sources: [{ title: 'OK', url: 'https://data.illinois.gov/x' }],
+      datafile: { id: 5, url: 'https://cdn.example.gov/d.csv' },
+    }))
+    expect(errs).not.toContainEqual(expect.objectContaining({ field: 'sources' }))
+    expect(errs).not.toContainEqual(expect.objectContaining({ field: 'datafile' }))
+  })
 })

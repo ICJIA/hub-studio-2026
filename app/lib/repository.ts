@@ -6,6 +6,7 @@
 // Deferred (later plans): relation-WRITE (connect/disconnect). The publish action is added in Plan 6.
 import type { $Fetch } from 'ofetch'
 import type { ContentStatus, RelationRef } from '~/types/content'
+import { assertNoBase64 } from '~/lib/base64-guard'
 import {
   unwrapList, unwrapOne, relationsFromList,
   type StrapiListResponse, type StrapiSingleResponse, type StrapiRelationsResponse,
@@ -104,19 +105,27 @@ export function createRepository<TRaw, TDomain, TWrite>(
     },
 
     async create(model, opts = {}) {
+      const body = cfg.toWrite(model) as Record<string, unknown>
+      // Audit I-5: HARD zero-base64 guarantee at the write boundary — a data:/base64 payload is
+      // rejected here (throws), not only by the form validators, so a direct repo caller cannot
+      // bypass the form layer and persist an inline base64 image.
+      assertNoBase64(body, `${cfg.uid} create payload`)
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(base, {
         method: 'POST',
         query: { status: opts.status },
-        body: cfg.toWrite(model) as Record<string, unknown>,
+        body,
       })
       return cfg.fromStrapi(unwrapOne(res))
     },
 
     async update(documentId, model, opts = {}) {
+      const body = cfg.toWrite(model) as Record<string, unknown>
+      // Audit I-5: same HARD zero-base64 write-time assertion on update.
+      assertNoBase64(body, `${cfg.uid} update payload`)
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}`, {
         method: 'PUT',
         query: { status: opts.status },
-        body: cfg.toWrite(model) as Record<string, unknown>,
+        body,
       })
       return cfg.fromStrapi(unwrapOne(res))
     },

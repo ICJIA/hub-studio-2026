@@ -52,4 +52,39 @@ describe('createRepository (Content-Manager API)', () => {
     await makeRepo(api).remove('a')
     expect(api).toHaveBeenCalledWith(`${BASE}/a`, expect.objectContaining({ method: 'DELETE' }))
   })
+
+  // Audit I-5: HARD zero-base64 guard at the repository write boundary (not just the form layer).
+  describe('zero-base64 write-time guard (audit I-5)', () => {
+    interface DomImg { documentId: string; title: string; image: string }
+    // A toWrite that lets a data:/base64 image url through into the payload.
+    const toWriteImg = (d: DomImg) => ({ title: d.title, image: d.image })
+    const fromImg = (r: { documentId: string; title: string }): DomImg => ({ ...r, image: '' })
+    const makeImgRepo = (api: $Fetch) =>
+      createRepository<{ documentId: string; title: string }, DomImg, { title: string; image: string }>({
+        api, uid: UID, relationFields: [], fromStrapi: fromImg, toWrite: toWriteImg,
+      })
+    const base64 = 'data:image/png;base64,AAAA'
+
+    it('create() rejects a payload carrying a data:/base64 image url (no API call)', async () => {
+      const api = vi.fn() as unknown as $Fetch
+      await expect(
+        makeImgRepo(api).create({ documentId: '', title: 'x', image: base64 }),
+      ).rejects.toThrow(/base64/i)
+      expect(api).not.toHaveBeenCalled()
+    })
+
+    it('update() rejects a payload carrying a data:/base64 image url (no API call)', async () => {
+      const api = vi.fn() as unknown as $Fetch
+      await expect(
+        makeImgRepo(api).update('a', { documentId: 'a', title: 'x', image: base64 }),
+      ).rejects.toThrow(/base64/i)
+      expect(api).not.toHaveBeenCalled()
+    })
+
+    it('create() allows a normal hosted (Media Library) image url', async () => {
+      const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', title: 'x' } }) as unknown as $Fetch
+      await makeImgRepo(api).create({ documentId: '', title: 'x', image: '/uploads/fig.png' })
+      expect(api).toHaveBeenCalledWith(BASE, expect.objectContaining({ method: 'POST' }))
+    })
+  })
 })

@@ -110,4 +110,24 @@ describe('buildSampleArticle', () => {
     const article = buildSampleArticle()
     expect(article.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
+
+  // ── New assertions for the longer article ──────────────────────────────────
+
+  it('markdown has at least 8 h2 section headings (## )', () => {
+    const article = buildSampleArticle()
+    const h2s = article.markdown.match(/^## .+/gm) ?? []
+    expect(h2s.length).toBeGreaterThanOrEqual(8)
+  })
+
+  it('markdown has at least 6 footnote definitions ([^N]:)', () => {
+    const article = buildSampleArticle()
+    const defs = article.markdown.match(/^\[\^\d+\]:/gm) ?? []
+    expect(defs.length).toBeGreaterThanOrEqual(6)
+  })
+
+  it('at least one author has a non-empty description (bio)', () => {
+    const article = buildSampleArticle()
+    const withBio = article.authors.filter((a) => a.description && a.description.trim() !== '')
+    expect(withBio.length).toBeGreaterThan(0)
+  })
 })

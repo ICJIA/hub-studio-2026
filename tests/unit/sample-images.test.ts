@@ -3,10 +3,10 @@ import { describe, it, expect } from 'vitest'
 import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 
 describe('sampleImageUrl', () => {
-  it('returns a https://v2.hub.icjia-api.cloud/uploads/… URL for any seed', () => {
+  it('returns a /images/demo/… local URL for any seed', () => {
     for (const seed of [0, 1, 7, 15, 16, 99, 210, 1000]) {
       const url = sampleImageUrl(seed)
-      expect(url).toMatch(/^https:\/\/v2\.hub\.icjia-api\.cloud\/uploads\//)
+      expect(url).toMatch(/^\/images\/demo\//)
     }
   })
 
@@ -46,9 +46,9 @@ describe('sampleImageUrl', () => {
 })
 
 describe('sampleSplashUrl', () => {
-  it('returns a large_ /uploads/ URL from v2.hub for any seed', () => {
+  it('returns a /images/demo/large_… local URL for any seed', () => {
     for (const seed of [0, 1, 7, 15, 16, 99, 210, -3]) {
-      expect(sampleSplashUrl(seed)).toMatch(/^https:\/\/v2\.hub\.icjia-api\.cloud\/uploads\/large_/)
+      expect(sampleSplashUrl(seed)).toMatch(/^\/images\/demo\/large_/)
     }
   })
 

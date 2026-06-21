@@ -2,6 +2,10 @@
 export default defineNuxtConfig({
   ssr: false,
   modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt', '@nuxt/fonts'],
+  // Flat component names (no directory prefix) so the content forms can reference the shared
+  // field components in app/components/fields/ as <TextField>/<DateField>/… rather than
+  // <FieldsTextField>/…. Without this, those nested components fail to resolve and render nothing.
+  components: [{ path: '~/components', pathPrefix: false }],
   css: ['~/assets/css/main.css', '~/assets/css/prose-preview.css'],
   fonts: {
     families: [

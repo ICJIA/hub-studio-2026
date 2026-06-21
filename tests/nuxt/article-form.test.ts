@@ -53,4 +53,12 @@ describe('ArticleForm (save-gate + repo wiring)', () => {
     const call = createMock.mock.calls[0]
     expect(call![0].slug).toBe('crime-in-illinois')
   })
+
+  it('renders the full field set (not just the Markdown body)', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const text = wrapper.text()
+    for (const label of ['Title', 'Date', 'Categories', 'Tags', 'Authors', 'Abstract', 'Splash image', 'Body']) {
+      expect(text).toContain(label)
+    }
+  })
 })

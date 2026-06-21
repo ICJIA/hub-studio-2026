@@ -9,11 +9,14 @@
 # NUXT_PUBLIC_DEMO_MODE unset, and set the real secrets as Netlify environment variables.
 
 [build]
-  command = "npm run generate && cp deploy/headers-demo.txt .output/public/_headers"
-  publish = ".output/public"        # Nuxt 4 static-generate output (confirmed on build)
+  # On Netlify, Nuxt's Nitro auto-detects the platform and emits the static site to `dist/`
+  # (locally, `nuxt generate` writes `.output/public/` and also creates a `dist` symlink to it —
+  # so `dist` is correct in BOTH places). The cp overlays the demo headers onto that output.
+  command = "npm run generate && cp deploy/headers-demo.txt dist/_headers"
+  publish = "dist"
   [build.environment]
     NUXT_PUBLIC_DEMO_MODE = "true"   # <-- the demo switch (studio.config.ts reads this)
-    NODE_VERSION = "20"
+    # Node version comes from .nvmrc (Node 22) — no NODE_VERSION here, to avoid a conflicting source.
 
 # Client-side routing (ssr:false): serve the app shell for every path so deep links work.
 [[redirects]]

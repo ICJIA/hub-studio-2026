@@ -41,6 +41,32 @@ That's the whole lifecycle: **Authors draft → Managers publish.**
 
 Strapi 5 — `https://v2.hub.icjia-api.cloud` (GraphQL + REST). The schema is modernized and at content parity with the legacy Strapi 3 instance. **Do not modify the backend without coordination.**
 
+## Security audits
+
+A running log of red / blue team security audits. The **latest** summary is shown; earlier audits are collapsed under *Previous audits*. Full reports live in [`docs/security-audit.md`](docs/security-audit.md).
+
+<!-- Maintenance: when a new audit is run, move the current "Latest" block into a new entry under "Previous audits" below, then replace the Latest block with the new summary. -->
+
+### Latest — 2026-06-21 · Red / Blue Team
+
+**Posture: strong** for a client-side staff tool — **0 Critical**, nothing confirmed-exploitable in the production path.
+
+| Critical | High | Medium | Low | Info |
+|:--:|:--:|:--:|:--:|:--:|
+| 0 | 1 | 4 | 4 | 4 |
+
+- **Top risk (H-1):** no Content-Security-Policy / security headers, plus the admin JWT in a JS-readable cookie → **add a CSP**.
+- **Other findings:** unthrottled review-email relay (M-5); client-only SVG / document-upload validation (M-3, M-4); fragile TOC id injection (M-2).
+- **Blue-team credit:** single `html:false` markdown seam, `safeHref` URL allowlist, default-deny routing with Strapi as the real authority, server-isolated secrets, dev bypass fails closed.
+- **Report:** [`docs/security-audit.md`](docs/security-audit.md) — reviewed `0f42014`, committed `5f4c951`.
+
+<details>
+<summary><strong>Previous audits</strong></summary>
+
+_No earlier audits yet — 2026-06-21 is the first._
+
+</details>
+
 ## Repository layout
 
 ```text

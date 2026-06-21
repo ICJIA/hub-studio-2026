@@ -63,6 +63,19 @@ describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
     expect(inserted[0]).not.toMatch(/data:/)
   })
 
+  it('exposes an imperative insertMarkdown that the sidebar BodyImagesField calls to place a figure', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
+    // The body-image panel lives in the sidebar now; it reaches the editor only via this seam.
+    expect(typeof wrapper.vm.$.exposed!.insertMarkdown).toBe('function')
+    expect(typeof wrapper.vm.$.exposed!.__insertMarkdown).toBe('function')
+  })
+
+  it('no longer renders an in-editor body-image tray (it moved to the sidebar BodyImagesField)', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
+    expect(wrapper.find('[data-test="body-image-gallery"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="gallery-tray"]').exists()).toBe(false)
+  })
+
   it('guard suppresses the echo: external modelValue update does NOT cause update:modelValue to be re-emitted', async () => {
     // Mount with an initial value so the watcher has a baseline.
     const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# Initial', label: 'Body' } })
@@ -81,81 +94,5 @@ describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
     // the structural guarantee: no update:modelValue events should be observable from a setProps call.
     const emittedAfter = wrapper.emitted('update:modelValue')
     expect(emittedAfter).toBeFalsy()
-  })
-
-  describe('body-image gallery (full mode)', () => {
-    it('renders the gallery tray when compact is false/absent', async () => {
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
-      expect(wrapper.find('[data-test="body-image-gallery"]').exists()).toBe(true)
-    })
-
-    it('does NOT render the gallery when compact is true', async () => {
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Abstract', compact: true } })
-      expect(wrapper.find('[data-test="body-image-gallery"]').exists()).toBe(false)
-    })
-
-    it('uploading via __handleGalleryFiles adds a tray entry WITHOUT inserting into the body', async () => {
-      uploadMock.mockClear()
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
-      const file = new File(['x'], 'figure.png', { type: 'image/png' })
-      await wrapper.vm.$.exposed!.__handleGalleryFiles([file])
-      await new Promise((r) => setTimeout(r, 0))
-      // Upload was called.
-      expect(uploadMock).toHaveBeenCalledWith(file)
-      // Tray now has one entry.
-      const tray = wrapper.vm.$.exposed!.__trayImages.value as Array<{ id: number; ref: MediaRef; filename: string }>
-      expect(tray).toHaveLength(1)
-      expect(tray[0]!.filename).toBe('figure.png')
-      expect(tray[0]!.ref.url).toBe('/uploads/pasted_xyz.png')
-      // No body insert events were emitted (gallery upload does NOT insert).
-      const events = wrapper.emitted('update:modelValue')
-      expect(events).toBeFalsy()
-    })
-
-    it('__insertTrayImage inserts the image markdown into the body (url-based, never data:)', async () => {
-      uploadMock.mockClear()
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
-      const file = new File(['x'], 'graph.png', { type: 'image/png' })
-      // Upload to tray.
-      await wrapper.vm.$.exposed!.__handleGalleryFiles([file])
-      await new Promise((r) => setTimeout(r, 0))
-      const tray = wrapper.vm.$.exposed!.__trayImages.value as Array<{ id: number; ref: MediaRef; filename: string }>
-      expect(tray).toHaveLength(1)
-      // Insert from tray — routes through __emitChange indirectly or we call insertTrayImage which
-      // calls insertAtCursor. Since CM may not fully dispatch in happy-dom, also test the markdown
-      // structure produced by the exposed helper directly.
-      // Verify the tray entry has a hosted URL (never data:).
-      expect(tray[0]!.ref.url).not.toMatch(/^data:/)
-      expect(tray[0]!.ref.url).toMatch(/\/uploads\//)
-    })
-
-    it('__removeFromTray removes the entry from the tray without affecting the body', async () => {
-      uploadMock.mockClear()
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
-      await wrapper.vm.$.exposed!.__handleGalleryFiles([new File(['x'], 'a.png', { type: 'image/png' })])
-      await new Promise((r) => setTimeout(r, 0))
-      const tray = wrapper.vm.$.exposed!.__trayImages.value as Array<{ id: number }>
-      expect(tray).toHaveLength(1)
-      const id = tray[0]!.id
-      wrapper.vm.$.exposed!.__removeFromTray(id)
-      await new Promise((r) => setTimeout(r, 0))
-      expect(wrapper.vm.$.exposed!.__trayImages.value).toHaveLength(0)
-    })
-
-    it('uploading multiple images adds all to the tray (zero data: uris)', async () => {
-      uploadMock.mockClear()
-      const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
-      const files = [
-        new File(['x'], 'a.png', { type: 'image/png' }),
-        new File(['y'], 'b.png', { type: 'image/png' }),
-      ]
-      await wrapper.vm.$.exposed!.__handleGalleryFiles(files)
-      await new Promise((r) => setTimeout(r, 0))
-      const tray = wrapper.vm.$.exposed!.__trayImages.value as Array<{ ref: MediaRef; filename: string }>
-      expect(tray).toHaveLength(2)
-      for (const entry of tray) {
-        expect(entry.ref.url).not.toMatch(/^data:/)
-      }
-    })
   })
 })

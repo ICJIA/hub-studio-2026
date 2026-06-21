@@ -35,4 +35,42 @@ describe('RepeatableField', () => {
       { title: 'John Roe', description: 'Analyst' },
     ])
   })
+
+  it('renders a custom addLabel on the add button (default is "Add row")', async () => {
+    const def = await mountSuspended(RepeatableField, {
+      props: { modelValue: [], label: 'Authors', columns },
+    })
+    expect(def.html()).toContain('Add row')
+
+    const custom = await mountSuspended(RepeatableField, {
+      props: { modelValue: [], label: 'Authors', columns, addLabel: 'Add Author' },
+    })
+    expect(custom.html()).toContain('Add Author')
+    expect(custom.html()).not.toContain('Add row')
+  })
+
+  it('shows a "(max N)" hint and disables the add button at the cap (addRow becomes a no-op)', async () => {
+    const wrapper = await mountSuspended(RepeatableField, {
+      props: {
+        modelValue: [{ title: 'A', description: '' }, { title: 'B', description: '' }],
+        label: 'Authors', columns, max: 2,
+      },
+    })
+    // The hint renders.
+    expect(wrapper.find('[data-test="repeatable-max-hint"]').text()).toBe('(max 2)')
+    // The add button is disabled at the cap.
+    const addBtn = wrapper.findAll('button').find((b) => b.text().includes('Add row'))!
+    expect(addBtn.attributes('disabled')).toBeDefined()
+    // The imperative addRow path also respects the cap (no emit).
+    await wrapper.vm.$.exposed!.addRow()
+    expect(wrapper.emitted('update:modelValue')).toBeFalsy()
+  })
+
+  it('does NOT render a paste UI for authors when no pasteParser is supplied', async () => {
+    const wrapper = await mountSuspended(RepeatableField, {
+      props: { modelValue: [], label: 'Authors', columns, addLabel: 'Add Author', max: 10 },
+    })
+    expect(wrapper.html()).not.toContain('Or paste rows')
+    expect(wrapper.html()).not.toContain('Paste rows')
+  })
 })

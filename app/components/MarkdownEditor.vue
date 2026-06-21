@@ -18,18 +18,8 @@ import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
-import { handleImageFiles, buildImageMarkdown, type InsertedImage } from '~/lib/editor/image-insert'
+import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
-import { isDemoMode } from '~/lib/demo'
-import { sampleFigureRef } from '~/lib/sample-figures'
-import type { MediaRef } from '~/types/content'
-
-/** A tray entry for the body-image gallery (full mode only). */
-interface TrayImage {
-  id: number
-  ref: MediaRef
-  filename: string
-}
 
 const props = defineProps<{ modelValue: string; label?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -40,13 +30,9 @@ const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 
 const host = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
-const galleryInput = ref<HTMLInputElement | null>(null)
 const uploadError = ref<string | null>(null)
 // Default to a wide, full-width editor; the Preview button splits in a live preview on demand.
 const showPreview = ref(false)
-// Body-image gallery tray (full mode only — not rendered when compact).
-const trayImages = ref<TrayImage[]>([])
-let trayIdSeq = 0
 let view: EditorView | null = null
 // Guards the modelValue→doc watcher against re-emitting our own onChange echo.
 let applyingExternal = false
@@ -68,24 +54,6 @@ function insertAtCursor(img: InsertedImage) {
   view.focus()
 }
 
-/** Add a MediaRef to the tray WITHOUT inserting into the body. Returns the tray entry. */
-function addToTray(mediaRef: MediaRef, filename: string): TrayImage {
-  const entry: TrayImage = { id: ++trayIdSeq, ref: mediaRef, filename }
-  trayImages.value.push(entry)
-  return entry
-}
-
-/** Insert a tray image into the body at the cursor. */
-function insertTrayImage(entry: TrayImage) {
-  const img = buildImageMarkdown(entry.ref, entry.filename)
-  insertAtCursor(img)
-}
-
-/** Remove an entry from the tray (does NOT delete the uploaded file or any body text). */
-function removeFromTray(id: number) {
-  trayImages.value = trayImages.value.filter((e) => e.id !== id)
-}
-
 /** Upload + insert each image File via the pure core (DI: live upload + live insert). */
 async function handleFiles(files: File[], onInsert?: (markdown: string) => void) {
   uploadError.value = null
@@ -96,19 +64,6 @@ async function handleFiles(files: File[], onInsert?: (markdown: string) => void)
     })
   } catch (err) {
     uploadError.value = err instanceof Error ? err.message : 'Image upload failed. Please try again.'
-  }
-}
-
-/** Upload files to the gallery tray WITHOUT auto-inserting into the body. */
-async function handleGalleryFiles(files: File[]) {
-  uploadError.value = null
-  for (const file of files) {
-    try {
-      const mediaRef = await upload(file)
-      addToTray(mediaRef, file.name)
-    } catch (err) {
-      uploadError.value = err instanceof Error ? err.message : 'Image upload failed. Please try again.'
-    }
   }
 }
 
@@ -125,18 +80,6 @@ function onFileInput(e: Event) {
   const files = imageFilesFrom((e.target as HTMLInputElement).files)
   if (files.length) handleFiles(files)
   if (fileInput.value) fileInput.value.value = ''
-}
-
-function onGalleryPick() { galleryInput.value?.click() }
-function onGalleryFileInput(e: Event) {
-  const files = imageFilesFrom((e.target as HTMLInputElement).files)
-  if (files.length) handleGalleryFiles(files)
-  if (galleryInput.value) galleryInput.value.value = ''
-}
-function onGalleryDrop(e: DragEvent) {
-  e.preventDefault()
-  const files = imageFilesFrom(e.dataTransfer?.files)
-  if (files.length) handleGalleryFiles(files)
 }
 
 // ── Formatting toolbar commands (mirror the ICJIA markdown-editor's useEditor) ──
@@ -205,6 +148,10 @@ function insertNumberedList() { prefixLine('1. ') }
 function insertHorizontalRule() { insertText('\n---\n') }
 function undo() { if (view) cmUndo({ state: view.state, dispatch: view.dispatch }) }
 function redo() { if (view) cmRedo({ state: view.state, dispatch: view.dispatch }) }
+
+/** Imperative insert at the current selection (the sidebar BodyImagesField calls this to place a
+ *  figure into the body). Routes through the same insertText path the toolbar commands use. */
+function insertMarkdown(text: string) { insertText(text) }
 
 /** The formatting toolbar, grouped (mirrors the ICJIA editor). Headings are a separate
     dropdown (headingItems below) so the toolbar stays compact. */
@@ -283,16 +230,6 @@ onMounted(() => {
 
   content.addEventListener('paste', onPaste)
   content.addEventListener('drop', onDrop)
-
-  // Demo mode blocks uploads, so the "Body images" tray (full mode only) would stay empty. Seed it
-  // with a deterministic set of bundled sample FIGURES (charts/tables) so authors can click-to-Insert
-  // them into the body. Display-only refs (id 0) — never written. Non-demo behavior is unchanged.
-  if (!props.compact && isDemoMode() && trayImages.value.length === 0) {
-    for (let n = 0; n < 8; n++) {
-      const ref = sampleFigureRef(n)
-      addToTray(ref, ref.name ?? `figure-${n}.svg`)
-    }
-  }
 })
 
 // External modelValue changes → replace the document, without re-emitting.
@@ -314,14 +251,13 @@ onBeforeUnmount(() => {
   view = null
 })
 
+// Public imperative API: the sidebar BodyImagesField inserts figures via insertMarkdown.
 // Test seams: route through the SAME functions CM's onChange / handlers use (not divergent logic).
 defineExpose({
+  insertMarkdown,
   __emitChange: emitChange,
   __handleFiles: handleFiles,
-  __handleGalleryFiles: handleGalleryFiles,
-  __trayImages: trayImages,
-  __insertTrayImage: insertTrayImage,
-  __removeFromTray: removeFromTray,
+  __insertMarkdown: insertMarkdown,
   __uploadError: uploadError,
 })
 </script>
@@ -389,43 +325,6 @@ defineExpose({
     </div>
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
 
-    <!-- Body-image gallery: FULL mode only. Hidden when compact. -->
-    <template v-if="!compact">
-      <div class="body-image-gallery border border-dashed border-default rounded p-3 mb-3" data-test="body-image-gallery">
-        <input ref="galleryInput" type="file" :accept="accept" multiple class="hidden" @change="onGalleryFileInput">
-        <div class="flex items-center gap-2 mb-2" @dragover.prevent @drop="onGalleryDrop">
-          <span class="text-xs font-semibold text-muted uppercase tracking-wide">Body images</span>
-          <UButton size="xs" variant="outline" icon="i-lucide-upload" @click="onGalleryPick">
-            Upload images
-          </UButton>
-          <span class="text-xs text-muted ml-1">or drag &amp; drop here</span>
-        </div>
-        <div v-if="trayImages.length > 0" class="flex flex-wrap gap-3 mt-2" data-test="gallery-tray">
-          <div
-            v-for="entry in trayImages"
-            :key="entry.id"
-            class="tray-item flex flex-col items-center gap-1 w-24"
-            :data-test="`tray-item-${entry.id}`"
-          >
-            <img
-              :src="entry.ref.url"
-              :alt="entry.ref.alternativeText ?? entry.filename"
-              width="88"
-              height="64"
-              class="rounded border border-default object-cover w-22 h-16"
-            >
-            <span class="text-xs text-muted truncate w-full text-center" :title="entry.filename">{{ entry.filename }}</span>
-            <div class="flex gap-1">
-              <UButton size="xs" variant="outline" icon="i-lucide-plus" :data-test="`insert-${entry.id}`" @click="insertTrayImage(entry)">
-                Insert
-              </UButton>
-              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" :aria-label="`Remove ${entry.filename} from tray`" :data-test="`remove-tray-${entry.id}`" @click="removeFromTray(entry.id)" />
-            </div>
-          </div>
-        </div>
-        <p v-else class="text-xs text-muted">No images yet. Upload to add them to the tray, then click Insert to place them in the body.</p>
-      </div>
-    </template>
     <div class="grid gap-3" :class="showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
       <div ref="host" data-test="cm-host" :class="compact ? 'cm-host cm-host--compact' : 'cm-host'" class="border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
       <div v-if="showPreview" :class="compact ? 'markdown-preview-pane markdown-preview-pane--compact' : 'markdown-preview-pane'" class="rounded border border-default bg-elevated/30 p-4 overflow-auto">

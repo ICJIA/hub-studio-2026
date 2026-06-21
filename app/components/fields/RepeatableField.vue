@@ -6,7 +6,7 @@
   a textarea lets authors paste delimited text and replace the whole array. Storage stays JSON.
 -->
 <script setup lang="ts">
-import { ref, watch } from '#imports'
+import { ref, watch, computed } from '#imports'
 
 type Row = Record<string, string>
 // pasteParser can return typed structs (Author, Source, Variable…). Because those interfaces lack
@@ -17,6 +17,10 @@ const props = defineProps<{
   label: string
   columns: { key: string; label: string }[]
   pasteParser?: (text: string) => unknown[]
+  /** Label on the add button (default 'Add row'). */
+  addLabel?: string
+  /** Optional cap: the add button is disabled once the row count reaches `max`. */
+  max?: number
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Row[]] }>()
 
@@ -27,6 +31,9 @@ const pasteText = ref('')
 const draft = ref<Row[]>([...props.modelValue])
 watch(() => props.modelValue, (v) => { draft.value = [...v] }, { deep: true })
 
+// When a `max` is set, the add button is disabled once the row count reaches it.
+const atMax = computed(() => props.max != null && draft.value.length >= props.max)
+
 function emitRows(rows: Row[]) {
   draft.value = rows
   emit('update:modelValue', rows)
@@ -35,7 +42,10 @@ function emitRows(rows: Row[]) {
 function blankRow(): Row {
   return Object.fromEntries(props.columns.map((c) => [c.key, ''])) as Row
 }
-function addRow() { emitRows([...draft.value, blankRow()]) }
+function addRow() {
+  if (atMax.value) return
+  emitRows([...draft.value, blankRow()])
+}
 function removeRow(i: number) { emitRows(draft.value.filter((_, idx) => idx !== i)) }
 function updateCell(i: number, key: string, val: string) {
   emitRows(draft.value.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)))
@@ -65,7 +75,10 @@ defineExpose({ addRow, removeRow, updateCell, applyPaste })
         />
         <UButton color="neutral" variant="ghost" icon="i-lucide-trash-2" aria-label="Remove row" @click="removeRow(i)" />
       </div>
-      <UButton size="sm" variant="subtle" icon="i-lucide-plus" label="Add row" @click="addRow" />
+      <div class="flex items-center gap-2">
+        <UButton size="sm" variant="subtle" icon="i-lucide-plus" :label="addLabel ?? 'Add row'" :disabled="atMax" @click="addRow" />
+        <span v-if="max != null" class="text-xs text-muted" data-test="repeatable-max-hint">(max {{ max }})</span>
+      </div>
 
       <div v-if="pasteParser" class="pt-2 border-t border-default">
         <p class="text-xs text-muted mb-1">Or paste rows (one per line, fields separated by <code>|</code>):</p>

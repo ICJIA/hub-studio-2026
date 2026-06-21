@@ -15,7 +15,6 @@ import { blankArticle } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
 import { validateArticle, type FieldError } from '~/lib/validators/article'
 import { CATEGORY_OPTIONS, ARTICLE_TYPE_OPTIONS, MAINFILETYPE_OPTIONS } from '~/lib/field-options'
-import { parseAuthors } from '~/lib/text-import'
 
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
 const repo = useArticles()
@@ -25,6 +24,9 @@ const model = reactive<Article>(props.initial ? { ...props.initial } : blankArti
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
 const previewOpen = ref(false)
+
+// Ref to the body MarkdownField so the sidebar BodyImagesField can insert figures at the cursor.
+const bodyField = ref<{ insertMarkdown: (text: string) => void } | null>(null)
 
 const authorColumns = [
   { key: 'title', label: 'Name' },
@@ -68,8 +70,8 @@ defineExpose({ submit, setField, errors, model })
       <!-- Writing column -->
       <div class="lg:col-span-2 space-y-5">
         <MarkdownField :model-value="model.abstract ?? ''" label="Abstract" compact @update:model-value="model.abstract = $event" />
-        <RepeatableField v-model="model.authors" label="Authors" :columns="authorColumns" :paste-parser="parseAuthors" />
-        <MarkdownField v-model="model.markdown" label="Body (Markdown)" />
+        <RepeatableField v-model="model.authors" label="Authors" :columns="authorColumns" add-label="Add Author" :max="10" />
+        <MarkdownField ref="bodyField" v-model="model.markdown" label="Body (Markdown)" />
       </div>
 
       <!-- Details sidebar -->
@@ -81,6 +83,7 @@ defineExpose({ submit, setField, errors, model })
           <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
           <ChipsField v-model="model.tags" label="Tags" />
           <MediaField v-model="model.splash" label="Splash image" />
+          <BodyImagesField @insert="bodyField?.insertMarkdown($event)" />
           <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
           <MediaField v-model="model.mainfile" label="Main file" kind="file" />
           <RelationList label="Linked datasets" :items="model.datasets" />

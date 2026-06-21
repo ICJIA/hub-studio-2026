@@ -9,7 +9,7 @@
   (review is not publish-gated).
 -->
 <script setup lang="ts">
-import { ref, computed } from '#imports'
+import { ref, computed, onMounted } from '#imports'
 import { isValidEmail } from '~/lib/review-email'
 
 const props = defineProps<{ type: 'article' | 'app' | 'dataset'; documentId: string }>()
@@ -30,6 +30,23 @@ const reviewers = computed(() =>
 
 function setReviewers(v: string) { reviewersRaw.value = v; error.value = null }
 function setMessage(v: string) { message.value = v }
+
+// PREFILL (Plan 7, additive + graceful): if the signed-in author has a studio-profile, seed the
+// reviewer field from its reviewers. Wrapped fail-open — ANY error (the studio-profile type not
+// existing yet, no profile, no email, a network error) leaves the field empty, exactly as before.
+onMounted(async () => {
+  if (reviewersRaw.value.trim()) return // don't clobber a value the user already typed
+  try {
+    const email = auth.user?.email
+    if (!email) return
+    const profile = await useStudioProfile().findByAuthorEmail(email)
+    if (profile && profile.reviewers.length > 0) {
+      setReviewers(profile.reviewers.join(', '))
+    }
+  } catch (e) {
+    console.warn('[request-review] reviewer prefill skipped', e)
+  }
+})
 
 async function send() {
   error.value = null

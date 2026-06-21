@@ -4,7 +4,7 @@ import { isDemoSession } from '~/lib/demo'
 
 const auth = useAuthStore()
 const { logout } = useAuth()
-const demo = import.meta.dev && isDemoSession()
+const demo = isDemoSession()
 const logoSrc = '/images/icjia-logo.png'
 
 const colorMode = useColorMode()

@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from '#imports'
 import { isValidEmail } from '~/lib/review-email'
+import { isDemoMode } from '~/lib/demo'
 
 const props = defineProps<{ type: 'article' | 'app' | 'dataset'; documentId: string }>()
 const emit = defineEmits<{ sent: [] }>()
@@ -54,6 +55,16 @@ async function send() {
   if (list.length === 0) { error.value = 'Enter at least one reviewer email.'; return }
   const bad = list.find((r) => !isValidEmail(r))
   if (bad) { error.value = `Invalid email: ${bad}`; return } // client-side gate; server re-validates
+
+  // Demo mode: friendly no-op — never POST the Nitro route, never send a real email, no secret
+  // needed. The form behaves as if it succeeded so the flow is demonstrable. false ⇒ unchanged.
+  if (isDemoMode()) {
+    emit('sent')
+    reviewersRaw.value = ''
+    message.value = ''
+    toast.add({ title: 'Review requested (demo)', description: 'No email is sent in the demo.', color: 'success' })
+    return
+  }
 
   busy.value = true
   try {

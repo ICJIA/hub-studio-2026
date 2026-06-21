@@ -1,4 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+// Single source of truth for non-secret app config (app name, Strapi base URL, demo flag).
+// Secrets (Mailgun, webhook) stay below in PRIVATE runtimeConfig, env-driven — never here.
+import studioConfig from './studio.config'
+
 export default defineNuxtConfig({
   ssr: false,
   modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt', '@nuxt/fonts'],
@@ -25,7 +29,12 @@ export default defineNuxtConfig({
     mailgunDomain: process.env.MAILGUN_DOMAIN ?? '',
     mailgunFrom: process.env.MAILGUN_FROM ?? '',
     public: {
-      strapiBaseUrl: 'https://v2.hub.icjia-api.cloud',
+      // Sourced from studio.config.ts (single source of truth for non-secret app config).
+      appName: studioConfig.appName,
+      strapiBaseUrl: studioConfig.strapiBaseUrl,
+      // Demo mode: a fully self-contained public demo (demo login only, in-memory, no writes,
+      // no secrets). false ⇒ normal behavior is 100% unchanged. Baked at build for the SPA.
+      demoMode: studioConfig.demoMode,
       // The deployed Studio origin the review email links to (absolute /preview/... URL).
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
     },

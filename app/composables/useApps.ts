@@ -5,9 +5,9 @@ import { makeDemoRepository } from '~/lib/demo-repository'
 import { DEMO_APPS } from '~/lib/demo-content'
 import type { App } from '~/types/content'
 
-/** Apps data access. Returns demo repo in dev admin/admin session; real Strapi repo otherwise. */
+/** Apps data access. Returns the in-memory demo repo for a demo session (dev OR demo build); real Strapi repo otherwise. */
 export function useApps() {
-  if (import.meta.dev && isDemoSession()) {
+  if (isDemoSession()) {
     return makeDemoRepository<App>(DEMO_APPS as App[])
   }
   const { $api } = useNuxtApp()

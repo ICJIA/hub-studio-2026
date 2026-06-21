@@ -1,7 +1,8 @@
 // tests/unit/demo-session.test.ts
-// isDemoSession delegates to isDevAdminToken(useAuthStore().jwt) when import.meta.dev is true.
-// In the node test environment, import.meta.dev may be false (Vite's default).
-// We test the underlying isDevAdminToken + store integration, which is the meaningful behavior.
+// isDemoSession delegates to isDevAdminToken(useAuthStore().jwt) when the context honors the
+// synthetic token (import.meta.dev OR isDemoMode). isDemoMode reads runtimeConfig, which needs a
+// Nuxt context — so the full isDemoSession/isDemoMode behavior is covered in the nuxt-env test
+// tests/nuxt/demo-mode.test.ts. Here we test the underlying isDevAdminToken + store integration.
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { DEV_ADMIN_TOKEN, isDevAdminToken } from '~/lib/dev-auth'
@@ -52,19 +53,21 @@ describe('isDemoSession — via isDevAdminToken + store integration', () => {
     expect(isDevAdminToken(store.jwt)).toBe(false)
   })
 
-  it('isDemoSession returns false when import.meta.dev is false (prod guard)', async () => {
-    // In the node test environment, import.meta.dev may be false.
-    // isDemoSession correctly short-circuits to false in that case.
-    const { isDemoSession } = await import('~/lib/demo')
+  it('the synthetic token gates the demo session only when the context honors it', () => {
+    // The decision is `(import.meta.dev || isDemoMode()) && isDevAdminToken(jwt)`. The token half
+    // is what we assert here (the context half is covered in tests/nuxt/demo-mode.test.ts): a real
+    // jwt is NEVER a demo session regardless of context, and the synthetic token is the only one
+    // that can be.
     const store = useAuthStore()
-    // Even with the dev admin token, if import.meta.dev is false, isDemoSession returns false.
+    store.setSession({
+      jwt: 'real.jwt.token',
+      user: { id: 1, username: 'real', email: 'real@example.com', firstname: 'Real', lastname: 'User', isActive: true, blocked: false, roles: [] },
+    })
+    expect(isDevAdminToken(store.jwt)).toBe(false)
     store.setSession({
       jwt: DEV_ADMIN_TOKEN,
       user: { id: 0, username: 'admin', email: 'dev-admin@localhost', firstname: 'Dev', lastname: 'Admin', isActive: true, blocked: false, roles: [] },
     })
-    // The result depends on import.meta.dev — in dev it's true, in prod/test it may be false.
-    // Either outcome is acceptable; what we verify is that it never throws.
-    const result = isDemoSession()
-    expect(typeof result).toBe('boolean')
+    expect(isDevAdminToken(store.jwt)).toBe(true)
   })
 })

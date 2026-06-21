@@ -1,7 +1,8 @@
 import { loginRequest, fetchMe } from '~/lib/auth'
 import { resolveHasProfile } from '~/lib/profile-gate'
-// DEV-ONLY — remove before production (see app/lib/dev-auth.ts header).
+// DEV-ONLY in normal builds; ALSO the only login path in the public demo build (see isDemoMode).
 import { matchesDevAdmin, isDevAdminToken, makeDevAdminSession } from '~/lib/dev-auth'
+import { isDemoMode } from '~/lib/demo'
 
 /** Best-effort HTTP status from a thrown fetch error (ofetch FetchError carries both shapes). */
 export function statusOf(e: unknown): number | undefined {
@@ -29,11 +30,18 @@ export function useAuth() {
 
   /** Admin login: get token + user, then load the user WITH roles from /admin/users/me. */
   async function login(email: string, password: string) {
-    if (import.meta.dev && matchesDevAdmin(email, password)) {
+    // Demo-login bypass: available in local dev AND in the public demo build.
+    if ((import.meta.dev || isDemoMode()) && matchesDevAdmin(email, password)) {
       const session = makeDevAdminSession()
       store.setSession(session)
-      console.warn('[dev-auth] Signed in with the fixed dev admin bypass — NOT a real Strapi session.')
+      console.warn('[demo-auth] Signed in with the fixed demo admin bypass — NOT a real Strapi session.')
       return session.user
+    }
+    // Defense in depth: in the public demo build, real Strapi login is IMPOSSIBLE. Only the
+    // demo-admin credentials above are accepted; anything else is rejected before any $api call
+    // (the real form is hidden anyway). false ⇒ unchanged behavior.
+    if (isDemoMode()) {
+      throw new Error('Demo mode: only the demo sign-in is available.')
     }
     const { jwt, user } = await loginRequest($api, email, password)
     store.setSession({ jwt, user }) // set token first so $api attaches it
@@ -51,7 +59,9 @@ export function useAuth() {
   /** Re-verify the persisted session against the admin API on app boot. */
   async function init() {
     if (!store.jwt) return
-    if (import.meta.dev && isDevAdminToken(store.jwt)) return // synthetic dev session — keep across reloads
+    // Synthetic demo session — keep across reloads (never re-verified against Strapi). Honored in
+    // local dev AND the public demo build; in a normal prod build this is false so behavior is unchanged.
+    if ((import.meta.dev || isDemoMode()) && isDevAdminToken(store.jwt)) return
     try {
       const me = await fetchMe($api)
       store.setUser(me)

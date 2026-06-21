@@ -7,6 +7,7 @@
 import type { $Fetch } from 'ofetch'
 import type { ContentStatus, RelationRef } from '~/types/content'
 import { assertNoBase64 } from '~/lib/base64-guard'
+import { isDemoMode } from '~/lib/demo'
 import {
   unwrapList, unwrapOne, relationsFromList,
   type StrapiListResponse, type StrapiSingleResponse, type StrapiRelationsResponse,
@@ -53,6 +54,15 @@ export interface RepositoryConfig<TRaw, TDomain, TWrite> {
   relationFields: string[]
   fromStrapi: (raw: TRaw, relations?: Relations) => TDomain
   toWrite: (model: TDomain) => TWrite
+}
+
+/**
+ * HARD write-block for the public demo build (belt-and-suspenders). Throws BEFORE any $api call,
+ * so even a code path that bypasses the in-memory demo repo can never write to / delete from
+ * Strapi. Reads are unaffected. No-op when demoMode is false (normal builds behave exactly as before).
+ */
+export function assertWritesAllowed(): void {
+  if (isDemoMode()) throw new Error('Demo mode: writes are disabled')
 }
 
 export function createRepository<TRaw, TDomain, TWrite>(
@@ -105,6 +115,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
     },
 
     async create(model, opts = {}) {
+      assertWritesAllowed() // demo build: no Strapi writes (throws before any $api call)
       const body = cfg.toWrite(model) as Record<string, unknown>
       // Audit I-5: HARD zero-base64 guarantee at the write boundary — a data:/base64 payload is
       // rejected here (throws), not only by the form validators, so a direct repo caller cannot
@@ -119,6 +130,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
     },
 
     async update(documentId, model, opts = {}) {
+      assertWritesAllowed() // demo build: no Strapi writes (throws before any $api call)
       const body = cfg.toWrite(model) as Record<string, unknown>
       // Audit I-5: same HARD zero-base64 write-time assertion on update.
       assertNoBase64(body, `${cfg.uid} update payload`)
@@ -131,10 +143,12 @@ export function createRepository<TRaw, TDomain, TWrite>(
     },
 
     async remove(documentId) {
+      assertWritesAllowed() // demo build: no Strapi writes (throws before any $api call)
       await cfg.api(`${base}/${documentId}`, { method: 'DELETE' })
     },
 
     async publish(documentId) {
+      assertWritesAllowed() // demo build: no Strapi writes (throws before any $api call)
       // Content-Manager publish action (LOCKED Plan-6 decision): POST .../actions/publish.
       // Same admin-API family the data layer validated; sets publishedAt and returns the entry
       // ({data} envelope, like update). Strapi ALSO enforces the publisher role server-side

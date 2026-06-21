@@ -13,6 +13,15 @@ const reviewLimiter = createRateLimiter({ max: 5, windowMs: 10 * 60 * 1000 })
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
+
+  // Demo mode (defense in depth): the public demo carries NO Mailgun secret. Short-circuit to a
+  // friendly no-op BEFORE reading the body or touching Strapi/Mailgun, so even a direct POST to
+  // this route can never send mail or require a secret. The client already no-ops in demo mode.
+  if (config.public.demoMode === true) {
+    setResponseStatus(event, 200)
+    return { ok: true as const }
+  }
+
   const authorization = getHeader(event, 'authorization')
   const clientIp = getRequestIP(event, { xForwardedFor: true })
   const body = await readBody(event)

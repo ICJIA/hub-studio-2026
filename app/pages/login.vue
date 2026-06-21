@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { APP_NAME } from '~/lib/constants'
-// DEV-ONLY — remove before production (see app/lib/dev-auth.ts header).
+// DEV-ONLY in normal builds; ALSO the demo sign-in in the public demo build (see isDemoMode).
 import { DEV_ADMIN_IDENTIFIER, DEV_ADMIN_PASSWORD } from '~/lib/dev-auth'
+import { isDemoMode } from '~/lib/demo'
 
 definePageMeta({ public: true, layout: false })
 
@@ -12,8 +13,13 @@ const toast = useToast()
 const state = reactive({ identifier: '', password: '' })
 const loading = ref(false)
 
-// DEV-ONLY fixed-admin shortcut. `import.meta.dev` is false in production builds,
-// so the footer and its handler are tree-shaken away. See app/lib/dev-auth.ts.
+// Public demo build: hide the real Strapi email/password form entirely and offer ONLY the
+// demo sign-in. Baked at build (NUXT_PUBLIC_DEMO_MODE) — false in a normal build, so the real
+// form renders exactly as today.
+const demoMode = isDemoMode()
+
+// Dev fixed-admin footer shortcut. `import.meta.dev` is false in production builds, so this
+// footer and its handler are tree-shaken away from any non-dev build. See app/lib/dev-auth.ts.
 const showDevAdmin = import.meta.dev
 
 async function onSubmit() {
@@ -50,7 +56,23 @@ function signInAsDevAdmin() {
         </div>
       </template>
 
-      <UForm :state="state" class="space-y-4" @submit="onSubmit">
+      <!-- Public demo build: ONLY the demo sign-in (the real Strapi form is not rendered at all). -->
+      <div v-if="demoMode" class="space-y-3">
+        <div class="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/60 dark:bg-amber-950/40">
+          <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+            <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0" />
+            Demonstration
+          </p>
+          <p class="mt-1 text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
+            This is a public, self-contained demonstration of the Hub Studio. There is no real sign-in,
+            all content is sample data held only in your browser, and nothing is ever saved to the server.
+          </p>
+        </div>
+        <UButton block size="lg" :loading="loading" icon="i-lucide-flask-conical" label="Enter the demo" @click="signInAsDevAdmin" />
+      </div>
+
+      <!-- Normal build: the real Strapi email/password form (unchanged). -->
+      <UForm v-else :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField label="Email" name="identifier">
           <UInput v-model="state.identifier" type="email" autocomplete="username" class="w-full" />
         </UFormField>
@@ -60,7 +82,7 @@ function signInAsDevAdmin() {
         <UButton type="submit" block :loading="loading" label="Sign in" />
       </UForm>
 
-      <template v-if="showDevAdmin" #footer>
+      <template v-if="showDevAdmin && !demoMode" #footer>
         <div class="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2 dark:border-amber-800/60 dark:bg-amber-950/40">
           <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
             <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0" />
@@ -88,8 +110,9 @@ function signInAsDevAdmin() {
       </template>
       </UCard>
 
-      <!-- No self-signup: accounts are provisioned by Research & Analysis in Strapi. -->
-      <p class="text-center text-xs text-muted leading-relaxed">
+      <!-- No self-signup: accounts are provisioned by Research & Analysis in Strapi. Hidden in the
+           public demo (there is no real account to provision). -->
+      <p v-if="!demoMode" class="text-center text-xs text-muted leading-relaxed">
         Don't have a Hub Studio 2.0 ID? Contact <span class="font-medium text-toned">Research &amp; Analysis</span> for more information.
       </p>
     </div>

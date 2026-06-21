@@ -9,6 +9,7 @@ import {
 } from '~/lib/upload'
 import { isSvg, sanitizeSvgText } from '~/lib/sanitize-svg'
 import { hasAllowedImageExtension, hasAllowedDocumentExtension } from '~/lib/image-types'
+import { isDemoMode } from '~/lib/demo'
 import type { MediaRef } from '~/types/content'
 
 /**
@@ -42,6 +43,8 @@ export function useUpload() {
 
   /** Eager-upload one image: gate by extension, sanitize SVGs, then POST to the Media Library. */
   async function upload(file: File, info?: UploadInfo): Promise<MediaRef> {
+    // HARD write-block (belt-and-suspenders): the public demo never uploads to Strapi.
+    if (isDemoMode()) throw new Error('Demo mode: writes are disabled')
     const prepared = await prepareUpload(file)
     // Preserve the original filename for the SVG re-wrap (Blob carries no name).
     const filename = prepared instanceof File ? undefined : file.name
@@ -53,6 +56,8 @@ export function useUpload() {
    * No alt/caption info is passed — documents have no image metadata.
    */
   async function uploadDocument(file: File): Promise<MediaRef> {
+    // HARD write-block (belt-and-suspenders): the public demo never uploads to Strapi.
+    if (isDemoMode()) throw new Error('Demo mode: writes are disabled')
     const prepared = prepareDocumentUpload(file)
     return uploadFile($api, prepared)
   }
@@ -64,6 +69,8 @@ export function useUpload() {
 
   /** Remove a file from the Media Library. */
   function remove(id: number): Promise<void> {
+    // HARD write-block (belt-and-suspenders): the public demo never deletes from Strapi.
+    if (isDemoMode()) throw new Error('Demo mode: writes are disabled')
     return deleteMediaFile($api, id)
   }
 

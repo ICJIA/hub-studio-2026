@@ -168,6 +168,9 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 /* Give the CodeMirror host a roomy authoring height; CM owns its inner DOM/theme. */
 .cm-host :deep(.cm-editor) { min-height: 32rem; }
 .cm-host :deep(.cm-scroller) { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-/* The live preview pane matches the editor height so the two read as a pair. */
+/* The live preview pane matches the editor height so the two read as a pair. The published
+   prose is em-relative off a 20px base; scale it down here so it fits the narrow split pane
+   (the full-size published view is the form's "Preview as published" modal). */
 .markdown-preview-pane { min-height: 32rem; }
+.markdown-preview-pane :deep(.prose-preview) { font-size: 14px; }
 </style>

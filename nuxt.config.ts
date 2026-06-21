@@ -11,6 +11,9 @@ export default defineNuxtConfig({
     families: [
       // The UI typeface — modern, highly legible. Used as --font-sans in main.css.
       { name: 'Inter', provider: 'google', weights: [400, 500, 600, 700], styles: ['normal'] },
+      // Oswald — the public Research Hub's heading typeface; used by the published-style
+      // preview (prose-preview.css) so the in-Studio preview matches the live article.
+      { name: 'Oswald', provider: 'google', weights: [400, 500, 600, 700], styles: ['normal'] },
       // The editor's intended monospace; the vendored CM themes request 'JetBrains Mono'.
       { name: 'JetBrains Mono', provider: 'google', weights: [400, 500, 700], styles: ['normal'] },
     ],

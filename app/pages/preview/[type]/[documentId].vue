@@ -32,35 +32,31 @@ const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset |
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto">
+  <div class="max-w-4xl mx-auto">
     <p v-if="loading" class="text-muted">Loading…</p>
-    <article v-else-if="entry" class="prose-preview">
-      <p class="text-xs text-muted mb-2">Draft preview</p>
-      <h1 class="text-3xl font-semibold mb-4">{{ entry.title }}</h1>
+    <template v-else-if="entry">
+      <p class="text-xs text-muted mb-4 uppercase tracking-wide">Draft preview</p>
 
-      <img
-        v-if="asArticle?.splash"
-        :src="asArticle.splash.url"
-        :alt="asArticle.splash.alternativeText ?? ''"
-        class="mb-6 rounded"
-      >
-      <img v-else-if="asApp?.image" :src="asApp.image.url" :alt="asApp.image.alternativeText ?? ''" class="mb-6 rounded">
+      <!-- Articles render in the full published layout (parity with the public Research Hub). -->
+      <PublishedArticlePreview v-if="asArticle" :article="asArticle" />
 
-      <MarkdownPreview v-if="asArticle" :source="asArticle.markdown" />
-
-      <template v-if="asApp">
-        <p v-if="asApp.description" class="mb-3">{{ asApp.description }}</p>
-        <p v-if="asApp.url"><a :href="safeHref(asApp.url)" target="_blank" rel="noopener noreferrer" class="text-primary underline">Open app</a></p>
-      </template>
-
-      <template v-if="asDataset">
-        <p v-if="asDataset.description" class="mb-3">{{ asDataset.description }}</p>
-        <h2 v-if="asDataset.variables?.length" class="text-xl font-semibold mt-4 mb-2">Variables</h2>
-        <ul v-if="asDataset.variables?.length" class="list-disc pl-5 text-sm">
-          <li v-for="(v, i) in asDataset.variables" :key="i"><strong>{{ v.name }}</strong> ({{ v.type }}): {{ v.definition }}</li>
-        </ul>
-      </template>
-    </article>
+      <!-- Apps / datasets: a simpler published-style preview for now. -->
+      <div v-else>
+        <h1 class="text-3xl font-semibold text-highlighted mb-4">{{ entry.title }}</h1>
+        <img v-if="asApp?.image" :src="asApp.image.url" :alt="asApp.image.alternativeText ?? ''" class="mb-6 rounded">
+        <template v-if="asApp">
+          <p v-if="asApp.description" class="mb-3 text-toned">{{ asApp.description }}</p>
+          <p v-if="asApp.url"><a :href="safeHref(asApp.url)" target="_blank" rel="noopener noreferrer" class="text-primary underline">Open app</a></p>
+        </template>
+        <template v-if="asDataset">
+          <p v-if="asDataset.description" class="mb-3 text-toned">{{ asDataset.description }}</p>
+          <h2 v-if="asDataset.variables?.length" class="text-xl font-semibold mt-4 mb-2 text-highlighted">Variables</h2>
+          <ul v-if="asDataset.variables?.length" class="list-disc pl-5 text-sm text-toned">
+            <li v-for="(v, i) in asDataset.variables" :key="i"><strong>{{ v.name }}</strong> ({{ v.type }}): {{ v.definition }}</li>
+          </ul>
+        </template>
+      </div>
+    </template>
     <p v-else class="text-muted">Not found.</p>
   </div>
 </template>

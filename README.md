@@ -4,17 +4,26 @@
 
 > This website is funded through a grant from the Bureau of Justice Statistics, Office of Justice Programs, U.S. Department of Justice. Neither the U.S. Department of Justice nor any of its components operate, control, are responsible for, or necessarily endorse, this website (including, without limitation, its content, technical infrastructure, and policies, and any services or tools provided).
 
+## TL;DR — the 30-second version
+
+- **What it is:** the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets).
+- **Status:** built and working in development — you can click through a complete demo today.
+- **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
+- **Security:** independently red/blue-team audited — **0 critical issues**; in-repo fixes done and covered by 375 automated tests ([`docs/security-audit.md`](docs/security-audit.md)).
+- **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
+
+*That's the whole project in five lines. Everything below is supporting detail — read only what you need.*
+
 Internal authoring &amp; publishing tool (**"Studio"**) for managing **ICJIA Research Hub** content — **articles, apps, and datasets** — backed by Strapi 5.
 
 This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.com/icjia/researchhub-studio) on a modern stack, with a simplified two-role workflow and proper (non-base64) image handling.
 
-## Status: 🚧 Draft 1 — first iteration (in active development)
+## Status: built and working in development (pre-launch)
 
-**This is Draft 1: the first exploratory iteration.** Requirements are being discovered *as the build proceeds*, so design decisions evolve — for example, this iteration moved authentication and content access from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles actually work. Treat everything in this repo — README, spec, and plans — as a **living first draft**, not a frozen final design.
+The core Studio is **built and working** — authoring, the live "exactly-as-published" preview, publishing, image handling, and a full clickable demo are all in place and covered by automated tests. It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus a short launch checklist remain. The full design and the security review live here:
 
-Underway: the project foundation, Strapi 5 authentication, and the typed data layer. The full design lives here:
-
-- 📄 [**Design spec**](docs/superpowers/specs/2026-06-19-researchhub-studio-2026-design.md) — dual-audience: plain-English for managers **and** technical detail for developers.
+- 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
+- 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
 
 ## Workflow
 
@@ -23,7 +32,7 @@ Underway: the project foundation, Strapi 5 authentication, and the typed data la
 
 That's the whole lifecycle: **Authors draft → Managers publish.**
 
-## Stack (planned)
+## Stack
 
 - [Nuxt 4](https://nuxt.com/) (SPA mode) + [Vue 3](https://vuejs.org/)
 - [Nuxt UI 4](https://ui.nuxt.com/) (Tailwind CSS v4)
@@ -71,12 +80,14 @@ _No earlier audits yet — 2026-06-21 is the first._
 ## Repository layout
 
 ```text
-docs/
-  superpowers/specs/                 # design specs
-  icjia-researchhub-studio-*.txt     # v1 code dump (reference only)
+app/         # Nuxt 4 app — pages, components, composables, stores, lib/ (pure logic)
+server/api/  # server routes (e.g. the review-email endpoint)
+public/      # static assets + _headers (CSP / security headers)
+tests/       # Vitest unit + Nuxt component tests
+docs/        # design & implementation spec, security audit, + v1 reference dump
 ```
 
-Application scaffolding (Nuxt app, components, composables, stores) will be added during implementation — see the spec.
+The Nuxt 4 application is built out under `app/` (with pure, unit-tested logic in `app/lib/`), server routes under `server/`, and tests under `tests/` — see the spec for the architecture.
 
 ## Reference
 

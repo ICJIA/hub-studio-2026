@@ -14,6 +14,60 @@
 
 *That's the whole project in five lines. Everything below is supporting detail — read only what you need.*
 
+## Why this matters — the audience the Studio serves
+
+The Research Hub is the most-visited part of ICJIA's public site, so the tool that produces it is worth doing well.
+
+### Most-visited pages — trailing 12 months
+
+Total site: **56.3K visitors / 452.4K pageviews** (Plausible analytics, `icjia.illinois.gov`). Percentages reflect each page's share of total site visitors; they do not sum to 100% because a visitor can view several pages.
+
+| Rank | Page | Visitors (12 mo) | % of site visitors |
+|:--:|---|--:|--:|
+| 1 | Homepage (`/`) | ~19.6K | ~35% |
+| 2 | **[RH] Article** — "The Effectiveness and Implications of Police Reform" | ~6.0K | ~11% |
+| 3 | **[RH] Article** — "Understanding Police Officer Stress: A Review of the Literature" | ~6.0K | ~11% |
+| 4 | **[RH] Article** — "The Victim–Offender Overlap" | ~6.0K | ~11% |
+| 5 | **[RH] Article** — "The 2021 SAFE-T Act: ICJIA Roles and Responsibilities" | ~5.7K | ~10% |
+| 6 | Grants — Funding (`/grants/funding`) | ~4.5K | ~8% |
+| 7 | **[RH] Article** — "Mental Illness and Violence: Is There a Link?" | ~4.5K | ~8% |
+| 8 | **[RH] Article** — "An Overview of Police Use-of-Force Policies and Research" | ~3.5K | ~6% |
+| 9 | **[RH] Article** — "Trauma-Informed and Evidence-Based Practices and Programs" | ~3.3K | ~6% |
+| 10 | Grants — Programs (`/grants/programs`) | ~3.1K | ~6% |
+| 11 | **[RH] Article** — "Addressing Police Officer Stress: Programs and Practices" | ~3.0K | ~5% |
+| 12 | **[RH] Article** — "Gender Differences in Intimate Partner Violence Service Use" | ~3.0K | ~5% |
+
+**[RH]** = Research Hub article. **9 of the top 12 pages are Research Hub articles. The four most-visited pages after the homepage are all articles.**
+
+### Section share of traffic
+
+Pageview share over the **trailing 6 months** on `icjia.illinois.gov` (31.5K visitors / 240.4K pageviews):
+
+| Section | Visitors (6 mo) | Pageviews (6 mo) | Visitor share | Pageview share |
+|---|--:|--:|--:|--:|
+| **Research Hub** (`/researchhub`) | ~18.0K | ~107.9K | **~57%** | **~45%** |
+| Grants (`/grants`) | — | ~53.1K | — | ~22% |
+| Homepage (`/`) | — | ~35.0K | — | ~15% |
+| About (`/about`) | — | ~21.9K | — | ~9% |
+| News (`/news`) | — | ~11.7K | — | ~5% |
+| **Whole site** | **~31.5K** | **~240.4K** | 100% | 100% |
+
+**12-month cross-check (56.3K visitors / 452.4K pageviews):** Research Hub ~50% of pageviews (~228.1K) and ~66% of visitors (~37K) — so the 6-month figures are, if anything, conservative.
+
+### What the data says
+
+The homepage is the single most-visited page — it is the site's front door — and the grants section is a strong second. That context matters: the case for Hub Studio 2.0 does not require overstating the Research Hub's position. Even setting those pages aside, the Research Hub is the **largest content section by roughly 2×**, and its articles are the most-read pages after the homepage. Four of the top five pages on the entire site are Research Hub articles.
+
+For contrast, **all meeting-agenda pages combined** drew ~800 visitors / ~1,800 pageviews over 6 months (a typical individual agenda: 15–30 visitors). The Research Hub out-draws meeting content by about **~20× in visitors and ~60× in views**; one popular article out-draws the entire meetings section several times over.
+
+The share is **stable**: the 6-month and 12-month figures are in close agreement, and the 12-month window, if anything, shows a slightly higher Research Hub share.
+
+The Studio manages this content base today: **236 articles, 13 apps, 5 datasets** (counted from the live Research Hub Strapi content API).
+
+The investment in Hub Studio 2.0 is proportional to the audience it serves: the public comes to `icjia.illinois.gov` primarily for the Research Hub, and that content is produced entirely through this tool.
+
+*Sources: Plausible analytics for `icjia.illinois.gov` (page-prefix filters; 6- and 12-month windows ending 2026-06-21) and the live Research Hub Strapi content API.*
+
 **Non-technical readers:** the TL;DR above and the [Design &amp; Implementation Spec](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) are all you need — everything below is developer reference.
 
 ---

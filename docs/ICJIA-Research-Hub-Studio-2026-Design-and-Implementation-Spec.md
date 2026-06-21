@@ -46,30 +46,81 @@
 This is scope-setting, not a victory lap: it explains why the investment in Hub
 Studio 2.0 is in proportion to the audience the Research Hub already reaches. The
 figures below come from two live sources — Plausible analytics for
-icjia.illinois.gov (trailing six months) and the live Research Hub content API
-(Strapi).
+icjia.illinois.gov and the live Research Hub content API (Strapi). Every figure
+is labeled with its timeframe.
 
-- **The Research Hub is the bulk of the public site's traffic.** Over the last six
-  months it accounted for about **45% of all pageviews and 57% of all visitors** on
-  icjia.illinois.gov — roughly **107.9K of 240.4K pageviews** and **18K of 31.5K
-  visitors**.
-- **Research Hub articles are the four most-visited pages on the entire site after
-  the homepage** — and many more fill out the top 25.
-- **The single most-read article** drew about **2,900 visitors and 6,100 views** in
-  six months.
-- **For comparison, the meeting-agenda content** — agendas, minutes, and the
-  meetings listing — drew on the order of **800 visitors and 1,800 views** combined.
-  The meetings listing page itself got 514 visitors; a typical individual agenda
-  gets **15–30**. In round terms, the Research Hub out-draws meeting content by
-  about **20× in visitors and 60× in views**, and one popular article out-draws the
-  entire meetings section several times over.
-- **The Studio manages this content base.** Live in the Research Hub today: **236
-  articles, 13 apps, and 5 datasets** (counted directly from the Strapi content
-  API).
+### Most-visited pages — trailing 12 months
 
-The takeaway: this is the most-used content on the agency's public site, and Hub
-Studio 2.0 is the tool the staff use to produce and publish it. The level of care
-in the build is matched to the size of the audience it serves.
+Total site over the trailing 12 months: **56.3K visitors / 452.4K pageviews**.
+Percentages reflect each page's share of total site visitors; they do not sum to
+100% because one visitor can view several pages.
+
+| Rank | Page | Visitors (12 mo) | % of site visitors |
+|:----:|------|----------------:|------------------:|
+| 1 | Homepage (`/`) | ~19.6K | ~35% |
+| 2 | **[RH]** "The Effectiveness and Implications of Police Reform" | ~6.0K | ~11% |
+| 3 | **[RH]** "Understanding Police Officer Stress: A Review of the Literature" | ~6.0K | ~11% |
+| 4 | **[RH]** "The Victim–Offender Overlap" | ~6.0K | ~11% |
+| 5 | **[RH]** "The 2021 SAFE-T Act: ICJIA Roles and Responsibilities" | ~5.7K | ~10% |
+| 6 | Grants — Funding (`/grants/funding`) | ~4.5K | ~8% |
+| 7 | **[RH]** "Mental Illness and Violence: Is There a Link?" | ~4.5K | ~8% |
+| 8 | **[RH]** "An Overview of Police Use-of-Force Policies and Research" | ~3.5K | ~6% |
+| 9 | **[RH]** "Trauma-Informed and Evidence-Based Practices and Programs" | ~3.3K | ~6% |
+| 10 | Grants — Programs (`/grants/programs`) | ~3.1K | ~6% |
+| 11 | **[RH]** "Addressing Police Officer Stress: Programs and Practices" | ~3.0K | ~5% |
+| 12 | **[RH]** "Gender Differences in Intimate Partner Violence Service Use" | ~3.0K | ~5% |
+
+**[RH]** = Research Hub article. **9 of the top 12 most-visited pages are Research
+Hub articles. The four most-visited pages after the homepage are all articles.**
+
+### Section share of traffic — trailing 6 months
+
+Total site over the trailing 6 months: **31.5K visitors / 240.4K pageviews**.
+
+| Section | Visitors (6 mo) | Pageviews (6 mo) | Visitor share | Pageview share |
+|---------|----------------:|-----------------:|-------------:|---------------:|
+| **Research Hub** (`/researchhub`) | ~18.0K | ~107.9K | **~57%** | **~45%** |
+| Grants (`/grants`) | — | ~53.1K | — | ~22% |
+| Homepage (`/`) | — | ~35.0K | — | ~15% |
+| About (`/about`) | — | ~21.9K | — | ~9% |
+| News (`/news`) | — | ~11.7K | — | ~5% |
+| **Whole site** | **~31.5K** | **~240.4K** | 100% | 100% |
+
+**12-month cross-check:** over the trailing 12 months the Research Hub accounts
+for about **50% of pageviews (~228.1K) and 66% of visitors (~37K)** — so the
+6-month figures above are, if anything, conservative.
+
+### What these figures mean for this project
+
+The homepage is the single most-visited page — it is the site's front door — and
+the grants section is a strong second. Stating that plainly is not a concession;
+it strengthens the case. Even with the homepage and grants set alongside it, the
+Research Hub is still the **largest content section by roughly 2×**, and its
+articles are the most-read pages on the entire site after the homepage. Four of
+the top five pages are Research Hub articles, and nine of the top twelve.
+
+For calibration, all meeting-agenda pages combined — agendas, minutes, the
+meetings listing — drew on the order of **800 visitors and 1,800 pageviews** over
+six months (the meetings listing itself: 514 visitors; a typical individual
+agenda: 15–30). The Research Hub out-draws meeting content by about **20× in
+visitors and 60× in views**; a single popular article out-draws the entire
+meetings section several times over.
+
+The pattern is stable: the 6-month and 12-month figures are in close agreement,
+and the 12-month window shows, if anything, a slightly higher Research Hub share.
+
+The Studio manages this content base. Live in the Research Hub today: **236
+articles, 13 apps, and 5 datasets** (counted directly from the live Strapi
+content API, 2026-06-21).
+
+The takeaway: the public comes to icjia.illinois.gov primarily for the Research
+Hub. Its articles are the most-read content on the entire site. Hub Studio 2.0 is
+the production line for that flagship content, and the level of care in the build
+is matched to the size of the audience it serves.
+
+*Sources: Plausible analytics for icjia.illinois.gov (page-prefix filters;
+6-month and 12-month windows ending 2026-06-21); live Research Hub Strapi content
+API.*
 
 ---
 

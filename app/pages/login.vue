@@ -61,19 +61,28 @@ function signInAsDevAdmin() {
       </UForm>
 
       <template v-if="showDevAdmin" #footer>
-        <div class="space-y-2 text-xs text-muted">
-          <p>
-            <span class="font-semibold text-amber-700">Dev only:</span>
-            fixed admin (<code>{{ DEV_ADMIN_IDENTIFIER }}</code> / <code>{{ DEV_ADMIN_PASSWORD }}</code>),
-            no Strapi account needed.
-          </p>
+        <div class="space-y-2.5">
+          <div class="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-1.5 dark:border-amber-800/60 dark:bg-amber-950/40">
+            <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+              <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0" />
+              Development &amp; demo only — automatically removed at launch
+            </p>
+            <p class="text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
+              The <code>{{ DEV_ADMIN_IDENTIFIER }}</code> / <code>{{ DEV_ADMIN_PASSWORD }}</code> shortcut is a
+              convenience for local development and demos. It exists <strong>only in development builds</strong> and is
+              automatically stripped from the production app — <strong>it cannot ship to the live site</strong>. This is a
+              deliberate, documented decision, reviewed in the red/blue team security audit. The live application
+              authenticates <strong>exclusively through Strapi staff accounts</strong>.
+            </p>
+          </div>
           <UButton
             color="neutral"
             variant="subtle"
             size="xs"
             block
             :loading="loading"
-            label="Sign in as dev admin"
+            icon="i-lucide-flask-conical"
+            label="Sign in as dev admin (dev / demo only)"
             @click="signInAsDevAdmin"
           />
         </div>

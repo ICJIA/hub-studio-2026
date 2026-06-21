@@ -723,6 +723,23 @@ the review history is visible at a glance.
   the email + publish keys, verify Strapi's role permissions, and remove the demo
   login — a short, documented checklist.
 
+**Findings & remediation**
+
+| Finding | Severity | Remediation | Status |
+|---|---|---|---|
+| H-1 — No CSP / security headers (admin JWT in a JS-readable cookie) | High | Added a Content-Security-Policy + security headers via `public/_headers` (CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, HSTS, Referrer-Policy) | ✅ Fixed in repo (`e402f3d`); CSP to be confirmed on a deploy preview |
+| M-1 — Session kept on transient/5xx boot errors | Medium | `init()` now clears the session on a definitive `403` | ✅ Fixed (`e402f3d`) |
+| M-2 — Fragile regex Table-of-Contents id injection | Medium | Heading ids now derived from the Markdown AST and HTML-escaped | ✅ Fixed (`e402f3d`) |
+| M-3 / M-4 — SVG + document-upload validation is client-side only | Medium | Enforce MIME/size limits at the Strapi Media Library; serve uploads as non-inline (`attachment` / `nosniff`) | ⏳ Launch-time (Strapi side — Research & Analysis) |
+| M-5 — Unthrottled review-email relay | Medium | Rate-limited the endpoint (5 sends / 10 min → HTTP 429) | ✅ Fixed (`e402f3d`) |
+| L-4 — Dataset source/datafile URLs not gated at save time | Low | `validateDataset` now rejects `javascript:` / `data:` / `vbscript:` / `file:` URLs | ✅ Fixed (`e402f3d`) |
+| L-5 — Error page could surface raw error text | Low | Production error page renders a generic message (detail only in dev) | ✅ Fixed (`e402f3d`) |
+| I-5 — Zero-base64 enforced only at the form | Info | `assertNoBase64` wired into the repository write boundary | ✅ Fixed (`e402f3d`) |
+| Server-side authorization / admin-JWT lifetime (incl. L-1 token revocation) | — | Verify in the Strapi instance: publisher-only publish, per-role permissions, a sane admin-JWT lifetime | ⏳ Launch-time (Strapi side — Research & Analysis) |
+| Dev `admin/admin` bypass (D-1/2/3) | Dev-only | Remove end-to-end before production and add a CI check that fails if it ships; meanwhile it is tree-shaken out of production builds | ⏳ Launch-time |
+
+Dependency monitoring (Dependabot) was also added in `e402f3d`; the full detail is in `docs/security-audit.md`.
+
 ---
 
 ## 7. Appendix — Developer reference (technical detail)

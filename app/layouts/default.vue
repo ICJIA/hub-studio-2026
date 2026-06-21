@@ -5,6 +5,11 @@ import { isDemoSession } from '~/lib/demo'
 const auth = useAuthStore()
 const { logout } = useAuth()
 const demo = import.meta.dev && isDemoSession()
+
+const colorMode = useColorMode()
+function toggleColorMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 </script>
 
 <template>
@@ -24,10 +29,19 @@ const demo = import.meta.dev && isDemoSession()
           <span class="grid place-items-center size-8 rounded-lg bg-primary text-inverted text-[0.7rem] font-bold tracking-tight">IC</span>
           <span class="hidden sm:inline">{{ APP_NAME }}</span>
         </NuxtLink>
-        <div v-if="auth.isLoggedIn" class="flex items-center gap-2 sm:gap-3">
-          <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
-          <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
-          <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
+        <div class="flex items-center gap-2 sm:gap-3">
+          <UButton
+            size="sm" variant="ghost" color="neutral"
+            :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
+            :aria-label="`Switch to ${colorMode.value === 'dark' ? 'light' : 'dark'} mode`"
+            title="Toggle light / dark"
+            @click="toggleColorMode"
+          />
+          <template v-if="auth.isLoggedIn">
+            <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
+            <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
+            <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
+          </template>
         </div>
       </div>
     </header>

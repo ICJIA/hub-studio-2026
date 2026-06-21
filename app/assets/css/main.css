@@ -38,8 +38,23 @@
   --ui-border-accented: var(--ui-color-neutral-300);
 }
 
-/* The page canvas — a soft slate so the white header and cards lift off it. */
+/* ---- Dark mode (opt-in via the nav toggle; light is the default) ---- */
+.dark {
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-400);
+  --ui-text-toned: var(--ui-color-neutral-300);
+  --ui-text: var(--ui-color-neutral-200);
+  --ui-text-highlighted: #ffffff;
+  --ui-bg: var(--ui-color-neutral-900);
+  --ui-bg-muted: var(--ui-color-neutral-800);
+  --ui-border: var(--ui-color-neutral-800);
+  --ui-border-muted: var(--ui-color-neutral-800);
+  --ui-border-accented: var(--ui-color-neutral-700);
+}
+
+/* The page canvas — a soft slate (light) / near-black (dark) so cards lift off it. */
 body { background-color: var(--ui-color-neutral-50); }
+.dark body { background-color: var(--ui-color-neutral-950); }
 
 /* Always-visible keyboard focus ring (accessibility). */
 :where(a, button, input, textarea, select, [role="button"], [tabindex]):focus-visible {

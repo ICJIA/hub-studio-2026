@@ -6,7 +6,7 @@
   a textarea lets authors paste delimited text and replace the whole array. Storage stays JSON.
 -->
 <script setup lang="ts">
-import { ref, watch, useId } from '#imports'
+import { ref, watch } from '#imports'
 
 type Row = Record<string, string>
 // pasteParser can return typed structs (Author, Source, Variable…). Because those interfaces lack
@@ -20,7 +20,6 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Row[]] }>()
 
-const legendId = useId()
 const pasteText = ref('')
 
 // Internal draft tracks the most-recently-emitted state so sequential mutations
@@ -53,7 +52,7 @@ defineExpose({ addRow, removeRow, updateCell, applyPaste })
 </script>
 
 <template>
-  <UFormField :label="label" :for="legendId">
+  <UFormField :label="label">
     <div class="space-y-2">
       <div v-for="(row, i) in draft" :key="i" class="flex gap-2 items-start">
         <UInput

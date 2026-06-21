@@ -12,7 +12,7 @@
   Client-only: EditorView mounts in onMounted, tears down in onBeforeUnmount (app is ssr:false).
 -->
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from '#imports'
+import { ref, watch, onMounted, onBeforeUnmount, useId } from '#imports'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
@@ -22,6 +22,7 @@ import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-
 const props = defineProps<{ modelValue: string; label?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
+const labelId = useId()
 const { upload } = useUpload()
 const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 
@@ -134,14 +135,14 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 
 <template>
   <div class="markdown-editor">
-    <label v-if="label" class="block text-sm font-medium mb-1">{{ label }}</label>
+    <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
     <div class="flex items-center gap-2 mb-2">
       <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
       <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
     </div>
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
     <div class="grid gap-3 md:grid-cols-2">
-      <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" />
+      <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
       <MarkdownPreview :source="modelValue" />
     </div>
   </div>

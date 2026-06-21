@@ -22,6 +22,22 @@ describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
     expect(wrapper.find('[data-test="cm-host"]').exists()).toBe(true)
   })
 
+  it('gives the CM host an aria-labelledby pointing at the rendered label (a11y fix)', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body (Markdown)' } })
+    const label = wrapper.find('label')
+    const host = wrapper.find('[data-test="cm-host"]')
+    expect(label.exists()).toBe(true)
+    const labelId = label.attributes('id')
+    expect(labelId).toBeTruthy()
+    expect(host.attributes('aria-labelledby')).toBe(labelId)
+  })
+
+  it('omits aria-labelledby on the CM host when no label prop is given', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '' } })
+    const host = wrapper.find('[data-test="cm-host"]')
+    expect(host.attributes('aria-labelledby')).toBeUndefined()
+  })
+
   it('honors the v-model seam: an onChange-driven document edit emits update:modelValue', async () => {
     const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
     // Drive the adapter via the exposed onChange hook (stable regardless of EditorView mountability).

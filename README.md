@@ -10,7 +10,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
-- **Security:** independently red/blue-team audited — **0 critical issues**; in-repo fixes done and covered by 375 automated tests ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Security:** independently red/blue-team audited (production **and** the public demo) — **0 critical issues**; in-repo fixes done and covered by 405 automated tests ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -127,6 +127,20 @@ A running log of red / blue team security audits. The **latest** summary is show
 | Dev `admin/admin` bypass (D-1/2/3) | Dev-only | Remove end-to-end before production and add a CI check that fails if it ships; meanwhile it is tree-shaken out of production builds | ⏳ Launch-time |
 
 Dependency monitoring (Dependabot) was also added in `e402f3d`; the full detail is in [`docs/security-audit.md`](docs/security-audit.md).
+
+**Demo & public-deploy audit (2026-06-21).** A second adversarial pass covered the new **public-demo** capability — demo mode, the static Netlify deploy, the demo CSP/headers, and icon/image bundling. **Verdict: safe to expose publicly — 0 Critical, 0 High.** The demo cannot write to Strapi, cannot sign in as a real user, and ships no secrets; this holds three deep — in-memory data, a sentinel token Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachable *even if every client-side guard is bypassed*. Of 10 findings (all Medium/Low), **5 were fixed in code and 5 documented.**
+
+| Finding | Severity | Remediation | Status |
+|---|---|---|---|
+| D-1 — Dev Strapi URL baked into the public demo bundle | Medium | Blank `strapiBaseUrl` in demo mode (unused — the demo is in-memory) | ✅ Fixed (`cdff530`) |
+| D-2 — `demoMode` flag is runtime-mutable (devtools could flip it) | Medium | Neutralized by the CSP `connect-src 'self'` backstop + the rejected sentinel token; optional freeze + CI guard noted | 🛡️ Mitigated |
+| D-3 — Icons could fetch `api.iconify.design` at runtime | Medium | `icon.fallbackToApi:false` + all 46 icons bundled locally | ✅ Fixed (`cdff530`) |
+| D-4 — Content reads gated only by the token, not the demo build | Low | `isDemoData()` read-guard (in-memory repo for the whole demo build) | ✅ Fixed (`cdff530`) |
+| D-7 — Icon dependency pinned with a `^` range | Low | Pinned exact (`1.2.114`) | ✅ Fixed (`cdff530`) |
+| D-8 — No `Permissions-Policy` header | Low | Added to both header sets | ✅ Fixed (`cdff530`) |
+| D-5, D-6, D-9, D-10 — minor disclosure / prod-scoped | Low | Documented (sentinel creds worthless vs real Strapi; email-domain placeholder; HSTS `preload`; cookie `HttpOnly` = prod H-1) | 📄 Documented |
+
+Full detail in [`docs/security-audit.md`](docs/security-audit.md) §7.
 
 <details>
 <summary><strong>Previous audits</strong></summary>

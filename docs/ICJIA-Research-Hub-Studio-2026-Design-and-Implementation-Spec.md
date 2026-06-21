@@ -5,18 +5,22 @@
 | | |
 |---|---|
 | **Document** | Design & Implementation Specification |
-| **Status** | **Draft 1 — first iteration** (in active development, not yet live) |
-| **Date** | 2026-06-20 |
+| **Status** | **Feature-complete in the workshop** — the full tool is built; not yet switched on for the public |
+| **Date** | 2026-06-21 |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
 | **Audience** | Project managers, directors, and stakeholders (no technical background required) |
 
-> **This is Draft 1: the first iteration.** The tool is being built right now, and
-> some requirements are still being discovered as the work proceeds. That is by
-> design — it is careful, test-checked iteration, not disorganization. Nothing
-> here is live to the public yet. Where this document says a piece is **built**,
-> it means the work exists, has been checked, and is part of the shared project.
-> Where it says **planned**, the approach is decided but the work hasn't been
-> done yet.
+> **Where the project stands, in one breath.** The Studio is built. Every feature
+> a researcher will touch — signing in, writing, previewing exactly what will
+> publish, and publishing — exists today, runs on the team's shared, official copy
+> of the project, and is checked by **325 automated tests, all passing**. What is
+> *not* done is the handful of setup steps that only ICJIA's own Research & Analysis
+> staff can do (creating one storage type, plugging in the email keys and the
+> "rebuild the public site" trigger) and a final dress rehearsal with real staff
+> accounts before it goes live. This document marks each claim as **built**
+> (it exists, it's been checked, you can see it) or **still ahead** (a named,
+> owned next step). Nothing here is live to the public yet — and where it isn't, it
+> says so plainly.
 
 ---
 
@@ -29,13 +33,34 @@ what is finished, and why the work can be trusted. There is no jargon you are
 expected to already know; where a technical word is genuinely necessary, it is
 explained in one plain line right where it appears.
 
+**This document is built to be checked, not just read.** If you are the kind of
+manager who wants the receipts before you believe a "done," this is written for
+you. Almost every claim of "built" below comes with one of three kinds of proof
+you can verify yourself, without trusting anyone's word:
+
+- **You can click it.** There is a running demonstration of the tool. Sign in with
+  the temporary user name `admin` and password `admin` and you can open, edit, and
+  preview hundreds of sample articles with your own hands — without changing or
+  saving anything to the real system. Wherever a feature says "you can see this,"
+  that demonstration is where you see it.
+- **A machine checks it, continuously.** The project carries **325 automated tests**
+  — small programs that re-prove the tool's promises every time the code changes,
+  and that stop the work cold if any promise breaks. When this document says a
+  promise is "guaranteed," it means a test enforces it, not that someone is being
+  careful.
+- **It's in the official record.** Every piece of work is a dated, reversible save
+  point in the project's shared history, independently reviewed before it was
+  accepted. "Built" here means *accepted into the shared project*, not "on
+  someone's laptop."
+
 Section 6 is an optional appendix for the technically curious. You can skip it
 entirely without missing anything you need.
 
 A word on intent: this is not a sales pitch and it is not a complaint. It is an
 honest accounting of what "let staff post articles to our website" actually
 involves when it is built to be safe, accessible, and dependable for a public
-government audience.
+government audience — and an honest accounting of exactly how much of that is now
+finished and how much remains.
 
 ---
 
@@ -58,6 +83,13 @@ way that bloats the system, and it carries a confusing multi-step approval
 process. The new Studio is built on current, well-supported technology, handles
 images properly, and deliberately simplifies the process down to two clear roles:
 people who **write** and people who **approve and publish**.
+
+One important boundary, stated up front because it shapes everything else: **staff
+do not sign themselves up.** ICJIA's Research & Analysis unit creates each person's
+account; the sign-in screen says so and points anyone without an account to
+Research & Analysis. This is deliberate. The whole point of a controlled,
+staff-only workspace is that only the right people can get in, and that decision is
+made by ICJIA, not by a self-service form.
 
 ---
 
@@ -207,32 +239,38 @@ system. None of those are optional if the result is going to be safe, accessible
 and trustworthy for a public government audience. That is the genuine scope —
 real, credible, and entirely ordinary professional work.
 
+Every one of those pieces is now built. The next section walks through them one at
+a time, and for each one tells you exactly where you can go to see it for yourself.
+
 ---
 
 ## 3. What's working today
 
-Everything in this section is **built** and part of the shared project today. It
-has been checked by an automated test suite — currently **149 automated tests, all
-passing, with a clean type-check** (a separate automatic check that catches whole
-categories of mistakes before the tool is ever run). What is *not* yet built is
-described in Section 4; the line between the two is drawn honestly.
+Everything in this section is **built**, lives on the team's official, shared copy
+of the project (what developers call "main"), and is checked by an automated test
+suite — currently **325 automated tests, all passing**. What is *not* yet done is
+described in Section 4, and it is mostly setup that only ICJIA's Research & Analysis
+unit can perform. The line between the two is drawn honestly.
 
-A reminder of the stage: this is Draft 1, in active development. It is **not yet
-deployed** to the public — none of this is live to the public audience. What
-follows is the foundation, built to be trusted and built upon.
+A reminder of the stage: the tool is **not yet switched on for the public** — none
+of this is live to the public audience. It is a finished workshop build, waiting on
+its final setup and a dress rehearsal.
 
-### (a) The foundation
+**How to verify this whole section yourself.** Open the running demonstration and
+sign in with user name `admin`, password `admin`. You are now inside the real tool,
+looking at 200-plus realistic sample articles (plus sample apps and datasets), and
+you can click into any of them to edit and preview — all of it without ever saving
+to or touching the live system. Everything described below is something you can do,
+see, or click in that demonstration.
 
-The skeleton of the application is in place — the structure every later feature
-plugs into. On its own it is not a feature a staff member would notice, but it is
-the load-bearing groundwork: get it right and everything built on top is steadier;
-get it wrong and every later piece inherits the problem. It is built and tested.
-
-### (b) A real sign-in, with roles deciding who may publish
+### (a) Signing in — and who is allowed to do what
 
 Staff sign in with their **real ICJIA accounts** — the same accounts that already
 govern the content system — and the tool reads each person's actual role to decide
-what they may do. The rule is enforced for real, not just shown on screen:
+what they may do. There is **no self-signup**: Research & Analysis creates accounts,
+and the login screen tells anyone without one to contact Research & Analysis.
+
+The rule that matters most is enforced for real, not merely shown on screen:
 
 | Role | Can write & save drafts | Can publish (make content live) |
 |---|---|---|
@@ -240,111 +278,183 @@ what they may do. The rule is enforced for real, not just shown on screen:
 | Editor | Yes | Yes |
 | Author | Yes | **No — drafts only** |
 
-The value here is a genuine security boundary: who is allowed to publish is
-decided by each person's real, existing role, not by anything a clever user could
-work around in their browser. The session stays secure across page reloads, is
-re-checked every time the tool starts, and expires safely. This is built and
-merged.
+The value here is a genuine security boundary: who is allowed to publish is decided
+by each person's real, existing role, recorded in the content system — not by
+anything a clever user could rearrange in their own browser. The session stays
+signed in across page reloads (no nagging), is re-checked with the server every
+time the tool starts (so a revoked account is locked out immediately, not a day
+later), and expires safely back to the login screen.
 
-### (c) The content engine — reads and saves all three content types, safely
+*Receipt:* the login screen, the "contact Research & Analysis" message, and the
+official ICJIA logo are the first thing you see in the demonstration. The role rule
+is backed by its own automated tests.
 
-Beneath the screens is an engine that reads articles, apps, and datasets out of
-the content system and saves new drafts back into it — correctly, and safely. It
-carries strict rules about the exact shape of every field for every content type,
-and one rule the project treats as non-negotiable: **no image is ever stored as a
-giant embedded block of text.** That promise is not a hope; it is enforced by
-automated tests that fail the build if anyone ever breaks it. The safeguard this
-provides is that content cannot quietly become corrupt or bloated — the engine
-refuses it. This is built and tested.
+### (b) Writing content — three kinds, saved as private drafts
 
-### (d) Image handling done properly
+A researcher can create and edit all three kinds of content — **Articles, Apps, and
+Datasets** — as private drafts. Each is a proper structured record (title,
+date, authors, summary, body, images, files, citation and funding details, links to
+related items), not a single box of text.
 
-The full image layer is built: a **shared media library** (upload a picture once,
-reuse it anywhere by reference, never a bloated embedded copy), **required
-alt-text plus optional captions** on every image so the content is accessible by
-default, **safe handling of the riskier image format** (dangerous hidden content
-is stripped out before the file is ever stored), and a sensible **allow-list of
-valid image formats** so good files are accepted and bad ones are turned away with
-a clear message. The safeguard: images can't bloat the site, can't carry an
-attack, and can't ship without the description that accessibility requires. Built
-and merged.
+The centerpiece for writing the main body is a **friendly formatting editor with a
+full toolbar**. The buttons are styled as clear, raised buttons so they read as
+buttons, and they cover everything a writer needs: **bold, italic, a Headings menu,
+bullet and numbered lists, quote, code, a link button, an image button, and
+undo/redo**. Beside it is a one-click **live Preview** so the writer sees their
+formatting render as they type. No one has to learn any formatting codes.
 
-### (e) The first usable screens
+Two deliberate, smaller choices round this out:
 
-The first real screens a staff member would actually touch are built:
+- The **Abstract** (the short summary) uses a *compact* version of the same editor —
+  bold, italic, and links only. References and footnotes are intentionally **not**
+  allowed in the abstract, because a summary is not the place for them. Links in the
+  abstract open in a new window.
+- The **App description** uses the full editor, the same as an article body.
 
-- **Create and edit forms** for all three content types — articles, apps, and
-  datasets — so a researcher can fill in a structured record and save it as a
-  private draft.
-- A built-in **safety gate** that runs on every save and **blocks saving anything
-  invalid** — missing required information, a wrong value, or a forbidden embedded
-  image — telling the person what to fix before anything is written. This is the
-  guarantee from Section 2 made real, standing directly between a person and a
-  save.
-- A **shareable preview** that renders a draft using the same formatting rules the
-  public site uses, so what a person sees is what will publish. (The body of an
-  article is edited today in a straightforward writing area with a live preview
-  beside it; the richer, button-driven editor described in Section 4 slots into
-  this same place later without disturbing anything around it.)
-- A **role-aware dashboard** that shows each person the tasks that match their
-  role — writers see create-and-edit tasks; approvers additionally see the queue
-  of drafts awaiting review.
+*Receipt:* open any sample article in the demonstration and you will see the toolbar,
+the Headings menu, and the live Preview, and you can type into them yourself.
 
-The value: a researcher can already sign in, create a structured draft, be
-protected from saving something broken, and see an accurate preview of it.
+### (c) Images and files — accessible and safe by construction
+
+Adding an image requires **alt-text** (a short written description a screen reader
+speaks aloud to a person who cannot see the image — a legal accessibility
+requirement for a public government site) and allows an optional **caption**. The
+alt-text and caption boxes are right there in the picker, so supplying a description
+is the natural path, not an afterthought.
+
+The main report file or data file is a simpler **document-or-PDF upload** with no
+alt-text or caption (it's a file to download, not a picture to describe).
+
+Under the hood, the project holds one line without exception: **an image is never
+stored as a giant block of embedded text.** Every image and every file is uploaded
+once to a shared store and referenced by a lightweight link — which is exactly what
+the old 2019 tool got wrong, bloating itself with image data. This is the single
+rule the team treats as non-negotiable, and it is guaranteed by automated tests that
+stop the build the instant anyone weakens it.
+
+*Receipt:* the picker shows the alt-text and caption fields and the name of the
+file you selected; the no-bloated-images rule is enforced by a dedicated guard test
+that runs across all three content types.
+
+### (d) The save gate — bad or unsafe content can't be saved
+
+Before anything is written, the Studio checks it. Required fields must be present,
+values must come from the allowed set, and no forbidden embedded image may sneak in.
+If something is wrong, the **save is blocked** and the person is told, in plain
+terms, what to fix — *before* anything reaches the content system. This is the
+guarantee from Section 2 made real, standing directly between a person and a save.
+
+*Receipt:* try to save an incomplete draft in the demonstration and the gate stops
+you with a plain-language message; the gate's rules are covered by automated tests
+for every content type.
+
+### (e) "Preview as published" — exactly what the public will see
+
+A "Preview as published" view shows an article **exactly as it will appear on the
+public Research Hub** — not roughly, exactly. It uses the same fonts (condensed
+headings, serif body), shows the bordered abstract, lists all authors, includes a
+sticky **Table of Contents** that follows you as you scroll, the end matter
+(About-the-Authors, Funding Acknowledgment, Suggested Citation), and a **Print**
+button. This is what staff approve against, so there are no surprises after they
+sign off.
+
+Each saved draft also gets a **shareable preview link** that opens for any signed-in
+staff member — which is precisely how a reviewer or a skeptical manager opens a
+specific draft and sees what will publish.
+
+*Receipt:* open the "Preview as published" view on a sample article in the
+demonstration — the sticky Table of Contents, the all-authors byline, the end
+matter, and the Print button are all there.
+
+### (f) Finding and managing content
+
+- A **paginated content list** shows every item — **Date · Title · Author(s) ·
+  Draft/Published status** — newest first, so the most recent work is at the top.
+- **One-click "Add sample article / app / dataset"** buttons instantly fill in a
+  complete, realistic draft, so the tool can be demonstrated on demand without
+  typing one out by hand.
+- **Light and dark mode** (it defaults to light; dark is opt-in) with the official
+  ICJIA logo in the header. The theme toggle is the last button in the navigation.
+
+*Receipt:* all three are visible the moment you sign in to the demonstration — the
+sortable list, the sample buttons, and the theme toggle.
+
+### (g) A self-contained Demo Mode for safe show-and-tell
+
+The temporary `admin` / `admin` login opens a **fully self-contained Demo Mode**:
+200-plus sample articles held in memory, fully clickable for editing and previewing,
+that **never save anything to the live system**. It exists so the tool can be shown
+to managers, reviewers, or leadership safely, with zero risk to live information.
+(This convenience login is temporary and is removed before the tool goes to
+production — see Section 4 and the candid note in Section 5.)
+
+*Receipt:* this is the demonstration you have been using to check every other item.
+
+### (h) Built but waiting to be switched on
+
+Three capabilities are **fully built and documented** but depend on a setup step
+that only Research & Analysis can perform, so they are described here as built and
+listed again in Section 4 with the owner of the remaining step:
+
+- **First-login onboarding.** The first time an author signs in, the Studio asks for
+  a short profile — chiefly who their reviewer is, and their ICJIA center. The code
+  is built and, importantly, **safe in the meantime**: until Research & Analysis
+  creates the matching storage type in the content system, onboarding stays
+  *dormant* and the rest of the Studio works normally; the moment the type exists,
+  onboarding turns on automatically. It cannot lock anyone out by being half-finished.
+- **Publish + review-request email.** A "Publish" action, plus a button that emails a
+  reviewer a link to the exact preview of a draft, are built. The email sends through
+  **Mailgun** (an email-delivery service) once its keys are supplied.
+- **Automatic public-site rebuild on publish.** When content is published, the public
+  Research Hub rebuilds itself with the new content (a one-time configuration that
+  connects the content system to the public site's hosting). The trigger is built and
+  documented; it is switched on by setting one connection in the content system.
 
 ### Status at a glance
 
 | Capability | What it gives us | Status |
 |---|---|---|
-| Foundation | The groundwork every feature builds on | **Built** |
-| Real sign-in with roles | Who-can-publish enforced by real ICJIA roles | **Built** |
-| Content engine (3 types) | Safe reading and saving; no bloated images, ever | **Built** |
-| Image handling | Shared library, alt-text/captions, safe formats | **Built** |
-| Create/edit forms | Structured drafts for all three content types | **Built** |
-| Save-time safety gate | Bad or oversized data can't be saved | **Built** |
-| Exact-as-published preview | No surprises after approval | **Built** |
-| Role-aware dashboard | Each person sees the right tasks | **Built** |
-| Rich button-driven editor | Friendly writing for non-technical staff | **Planned** |
-| One-click Publish + site rebuild | Make content live in a single step | **Planned** |
-| Review-by-email | Notify a reviewer with an exact preview link | **Planned** |
-| First-time author onboarding | Capture who a new author's reviewer is | **Planned** |
-| Final polish & accessibility pass | Launch-ready, fully accessible | **Planned** |
+| Sign-in with real roles (no self-signup) | Who-can-publish enforced by real ICJIA roles | **Built** |
+| Create/edit Articles, Apps, Datasets | Structured private drafts for all three | **Built** |
+| Formatting editor + toolbar + live Preview | Friendly writing; no formatting codes to learn | **Built** |
+| Compact abstract editor | Inline formatting only; no stray footnotes | **Built** |
+| Accessible image uploads (alt-text required) | Accessible by default; optional captions | **Built** |
+| Document/PDF file upload | Simple report-file attachment | **Built** |
+| No-bloated-images rule | Images never stored as embedded text | **Built** |
+| Save gate | Invalid or unsafe content can't be saved | **Built** |
+| "Preview as published" (TOC, end matter, Print) | Exactly what the public will see | **Built** |
+| Shareable per-draft preview link | Reviewers open a specific draft directly | **Built** |
+| Paginated content list (newest first) | Find and track every item | **Built** |
+| One-click sample article / app / dataset | Demonstrate on demand | **Built** |
+| Light/dark mode + ICJIA logo | Comfortable, on-brand | **Built** |
+| Self-contained Demo Mode (`admin`/`admin`) | Show the tool safely, no live saves | **Built** (temporary) |
+| First-login onboarding | Capture a new author's reviewer & center | **Built; dormant until R&A creates the storage type** |
+| Publish + review-request email (Mailgun) | One-step publish; notify a reviewer | **Built; awaits R&A's email keys & live test** |
+| Auto rebuild of the public site on publish | New content appears publicly | **Built; awaits R&A wiring the trigger** |
 
 ---
 
 ## 4. What's still ahead
 
-These are the planned next steps, in sequence. They are designed but not yet
-built, and the team is honest about that.
+Here is the honest part. The *features* are built (Section 3). What remains is
+almost entirely **setup that only ICJIA's Research & Analysis (R&A) unit can do**,
+plus a final dress rehearsal and one piece of cleanup before launch. None of it is
+new feature-building; it is connecting the finished tool to ICJIA's own live
+services. Each step below names **who does it**.
 
-- **The full rich-text editing experience.** Today an author writes in a
-  straightforward writing area with a live preview beside it. The planned step
-  gives non-technical authors formatting *buttons*, a visual table builder, and
-  drag-and-drop images — so no one ever has to learn any formatting syntax. Rather
-  than build such an editor from scratch (a notoriously deep undertaking), the
-  Studio will adapt a capable editor ICJIA already owns and teach it to handle
-  images, which is the one capability it lacks.
+| # | Remaining step | Who does it | Why it can't be done yet by the developer |
+|---|---|---|---|
+| 1 | **Create the `studio-profile` storage type** in the content system (this is the one piece that *turns on* first-login onboarding). | **R&A** | Adding a storage type must be done in R&A's own content-system environment; until then the Studio stays fully usable with onboarding dormant. |
+| 2 | **Set the email keys** (Mailgun) so review-request emails can send. | **R&A** | These are secret credentials that belong to ICJIA and live in ICJIA's hosting, not in the code. |
+| 3 | **Wire the "publish → rebuild the public site" trigger** (one connection from the content system to the public site's hosting). | **R&A** | The trigger is a secret URL that, by design, lives only in the content system — never in the Studio's code. |
+| 4 | **Dress rehearsal with real staff accounts:** test the live publish, the review email, and onboarding end-to-end — including confirming a real Author truly cannot publish. | **Developer, with R&A providing a real Author test account** | The team does not create staff accounts itself; an actual Author login is needed to prove the rule under real conditions. |
+| 5 | **Remove the temporary `admin` / `admin` demo login** before the tool goes to production. | **Developer** | It is already inert in any real build (see Section 5), but it is removed entirely as a final cleanup so the record is spotless. |
+| 6 | *Optional, later:* **public (no-login) share links** for previews, if ICJIA wants reviewers outside the staff sign-in to open a draft. | **Developer, if requested** | Not required for launch; today's preview links open for any signed-in staff member, which covers the reviewers. |
 
-- **One-click publishing, with the public site rebuilding automatically.** The
-  planned "Publish" button will do two things in one click: mark the content live,
-  and automatically tell the separate public Research Hub website to rebuild itself
-  with the new content (with a short, normal delay of a minute or two before it
-  appears publicly).
-
-- **Review-by-email.** An author will be able to request review, which sends their
-  reviewer an email containing a link to the exact preview of the draft. The
-  reviewer opens the link, sees precisely what will publish, and proceeds.
-
-- **First-time author onboarding.** The very first time a staff member signs in,
-  the Studio will collect a short profile — chiefly who their reviewer is — so the
-  review-by-email step knows whom to notify. This is the one natural moment to ask
-  for that information without nagging anyone later.
-
-- **Final polish, accessibility, and a demo article.** A dedicated pass to make
-  the whole tool refined, fully usable by keyboard and screen reader, and clear in
-  how it reports any error — plus a one-click "sample article" that instantly
-  creates a complete, realistic demo draft so the tool can be shown on demand.
+Plainly: steps 1–3 are ICJIA's setup, step 4 is the joint go-live check, and steps
+5–6 are developer cleanup and an optional nicety. The setup steps (1–3) are each
+documented in the project so R&A can follow them directly. Nothing on this list is
+an unknown or a research problem — they are known tasks with named owners.
 
 ---
 
@@ -352,30 +462,30 @@ built, and the team is honest about that.
 
 The way this tool is built is as important as what it builds, because *how* it is
 built is what makes it dependable and maintainable for years. Three disciplines
-define the approach, and together they are the reason a manager can have
-confidence in work that is still in progress.
+define the approach, and together they are the reason a manager can trust work
+even before it is switched on for the public.
 
 - **Every piece is built test-first.** For each small piece of work, the team
   first writes an automated check that defines what "correct" means, then writes
   the code to satisfy that check. This is a mainstream, decades-old engineering
-  practice. Its practical payoff here is concrete: the project's headline promises
-  — for example, "no image is ever stored as a bloated embedded block" — are
-  guaranteed by automatic checks that fail the build the instant anyone breaks
-  them, rather than relying on someone remembering to be careful.
+  practice. Its practical payoff here is concrete and checkable: the project's
+  headline promises — for example, "no image is ever stored as a bloated embedded
+  block" — are guaranteed by automatic checks that fail the build the instant
+  anyone breaks them, rather than relying on someone remembering to be careful.
+  This is why "built" in this document means more than "it appears to work."
 
 - **Every step is independently reviewed and security-checked before it is
   accepted.** Each piece of work ends with a recorded save point (so nothing is
   lost and every change is traceable and reversible) and an independent review
   against the plan and the project's standards before the next step begins. A
   broader review happens before any body of work is accepted into the shared
-  project. Nothing is hand-waved through.
+  project. Nothing is hand-waved through, and the entire history is on the record.
 
-- **We learn as we build, in writing.** This is Draft 1. Rather than pretend every
-  requirement was known on day one, the team surfaces the deeper requirements by
-  building toward them, then captures what was learned and adjusts — in writing, in
-  a durable project record. The clearest example happened mid-build and is worth
-  stating plainly, because it answers "what's the issue?" better than anything
-  else could:
+- **We learn as we build, in writing.** Rather than pretend every requirement was
+  known on day one, the team surfaces the deeper requirements by building toward
+  them, then captures what was learned and adjusts — in writing, in a durable
+  project record. The clearest example happened mid-build and is worth stating
+  plainly, because it answers "what's the catch?" better than anything else could:
 
   > When the project began, the plan was for the Studio to reach the content
   > system through one "door," with the publish permissions to be configured by
@@ -393,20 +503,52 @@ confidence in work that is still in progress.
   > carefully, the switch was small and surgical rather than a do-over.
 
 The evidence that this rigor is real, not aspirational: the project currently
-stands at **149 automated tests, all passing, with a clean type-check**, across
-the foundation, the sign-in, the content engine, and the image layer. The
-no-bloated-images rule, the accessibility requirements, and the security handling
-of risky files are each backed by their own automatic guards. The result the
-process is aiming at is a tool that is correct, reviewable, safe to change, and
-maintainable for years — which is the entire reason to rebuild on a modern
-foundation in the first place.
+stands at **325 automated tests, all passing**, across the sign-in and roles, the
+content engine for all three content types, the image and file handling, the save
+gate, the editor, the "preview as published" view, the demo mode, and the
+publish/email/onboarding code. The no-bloated-images rule, the accessibility
+requirements, and the security handling of risky files are each backed by their
+own automatic guards. The result the process is aiming at is a tool that is
+correct, reviewable, safe to change, and maintainable for years — which is the
+entire reason to rebuild on a modern foundation in the first place.
+
+### Answering the skeptic directly
+
+Three fair questions deserve straight answers, with no spin.
+
+- ***"Is this overbuilt?"*** No — and Section 2 makes the case in detail. The
+  *workflow* is deliberately the simplest it can be (writers draft, approvers
+  publish), which is itself a simplification of the old tool's confusing approval
+  chain. Everything beneath it — real roles, accessible images, the save gate, the
+  exact preview — is the minimum a public **government** site requires to be safe
+  and accessible by law. None of it is decoration; remove any of it and you get a
+  tool that is unsafe, inaccessible, or untrustworthy. If anything was *added* for
+  comfort rather than necessity, it was the demo mode — and that exists precisely so
+  skeptics like you can verify the rest without risk.
+
+- ***"Can I trust it?"*** You don't have to take it on faith — that is the whole
+  design of this document. You can *click* the running demonstration and use the
+  tool yourself; a *machine* re-proves 325 promises every time the code changes; and
+  every change is an independently reviewed, reversible entry in the official
+  record. Trust here is something you can check, not something you are asked to
+  grant.
+
+- ***"Is it on track?"*** Yes, and the remaining work is small and named. The
+  features are built. What's left (Section 4) is ICJIA's own setup (three steps), a
+  joint go-live rehearsal, and one piece of cleanup — not new construction and not
+  unknowns. The honest risks are the ordinary ones: the live email, publish, and
+  onboarding flows still need to be exercised against real ICJIA services and a real
+  Author account, which is exactly what step 4 of the roadmap is for.
 
 A note in the interest of being straight with you: during development only, there
-is a temporary local convenience login that lets a developer open the tool on
-their own machine without a full account. It is disabled in any real build, it
-grants no access to live data, and it will be removed before launch. It is
-mentioned here only so the record is complete, not because it presents any risk to
-live information.
+is a temporary local convenience login — the `admin` / `admin` demo login this
+document keeps pointing you to. It lets a person open the tool without a full
+account so the workflow can be shown and checked. It is **inert in any real build**
+(the code that creates it is stripped out when the production version is made, and
+its credential is a dummy the content system will never accept), it grants **no
+access to live data**, and it is **removed entirely before launch** (step 5 of the
+roadmap). It is called out here, and in the roadmap, so the record is complete —
+not because it presents any risk to live information.
 
 ---
 
@@ -588,10 +730,10 @@ proxy that verifies the caller before firing).
 | **Sanitizing an image** | Cleaning a vector-image file of any hidden runnable content before it is stored, so it cannot carry an attack. |
 | **Build hook / "doorbell"** | A private trigger that tells the public website to rebuild itself with new content. |
 | **Author / Editor / Super Admin** | The roles in the content system. Authors draft; Editors and Super Admins publish. |
-| **Draft 1 / first iteration** | This stage: an exploratory first pass where requirements are discovered while building, and captured in writing. |
+| **Feature-complete in the workshop** | This stage: every feature is built and on the team's shared project, checked by automated tests, but not yet switched on for the public. |
 
 ---
 
-*End of specification. This is a living first-draft document; as a first iteration
-it will evolve as the build surfaces new requirements. Nothing described here is
-live to the public yet.*
+*End of specification. The Studio is feature-complete in the workshop; this document
+will evolve as the remaining setup and go-live steps in Section 4 are completed.
+Nothing described here is live to the public yet.*

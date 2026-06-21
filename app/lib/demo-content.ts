@@ -295,19 +295,18 @@ const TABLE_LEADINS = [
   '**Table 1** compares the two placeholder groups on the sample measures.',
 ] as const
 
-// Figure COUNT bucket for article i (deterministic, no Math.random):
-//   i % 20 in [0,3)   → 0 figures  (~15%)
-//   i % 20 in [14,20) → 2 or 3     (~30%; the 3-figure case is the even half of that bucket)
-//   otherwise         → 1 figure   (~55%)
+// Figure COUNT bucket for article i (deterministic, no Math.random). EVERY article carries at least
+// one inline figure, so a manager opening ANY demo article sees figures inside the body text:
+//   i % 20 in [14,20) → 2 or 3 figures  (~30%; the 3-figure case is the even half of that bucket)
+//   otherwise         → 1 figure        (~70%)
 function figureCount(i: number): number {
   const m = i % 20
-  if (m < 3) return 0
   if (m >= 14) return m % 2 === 0 ? 3 : 2
   return 1
 }
 
 // A table appears in ~20% of articles (i % 5 === 2) — independent of the figure count, so a table
-// may stand alone (when figureCount is 0) or accompany figures.
+// accompanies the article's figure(s) in the body flow.
 function hasTable(i: number): boolean {
   return i % 5 === 2
 }

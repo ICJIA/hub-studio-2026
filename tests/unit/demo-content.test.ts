@@ -50,16 +50,14 @@ describe('DEMO_ARTICLES — figure distribution', () => {
   const one = counts.filter((c) => c === 1).length
   const twoOrThree = counts.filter((c) => c === 2 || c === 3).length
 
-  it('~15% of articles have NO inline figure (10–20%)', () => {
-    const pct = none / DEMO_ARTICLES.length
-    expect(pct).toBeGreaterThanOrEqual(0.1)
-    expect(pct).toBeLessThanOrEqual(0.2)
+  it('EVERY article has at least one inline figure (managers must see figures in any article)', () => {
+    expect(none).toBe(0)
   })
 
-  it('~55% of articles have exactly ONE figure (45–65%)', () => {
+  it('~70% of articles have exactly ONE figure (60–80%)', () => {
     const pct = one / DEMO_ARTICLES.length
-    expect(pct).toBeGreaterThanOrEqual(0.45)
-    expect(pct).toBeLessThanOrEqual(0.65)
+    expect(pct).toBeGreaterThanOrEqual(0.6)
+    expect(pct).toBeLessThanOrEqual(0.8)
   })
 
   it('~30% of articles have TWO or THREE figures (20–40%)', () => {

@@ -255,7 +255,7 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
   <div class="markdown-editor">
     <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
     <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
-      <div class="flex items-center gap-0.5 flex-wrap rounded-md border border-default bg-elevated/40 px-1 py-0.5">
+      <div class="editor-tools flex items-center gap-1 flex-wrap">
         <!-- Compact mode: inline formatting only (Bold, Italic, Inline code, Link, Undo, Redo) -->
         <template v-if="compact">
           <template v-for="(group, gi) in compactToolbarGroups" :key="gi">
@@ -335,4 +335,26 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 .markdown-preview-pane { min-height: 32rem; }
 .markdown-preview-pane--compact { min-height: 9rem; }
 .markdown-preview-pane :deep(.prose-preview) { font-size: 14px; }
+
+/* Raised, 3D-looking toolbar buttons so authors immediately recognize them as buttons. */
+.editor-tools :deep(button) {
+  border: 1px solid var(--ui-border-accented);
+  background-color: var(--ui-bg);
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: box-shadow 0.1s ease, transform 0.06s ease, background-color 0.1s ease;
+}
+.editor-tools :deep(button:hover) {
+  background-color: var(--ui-bg-muted);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.editor-tools :deep(button:active) {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+  transform: translateY(0.5px);
+}
+.dark .editor-tools :deep(button) {
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.dark .editor-tools :deep(button:hover) {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
 </style>

@@ -136,13 +136,22 @@
 }
 .published-article .published-endmatter p:last-child { margin-bottom: 0; }
 
-/* Print: render only the article, single column, no TOC / print button / Studio chrome. */
+/* Print: clean standalone article — governs the iframe document and a direct Ctrl+P. */
 @media print {
-  body * { visibility: hidden; }
-  .published-article, .published-article * { visibility: visible; }
-  .published-article { position: absolute; left: 0; top: 0; width: 100%; max-width: none; padding: 0; }
-  .published-layout { display: block; }
-  .published-toc, .published-print-btn { display: none !important; }
+  @page { margin: 1.6cm; }
+  html.dark { color-scheme: light; }
+  body { background: #fff !important; }
+  /* Hide non-article chrome (harmless in the print iframe; helps a direct Ctrl+P). */
+  header, nav.published-toc, .published-toc, .published-print-btn { display: none !important; }
+  /* Single column — drop the TOC grid. */
+  .published-layout { display: block !important; }
+  .published-content { max-width: none !important; margin: 0 !important; }
+  .published-article { color: #000 !important; }
+  .published-splash { max-height: 8cm; object-fit: cover; }
+  /* Keep headings with their content; don't split atomic blocks across pages. */
+  .published-article h1, .published-article h2, .published-article h3, .published-article h4 { break-after: avoid; page-break-after: avoid; }
+  .published-article img, .published-abstract, .published-endmatter, .prose-preview blockquote, .prose-preview pre, .prose-preview figure, .prose-preview img, .prose-preview table { break-inside: avoid; page-break-inside: avoid; }
+  .prose-preview { font-size: 12pt; line-height: 1.5; }
 }
 
 /* ---------- App / Dataset preview extras ---------- */

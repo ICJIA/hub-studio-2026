@@ -46,7 +46,59 @@ const splashUrl = computed(() => {
 const hasTags = computed(() => Boolean(props.article.categories?.length || props.article.tags?.length))
 
 function printArticle() {
-  if (import.meta.client) window.print()
+  if (!import.meta.client) return
+  if (!rootEl.value) {
+    window.print()
+    return
+  }
+
+  // Copy the page's stylesheets so the article keeps hub typography in the iframe.
+  const styleLinks = Array.from(
+    document.querySelectorAll<HTMLElement>('link[rel="stylesheet"], style'),
+  ).map((el) => el.outerHTML).join('\n')
+
+  // Sanitise the title for insertion into <head>.
+  const rawTitle = props.article.title ?? 'Article'
+  const safeTitle = rawTitle
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+
+  // Hidden same-origin iframe — isolates the print from the app shell.
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('aria-hidden', 'true')
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'
+  document.body.appendChild(iframe)
+
+  const iwin = iframe.contentWindow!
+  let printed = false
+
+  const removeIframe = () => {
+    if (iframe.parentNode) iframe.parentNode.removeChild(iframe)
+  }
+
+  const doPrint = () => {
+    if (printed) return
+    printed = true
+    iwin.focus()
+    iwin.print()
+    iwin.addEventListener('afterprint', () => setTimeout(removeIframe, 200))
+    setTimeout(removeIframe, 30_000) // safety: remove even if afterprint never fires
+  }
+
+  // Print once the iframe's resources (fonts/images) have loaded.
+  iwin.addEventListener('load', () => doPrint())
+  // Fallback: if load doesn't fire within 1.2 s, print anyway (guard is in doPrint).
+  setTimeout(() => doPrint(), 1200)
+
+  // Write the article into the iframe. The dark class is NOT copied — print must be light.
+  const doc = iwin.document
+  doc.open()
+  doc.write(
+    `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${safeTitle}</title>\n${styleLinks}\n</head>\n<body>${rootEl.value.outerHTML}</body>\n</html>`,
+  )
+  doc.close()
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +256,8 @@ onBeforeUnmount(() => {
   resizeListener = null
   scrollContainer = null
 })
+
+defineExpose({ printArticle, rootEl })
 </script>
 
 <template>

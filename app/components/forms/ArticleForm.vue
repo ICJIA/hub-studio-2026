@@ -4,7 +4,9 @@
   submit it runs validateArticle BEFORE any write (the zero-base64 hand-off from the data layer)
   and, on create, slugifies the title (prepareForCreate). Relations (apps/datasets) render
   READ-ONLY (relation WRITE is deferred). The Markdown body uses MarkdownField — the Plan-4 editor
-  seam. Pure form logic lives in lib/forms/*; this component is intentionally thin.
+  seam. Layout: a wide writing column (abstract, authors, body) + a "Details" metadata sidebar,
+  so the page reads horizontally instead of as one long vertical stack. Pure logic lives in
+  lib/forms/*; this component is intentionally thin.
 -->
 <script setup lang="ts">
 import { reactive, ref } from '#imports'
@@ -54,21 +56,33 @@ defineExpose({ submit, setField, errors, model })
 </script>
 
 <template>
-  <UForm :state="model" class="space-y-5" @submit.prevent="submit">
+  <UForm :state="model" class="space-y-6" @submit.prevent="submit">
     <TextField v-model="model.title" label="Title" />
-    <DateField v-model="model.date" label="Date" />
-    <SelectField v-model="model.type" label="Type" :options="ARTICLE_TYPE_OPTIONS" />
-    <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
-    <ChipsField v-model="model.tags" label="Tags" />
-    <RepeatableField v-model="model.authors" label="Authors" :columns="authorColumns" :paste-parser="parseAuthors" />
-    <TextField v-model="model.abstract" label="Abstract" />
-    <MediaField v-model="model.splash" label="Splash image" />
-    <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
-    <MediaField v-model="model.mainfile" label="Main file" />
-    <MarkdownField v-model="model.markdown" label="Body (Markdown)" />
 
-    <RelationList label="Linked datasets" :items="model.datasets" />
-    <RelationList label="Linked apps" :items="model.apps" />
+    <div class="grid gap-6 lg:grid-cols-3 items-start">
+      <!-- Writing column -->
+      <div class="lg:col-span-2 space-y-5">
+        <TextField v-model="model.abstract" label="Abstract" />
+        <RepeatableField v-model="model.authors" label="Authors" :columns="authorColumns" :paste-parser="parseAuthors" />
+        <MarkdownField v-model="model.markdown" label="Body (Markdown)" />
+      </div>
+
+      <!-- Details sidebar -->
+      <UCard class="lg:col-span-1">
+        <template #header><h3 class="font-medium text-highlighted">Details</h3></template>
+        <div class="space-y-5">
+          <DateField v-model="model.date" label="Date" />
+          <SelectField v-model="model.type" label="Type" :options="ARTICLE_TYPE_OPTIONS" />
+          <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
+          <ChipsField v-model="model.tags" label="Tags" />
+          <MediaField v-model="model.splash" label="Splash image" />
+          <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
+          <MediaField v-model="model.mainfile" label="Main file" />
+          <RelationList label="Linked datasets" :items="model.datasets" />
+          <RelationList label="Linked apps" :items="model.apps" />
+        </div>
+      </UCard>
+    </div>
 
     <ul v-if="errors.length" class="text-sm text-error list-disc pl-5" role="alert">
       <li v-for="(e, i) in errors" :key="i">{{ e.field }}: {{ e.message }}</li>

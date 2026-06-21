@@ -14,12 +14,14 @@ mockNuxtImport('useUpload', () => () => ({ upload: uploadMock, browse: vi.fn().m
 import MarkdownEditor from '~/components/MarkdownEditor.vue'
 
 describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
-  it('renders the mount target and shows modelValue in the kept MarkdownPreview', async () => {
+  it('shows modelValue in the live preview when the Preview toggle is on', async () => {
     const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# Hello', label: 'Body' } })
-    // Our renderer preview is kept beside the editor.
-    expect(wrapper.find('.prose-preview').html()).toMatch(/<h1[^>]*>Hello<\/h1>/)
     // The editor owns a mount-target element (CM mounts here in onMounted).
     expect(wrapper.find('[data-test="cm-host"]').exists()).toBe(true)
+    // Preview is opt-in (default off → a wider editor); turning it on renders our markdown-it preview.
+    expect(wrapper.find('.prose-preview').exists()).toBe(false)
+    await wrapper.find('[data-test="preview-toggle"]').trigger('click')
+    expect(wrapper.find('.prose-preview').html()).toMatch(/<h1[^>]*>Hello<\/h1>/)
   })
 
   it('gives the CM host an aria-labelledby pointing at the rendered label (a11y fix)', async () => {

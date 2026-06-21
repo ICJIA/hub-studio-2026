@@ -9,8 +9,10 @@ mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mock
 import MarkdownField from '~/components/MarkdownField.vue'
 
 describe('MarkdownField (now the ICJIA editor seam)', () => {
-  it('keeps rendering the bound value in the live preview (our renderer)', async () => {
+  it('renders the bound value in the live preview when toggled on (our renderer)', async () => {
     const wrapper = await mountSuspended(MarkdownField, { props: { modelValue: '# Hello', label: 'Body' } })
+    // Preview is opt-in; turning it on renders our markdown-it preview with the bound value.
+    await wrapper.find('[data-test="preview-toggle"]').trigger('click')
     expect(wrapper.find('.prose-preview').html()).toMatch(/<h1[^>]*>Hello<\/h1>/)
   })
 

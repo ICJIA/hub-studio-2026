@@ -3,19 +3,20 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    ICJIA Research Hub Studio — theme
-   Modern, calm, government-grade: the Inter UI typeface, a soft slate canvas
-   with crisp elevated white surfaces, gently rounded corners, and text tokens
-   tuned one neutral step DARKER than the Nuxt UI defaults so secondary copy
-   clears WCAG AA contrast on the page. Colour roles live in app/app.config.ts.
+   A single, light, government-grade theme (forced light in nuxt.config — the
+   system/dark default produced an illegible light-text-on-white-card mismatch).
+   Inter UI typeface, crisp corners, white surfaces on a soft slate canvas, and
+   text tokens one neutral step DARKER than the Nuxt UI defaults so secondary
+   copy clears WCAG AA contrast on the page.
    ────────────────────────────────────────────────────────────────────────── */
 
 @theme {
   --font-sans: 'Inter', 'InterVariable', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
-/* ---- Light mode (default) ---- */
 :root {
-  --ui-radius: 0.625rem;
+  /* Crisper corners (less rounded than the Nuxt UI default). */
+  --ui-radius: 0.375rem;
 
   /* Darker primary so WHITE text on solid primary buttons / the brand mark clears AA
      (blue-500 ≈ 3.1:1 fails; blue-600 ≈ 4.7:1 passes). Applies app-wide. */
@@ -37,18 +38,8 @@
   --ui-border-accented: var(--ui-color-neutral-300);
 }
 
-/* ---- Dark mode (kept high-contrast too) ---- */
-.dark {
-  --ui-text-dimmed: var(--ui-color-neutral-500);
-  --ui-text-muted: var(--ui-color-neutral-400);
-  --ui-text-toned: var(--ui-color-neutral-300);
-  --ui-text: var(--ui-color-neutral-200);
-  --ui-text-highlighted: #ffffff;
-}
-
 /* The page canvas — a soft slate so the white header and cards lift off it. */
 body { background-color: var(--ui-color-neutral-50); }
-.dark body { background-color: var(--ui-color-neutral-950); }
 
 /* Always-visible keyboard focus ring (accessibility). */
 :where(a, button, input, textarea, select, [role="button"], [tabindex]):focus-visible {

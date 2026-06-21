@@ -29,6 +29,8 @@ const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 const host = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadError = ref<string | null>(null)
+// Default to a wide, full-width editor; the Preview button splits in a live preview on demand.
+const showPreview = ref(false)
 let view: EditorView | null = null
 // Guards the modelValue→doc watcher against re-emitting our own onChange echo.
 let applyingExternal = false
@@ -136,20 +138,36 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 <template>
   <div class="markdown-editor">
     <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
-    <div class="flex items-center gap-2 mb-2">
-      <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
-      <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="flex items-center gap-2">
+        <UButton size="xs" variant="subtle" icon="i-lucide-image" label="Insert image" @click="onToolbarPick" />
+        <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
+      </div>
+      <UButton
+        size="xs"
+        :variant="showPreview ? 'solid' : 'outline'"
+        :icon="showPreview ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+        :label="showPreview ? 'Hide preview' : 'Preview'"
+        :aria-pressed="showPreview"
+        data-test="preview-toggle"
+        @click="showPreview = !showPreview"
+      />
     </div>
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
-    <div class="grid gap-3 md:grid-cols-2">
+    <div class="grid gap-3" :class="showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
       <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
-      <MarkdownPreview :source="modelValue" />
+      <div v-if="showPreview" class="markdown-preview-pane rounded border border-default bg-elevated/30 p-4 overflow-auto">
+        <div class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Preview</div>
+        <MarkdownPreview :source="modelValue" />
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Give the CodeMirror host a sensible authoring height; CM owns its inner DOM/theme. */
-.cm-host :deep(.cm-editor) { min-height: 24rem; }
+/* Give the CodeMirror host a roomy authoring height; CM owns its inner DOM/theme. */
+.cm-host :deep(.cm-editor) { min-height: 32rem; }
 .cm-host :deep(.cm-scroller) { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+/* The live preview pane matches the editor height so the two read as a pair. */
+.markdown-preview-pane { min-height: 32rem; }
 </style>

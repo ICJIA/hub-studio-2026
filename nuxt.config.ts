@@ -27,9 +27,10 @@ export default defineNuxtConfig({
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
     },
   },
-  // A clean, controlled light theme (the dark/system default produced a low-contrast
-  // mismatch; the Studio is a government content tool — light is the right default).
-  colorMode: { preference: 'light', fallback: 'light' },
+  // Force a single light theme. The Studio is a government content tool; the dark/system
+  // default produced an illegible light-text-on-white-card mismatch. A fresh storageKey
+  // drops any stale 'system'/'dark' preference a browser cached before this was set.
+  colorMode: { preference: 'light', fallback: 'light', storageKey: 'icjia-studio-color-mode' },
   app: {
     head: {
       htmlAttrs: { lang: 'en' },

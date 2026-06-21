@@ -13,7 +13,7 @@
 > **Where the project stands, in one breath.** The Studio is built. Every feature
 > a researcher will touch — signing in, writing, previewing exactly what will
 > publish, and publishing — exists today, runs on the team's shared, official copy
-> of the project, and is checked by **325 automated tests, all passing**. What is
+> of the project, and is checked by **375 automated tests, all passing**. What is
 > *not* done is the handful of setup steps that only ICJIA's own Research & Analysis
 > staff can do (creating one storage type, plugging in the email keys and the
 > "rebuild the public site" trigger) and a final dress rehearsal with real staff
@@ -21,6 +21,18 @@
 > (it exists, it's been checked, you can see it) or **still ahead** (a named,
 > owned next step). Nothing here is live to the public yet — and where it isn't, it
 > says so plainly.
+
+---
+
+## TL;DR — the 30-second version
+
+- **What it is:** the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets).
+- **Status:** built and working in development — you can click through a complete demo today.
+- **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
+- **Security:** independently red/blue-team audited — **0 critical issues**; the in-repo fixes are done and covered by 375 automated tests (`docs/security-audit.md`).
+- **What's left:** setup on the Strapi / email side (Research & Analysis) and a short launch checklist — not new building.
+
+*That's the whole project in five lines. Everything below is the supporting evidence, organized by section — read only what you need.*
 
 ---
 
@@ -53,7 +65,7 @@ you can verify yourself, without trusting anyone's word:
   accepted. "Built" here means *accepted into the shared project*, not "on
   someone's laptop."
 
-Section 6 is an optional appendix for the technically curious. You can skip it
+Section 7 is an optional appendix for the technically curious. You can skip it
 entirely without missing anything you need.
 
 A word on intent: this is not a sales pitch and it is not a complaint. It is an
@@ -248,7 +260,7 @@ a time, and for each one tells you exactly where you can go to see it for yourse
 
 Everything in this section is **built**, lives on the team's official, shared copy
 of the project (what developers call "main"), and is checked by an automated test
-suite — currently **325 automated tests, all passing**. What is *not* yet done is
+suite — currently **375 automated tests, all passing**. What is *not* yet done is
 described in Section 4, and it is mostly setup that only ICJIA's Research & Analysis
 unit can perform. The line between the two is drawn honestly.
 
@@ -322,6 +334,12 @@ requirement for a public government site) and allows an optional **caption**. Th
 alt-text and caption boxes are right there in the picker, so supplying a description
 is the natural path, not an afterthought.
 
+Authors also have a **body-image gallery**: upload several images at once, see them
+as thumbnails in a small panel beside the editor, and click any thumbnail to insert
+that image at the current cursor position in the article body. This means an author
+can stage all the images for an article first, then drop them in where they want
+them — without leaving the editing screen.
+
 The main report file or data file is a simpler **document-or-PDF upload** with no
 alt-text or caption (it's a file to download, not a picture to describe).
 
@@ -333,8 +351,9 @@ rule the team treats as non-negotiable, and it is guaranteed by automated tests 
 stop the build the instant anyone weakens it.
 
 *Receipt:* the picker shows the alt-text and caption fields and the name of the
-file you selected; the no-bloated-images rule is enforced by a dedicated guard test
-that runs across all three content types.
+file you selected; the body-image gallery thumbnails are visible in the editing
+panel when images have been uploaded to an article; the no-bloated-images rule is
+enforced by a dedicated guard test that runs across all three content types.
 
 ### (d) The save gate — bad or unsafe content can't be saved
 
@@ -382,13 +401,20 @@ sortable list, the sample buttons, and the theme toggle.
 ### (g) A self-contained Demo Mode for safe show-and-tell
 
 The temporary `admin` / `admin` login opens a **fully self-contained Demo Mode**:
-200-plus sample articles held in memory, fully clickable for editing and previewing,
-that **never save anything to the live system**. It exists so the tool can be shown
-to managers, reviewers, or leadership safely, with zero risk to live information.
+**200-plus full-length sample articles** — each with complete sections, figures, and
+working footnote references — held in memory, fully clickable for editing and
+previewing, that **never save anything to the live system**. Every word in the demo
+is fake: lorem ipsum body text and made-up names. No real ICJIA person, topic,
+grant, or finding is ever shown on a demo screen. It exists so the tool can be shown
+to managers, reviewers, or leadership safely, with zero risk to live information and
+no risk of real ICJIA content appearing in a screenshot or a walkthrough.
 (This convenience login is temporary and is removed before the tool goes to
-production — see Section 4 and the candid note in Section 5.)
+production — see Section 4, the candid note in Section 5, and the security note in
+Section 6.)
 
 *Receipt:* this is the demonstration you have been using to check every other item.
+Open any sample article and you will see full multi-section body text, figures, and
+footnotes — all entirely fabricated.
 
 ### (h) Built but waiting to be switched on
 
@@ -419,6 +445,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Formatting editor + toolbar + live Preview | Friendly writing; no formatting codes to learn | **Built** |
 | Compact abstract editor | Inline formatting only; no stray footnotes | **Built** |
 | Accessible image uploads (alt-text required) | Accessible by default; optional captions | **Built** |
+| Body-image gallery (thumbnails → insert) | Stage multiple images, click to insert | **Built** |
 | Document/PDF file upload | Simple report-file attachment | **Built** |
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
@@ -427,7 +454,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Paginated content list (newest first) | Find and track every item | **Built** |
 | One-click sample article / app / dataset | Demonstrate on demand | **Built** |
 | Light/dark mode + ICJIA logo | Comfortable, on-brand | **Built** |
-| Self-contained Demo Mode (`admin`/`admin`) | Show the tool safely, no live saves | **Built** (temporary) |
+| Self-contained Demo Mode (`admin`/`admin`) | 200+ full-length phony articles; no live saves | **Built** (temporary) |
 | First-login onboarding | Capture a new author's reviewer & center | **Built; dormant until R&A creates the storage type** |
 | Publish + review-request email (Mailgun) | One-step publish; notify a reviewer | **Built; awaits R&A's email keys & live test** |
 | Auto rebuild of the public site on publish | New content appears publicly | **Built; awaits R&A wiring the trigger** |
@@ -503,7 +530,7 @@ even before it is switched on for the public.
   > carefully, the switch was small and surgical rather than a do-over.
 
 The evidence that this rigor is real, not aspirational: the project currently
-stands at **325 automated tests, all passing**, across the sign-in and roles, the
+stands at **375 automated tests, all passing**, across the sign-in and roles, the
 content engine for all three content types, the image and file handling, the save
 gate, the editor, the "preview as published" view, the demo mode, and the
 publish/email/onboarding code. The no-bloated-images rule, the accessibility
@@ -528,10 +555,11 @@ Three fair questions deserve straight answers, with no spin.
 
 - ***"Can I trust it?"*** You don't have to take it on faith — that is the whole
   design of this document. You can *click* the running demonstration and use the
-  tool yourself; a *machine* re-proves 325 promises every time the code changes; and
+  tool yourself; a *machine* re-proves 375 promises every time the code changes; and
   every change is an independently reviewed, reversible entry in the official
-  record. Trust here is something you can check, not something you are asked to
-  grant.
+  record. The tool has also been through an independent red/blue-team security audit
+  (Section 6) — zero critical issues found. Trust here is something you can check,
+  not something you are asked to grant.
 
 - ***"Is it on track?"*** Yes, and the remaining work is small and named. The
   features are built. What's left (Section 4) is ICJIA's own setup (three steps), a
@@ -552,14 +580,44 @@ not because it presents any risk to live information.
 
 ---
 
-## 6. Appendix — for the technically curious
+## 6. Security & independent audit
+
+The two areas most likely to hurt a content tool — turning author text into a web
+page, and handling links/files — are each funneled through a single, hardened,
+well-tested piece of code, so there is one place to get right rather than many.
+Sign-in goes through Strapi's staff accounts (the same system that holds the
+content); the Studio itself never makes the final security decision — Strapi
+re-checks every request on the server, so a tampered browser cannot publish or see
+anything it shouldn't.
+
+**Independent red / blue team audit (2026-06-21).** A full adversarial review
+(try-to-break-it *and* verify-the-defenses) found **zero critical issues** and
+nothing exploitable in the production path. The graded findings were hardening
+items, not holes — and **every in-repo finding is now fixed and covered by
+automated tests (375 of them)**. The full report lives in the repository
+(`docs/security-audit.md`), and the README keeps a running log of every audit so
+the review history is visible at a glance.
+
+- **Receipt:** open `docs/security-audit.md` — each finding names the exact file,
+  the attack, the existing defense, and the fix.
+- **The demo login** (`admin / admin`) is a deliberate development/demo convenience
+  that is automatically removed from the production build; it is labeled as such on
+  the sign-in screen and documented in the audit. The live site authenticates
+  **only** through Strapi staff accounts.
+- **Before go-live:** confirm the security headers / CSP on a deploy preview, set
+  the email + publish keys, verify Strapi's role permissions, and remove the demo
+  login — a short, documented checklist.
+
+---
+
+## 7. Appendix — for the technically curious
 
 *This appendix is optional. Everything a non-technical reader needs is in Sections
-1–5. What follows condenses the architecture and the implementation plan for
+1–6. What follows condenses the architecture and the implementation plan for
 readers who want the deeper detail, and is where the remaining technical terms
 live.*
 
-### 6.1 At a glance
+### 7.1 At a glance
 
 The Studio is a single-page web application (it loads once and then responds
 instantly, like Gmail) built with **Nuxt 4 / Vue 3** and **Nuxt UI 4**, written in
@@ -579,7 +637,7 @@ at sign-in proves identity on every request; records are addressed by a stable
 identifier; and the system's native draft/published distinction is the single
 source of truth for what is live.
 
-### 6.2 The end-to-end lifecycle
+### 7.2 The end-to-end lifecycle
 
 The intended flow, end to end (publishing and review email are planned; drafting,
 the save-gate, and preview are built):
@@ -607,7 +665,7 @@ the save-gate, and preview are built):
                                                                       (~1-2 min)
 ```
 
-### 6.3 Why a rebuild (old tool → new Studio)
+### 7.3 Why a rebuild (old tool → new Studio)
 
 | Concern | Old tool (2019) | New Studio (2026) |
 |---|---|---|
@@ -623,7 +681,7 @@ with the old data, with proper media handling and native draft/publish. The
 Studio's job is to do its part correctly against that modern foundation. The old
 codebase is retained only as a reference for what each field means.
 
-### 6.4 What is built, in technical terms
+### 7.4 What is built, in technical terms
 
 - **Sign-in & roles.** Authentication targets Strapi 5's admin interface; the
   signed-in credential authorizes every request. Capability is decided by **role
@@ -663,7 +721,7 @@ codebase is retained only as a reference for what each field means.
   role-aware dashboard and a publisher-only draft queue are in place (the queue
   lists drafts; the publish action itself is planned).
 
-### 6.5 What is planned, in technical terms
+### 7.5 What is planned, in technical terms
 
 - **Authoring editor.** Adapt the existing ICJIA Markdown Editor as a shared,
   reusable building block, and add the one capability it lacks: an image-upload
@@ -691,7 +749,7 @@ codebase is retained only as a reference for what each field means.
   end-to-end happy-path test, deployment configuration, removal of the temporary
   development-only login, and a one-click "sample article" demo.
 
-### 6.6 Open items being tracked
+### 7.6 Open items being tracked
 
 These are normal project hygiene — each is known, tracked, and has a sensible
 default or a clear owner.
@@ -709,7 +767,7 @@ Resolved during this iteration and no longer open: publish permissions (now nati
 via real roles) and keeping the public-site rebuild trigger secret (a server-side
 proxy that verifies the caller before firing).
 
-### 6.7 Glossary
+### 7.7 Glossary
 
 | Term | What it means here |
 |---|---|

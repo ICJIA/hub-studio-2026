@@ -13,6 +13,7 @@
 -->
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, useId } from '#imports'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands'
@@ -148,17 +149,13 @@ function insertHorizontalRule() { insertText('\n---\n') }
 function undo() { if (view) cmUndo({ state: view.state, dispatch: view.dispatch }) }
 function redo() { if (view) cmRedo({ state: view.state, dispatch: view.dispatch }) }
 
-/** The formatting toolbar, grouped (mirrors the ICJIA editor's button set). */
+/** The formatting toolbar, grouped (mirrors the ICJIA editor). Headings are a separate
+    dropdown (headingItems below) so the toolbar stays compact. */
 const toolbarGroups: { icon: string; label: string; run: () => void }[][] = [
   [
     { icon: 'i-lucide-bold', label: 'Bold', run: toggleBold },
     { icon: 'i-lucide-italic', label: 'Italic', run: toggleItalic },
     { icon: 'i-lucide-code', label: 'Inline code', run: toggleInlineCode },
-  ],
-  [
-    { icon: 'i-lucide-heading-1', label: 'Heading 1', run: () => insertHeading(1) },
-    { icon: 'i-lucide-heading-2', label: 'Heading 2', run: () => insertHeading(2) },
-    { icon: 'i-lucide-heading-3', label: 'Heading 3', run: () => insertHeading(3) },
   ],
   [
     { icon: 'i-lucide-list', label: 'Bullet list', run: insertBulletList },
@@ -176,6 +173,13 @@ const toolbarGroups: { icon: string; label: string; run: () => void }[][] = [
     { icon: 'i-lucide-redo-2', label: 'Redo', run: redo },
   ],
 ]
+
+/** Heading levels collapsed into a dropdown menu (H1–H3). */
+const headingItems: DropdownMenuItem[][] = [[
+  { label: 'Heading 1', icon: 'i-lucide-heading-1', onSelect: () => insertHeading(1) },
+  { label: 'Heading 2', icon: 'i-lucide-heading-2', onSelect: () => insertHeading(2) },
+  { label: 'Heading 3', icon: 'i-lucide-heading-3', onSelect: () => insertHeading(3) },
+]]
 
 // Named handlers so onBeforeUnmount can remove the exact same references.
 let onPaste: ((e: ClipboardEvent) => void) | null = null
@@ -237,17 +241,31 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
     <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
     <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
       <div class="flex items-center gap-0.5 flex-wrap rounded-md border border-default bg-elevated/40 px-1 py-0.5">
-        <template v-for="(group, gi) in toolbarGroups" :key="gi">
-          <span v-if="gi > 0" class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+        <!-- Inline formatting -->
+        <UButton
+          v-for="btn in toolbarGroups[0]"
+          :key="btn.label"
+          size="xs" variant="ghost" color="neutral"
+          :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
+          @click="btn.run"
+        />
+        <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+        <!-- Headings dropdown (H1–H3) -->
+        <UDropdownMenu :items="headingItems">
+          <UButton
+            size="xs" variant="ghost" color="neutral"
+            icon="i-lucide-heading" trailing-icon="i-lucide-chevron-down"
+            aria-label="Heading" title="Heading"
+          />
+        </UDropdownMenu>
+        <!-- Lists / blocks, insert, history -->
+        <template v-for="(group, gi) in toolbarGroups.slice(1)" :key="gi">
+          <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
           <UButton
             v-for="btn in group"
             :key="btn.label"
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            :icon="btn.icon"
-            :aria-label="btn.label"
-            :title="btn.label"
+            size="xs" variant="ghost" color="neutral"
+            :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
             @click="btn.run"
           />
         </template>

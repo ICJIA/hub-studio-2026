@@ -43,4 +43,22 @@ describe('auth store', () => {
     expect(s.jwt).toBeNull()
     expect(s.user).toBeNull()
   })
+
+  it('hasProfile starts null (fail-open default, never sourced from persisted state)', () => {
+    // hasProfile is excluded from persist.pick (only jwt + user are picked).
+    // On every boot it starts null so the guard stays open until init() resolves it.
+    const s = useAuthStore()
+    expect(s.hasProfile).toBeNull()
+  })
+
+  it('session (jwt + user) survives a $patch hydration; hasProfile stays null', () => {
+    // Simulates what pinia-plugin-persistedstate does after restoring a cookie that
+    // only contains { jwt, user } (because pick: ['jwt', 'user'] excludes hasProfile).
+    const s = useAuthStore()
+    s.$patch({ jwt: 'jwt-x', user: mk(['strapi-author']) })
+    expect(s.jwt).toBe('jwt-x')
+    expect(s.user).not.toBeNull()
+    // hasProfile was not in the hydration payload — still null, never stale-false.
+    expect(s.hasProfile).toBeNull()
+  })
 })

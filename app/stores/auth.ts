@@ -45,5 +45,8 @@ export const useAuthStore = defineStore('auth', {
       secure: !import.meta.dev,
       maxAge: 60 * 60 * 24 * 30,
     }),
+    // Exclude hasProfile from persistence: a stale `false` on reload would gate before init()
+    // re-resolves it. Start null (fail-open) every boot; init/login re-hydrates it.
+    pick: ['jwt', 'user'],
   },
 })

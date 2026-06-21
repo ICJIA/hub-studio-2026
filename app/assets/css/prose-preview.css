@@ -42,11 +42,11 @@
   font-style: italic;
 }
 .prose-preview img { max-width: 100%; height: auto; margin: 1.5rem 0; }
-/* Inline body figures (charts/tables): a block image in a paragraph (NOT the .published-splash hero).
+/* Inline body figures: a block image in a paragraph (NOT the .published-splash hero).
    Centered, bordered, lightly padded on white so SVG charts read cleanly against the serif prose. */
-.prose-preview p img {
+.prose-preview p > img {
   display: block;
-  margin: 1.5rem auto;
+  margin: 1.25rem auto;
   max-width: 100%;
   height: auto;
   border: 1px solid #e2e8f0;
@@ -54,19 +54,41 @@
   padding: 0.5rem;
   background: #fff;
 }
-/* The "*Figure N. …*" caption: an em-only paragraph immediately after the figure image paragraph. */
+/* Markdown tables: centered as a block so narrow tables aren't awkwardly left-aligned.
+   border-collapse + font-size from the single consolidated rule here. */
+.prose-preview table {
+  display: table;
+  border-collapse: collapse;
+  margin: 1.25rem auto;
+  font-size: 0.9em;
+}
+/* Figure captions — below: an em-only paragraph immediately after an image paragraph. */
 .prose-preview p:has(> img) + p {
   text-align: center;
-  margin-top: -0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
-.prose-preview p:has(> img) + p em {
+.prose-preview p:has(> img) + p > em:only-child {
   font-size: 0.8em;
-  color: rgba(0, 0, 0, 0.6);
+  color: #64748b;
   font-style: italic;
+}
+/* Figure captions — above: an em-only paragraph immediately before an image paragraph. */
+.prose-preview p:has(> em:only-child):has(+ p > img) {
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+.prose-preview p:has(> em:only-child):has(+ p > img) > em {
+  font-size: 0.8em;
+  color: #64748b;
+  font-style: italic;
+}
+/* Left-aligned caption variant: authors tag with {.fig-caption-left} via markdown-it-attrs. */
+.prose-preview .fig-caption-left {
+  text-align: left;
 }
 .prose-preview figure { margin: 1.5rem 0; }
 .prose-preview figcaption { font-size: 0.8em; color: rgba(0, 0, 0, 0.6); text-align: center; margin-top: 0.5rem; }
-.prose-preview table { border-collapse: collapse; margin: 1.5rem 0; width: 100%; font-size: 0.9em; }
 .prose-preview th, .prose-preview td { border: 1px solid #e0e0e0; padding: 0.5rem 0.75rem; text-align: left; }
 .prose-preview th { background: #f5f5f5; font-family: 'Oswald', sans-serif; font-weight: 500; }
 .prose-preview code { font-family: ui-monospace, 'JetBrains Mono', monospace; font-size: 0.85em; background: #f5f5f5; padding: 0.1em 0.35em; border-radius: 3px; }

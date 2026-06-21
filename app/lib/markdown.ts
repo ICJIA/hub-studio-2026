@@ -10,6 +10,7 @@ import type Token from 'markdown-it/lib/token.mjs'
 import footnote from 'markdown-it-footnote'
 import katex from '@vscode/markdown-it-katex'
 import multimdTable from 'markdown-it-multimd-table'
+import markdownItAttrs from 'markdown-it-attrs'
 
 /** Apply a link_open renderer rule that adds target="_blank" and rel="noopener noreferrer". */
 function addLinkTargetBlank(instance: MarkdownIt): void {
@@ -24,10 +25,16 @@ function addLinkTargetBlank(instance: MarkdownIt): void {
   }
 }
 
+// Security: allowedAttributes is the XSS control that preserves the html:false / safeHref posture
+// (security-audit.md §2.3). Only 'id' and 'class' are permitted — NO 'style', NO 'on*' handlers,
+// NO 'href'/'src' override. Authors may write {.class #id} syntax on any element.
+const attrsOptions = { allowedAttributes: ['id', 'class'] } as const
+
 const md = new MarkdownIt({ html: false, linkify: true, typographer: true })
   .use(footnote)
   .use(katex)
   .use(multimdTable, { multiline: true, rowspan: true, headerless: true })
+  .use(markdownItAttrs, attrsOptions)
 
 addLinkTargetBlank(md)
 
@@ -41,6 +48,7 @@ export function renderMarkdown(source: string): string {
 const mdInline = new MarkdownIt({ html: false, linkify: true, typographer: true })
   .use(katex)
   .use(multimdTable, { multiline: true, rowspan: true, headerless: true })
+  .use(markdownItAttrs, attrsOptions)
 
 addLinkTargetBlank(mdInline)
 
@@ -101,6 +109,7 @@ const mdArticle = new MarkdownIt({ html: false, linkify: true, typographer: true
   .use(katex)
   .use(multimdTable, { multiline: true, rowspan: true, headerless: true })
   .use(h2TocRule)
+  .use(markdownItAttrs, attrsOptions)
 
 addLinkTargetBlank(mdArticle)
 

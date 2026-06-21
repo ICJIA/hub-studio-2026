@@ -92,12 +92,34 @@ for about **50% of pageviews (~228.1K) and 66% of visitors (~37K)** — so the
 
 ### What these figures mean for this project
 
-The homepage is the single most-visited page — it is the site's front door — and
-the grants section is a strong second. Stating that plainly is not a concession;
-it strengthens the case. Even with the homepage and grants set alongside it, the
-Research Hub is still the **largest content section by roughly 2×**, and its
-articles are the most-read pages on the entire site after the homepage. Four of
-the top five pages are Research Hub articles, and nine of the top twelve.
+Two kinds of traffic share this site, and separating them sharpens the picture.
+Some pages are **task traffic** — people who arrive to *do* something, most
+visibly to find grant funding, in visits that spike around application deadlines.
+The Research Hub is the other kind: **editorial content** — the research the
+agency publishes for the public to *read*. Among everything on the site meant to
+be read, the Research Hub is not merely ahead; it is effectively the site's
+content.
+
+And it is read consistently, not occasionally. Across every sustained window —
+the last month, the last six months, the last twelve — Research Hub articles are
+the most-read pages on the site: the **four most-visited pages after the homepage
+are all articles, and nine of the top twelve overall**. A **majority of everyone
+who visits the site reaches the Research Hub** — about **57% over six months and
+66% over twelve**. (The homepage is the single most-visited page, as on any site;
+it is the front door everyone enters through, not a destination.) Grants is the
+next-largest section by volume, but that is task-driven, deadline-bound traffic —
+people transacting, not readers — so it rises and falls with funding cycles while
+Research Hub readership holds steady.
+
+The difference compounds over time. A Research Hub article is **permanent**:
+published once, it keeps drawing readers for years — the same articles top the
+6-month and 12-month rankings, so this is durable readership, not a passing
+spike — and the library grows with every new article. A grant funding page is
+**temporary by design**: it exists only between its open and close dates, then
+expires. So the Research Hub is a durable, compounding asset the agency keeps for
+good, while grants traffic is necessary churn that resets with each cycle. That is
+the strongest case of all for investing well in the tool that produces the
+durable side of the site.
 
 For calibration, all meeting-agenda pages combined — agendas, minutes, the
 meetings listing — drew on the order of **800 visitors and 1,800 pageviews** over

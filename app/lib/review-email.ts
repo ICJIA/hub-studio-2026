@@ -48,7 +48,9 @@ export function buildReviewEmail(opts: ReviewEmailOptions): MailMessage {
   }
 
   const origin = opts.baseUrl.replace(/\/+$/, '')
-  const previewUrl = `${origin}/preview/${opts.type}/${opts.documentId}`
+  const safeType = encodeURIComponent(opts.type)
+  const safeDoc = encodeURIComponent(opts.documentId)
+  const previewUrl = `${origin}/preview/${safeType}/${safeDoc}`
   const note = opts.message?.trim()
 
   const subject = `Review request: ${opts.type} (${opts.documentId})`
@@ -64,7 +66,7 @@ export function buildReviewEmail(opts: ReviewEmailOptions): MailMessage {
   const safeNote = note ? `<p><strong>Message:</strong> ${escapeHtml(note)}</p>` : ''
   const previewUrlHtml = escapeHtml(previewUrl)
   const html = [
-    `<p>You have been asked to review a <strong>${opts.type}</strong> in the ICJIA Studio.</p>`,
+    `<p>You have been asked to review a <strong>${escapeHtml(opts.type)}</strong> in the ICJIA Studio.</p>`,
     `<p><a href="${previewUrlHtml}">Open the preview</a><br><code>${previewUrlHtml}</code></p>`,
     safeNote,
     `<p style="color:#6b7280;font-size:0.875rem">This link opens the private preview; you must be signed in to the Studio to view it.</p>`,

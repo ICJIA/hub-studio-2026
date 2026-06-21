@@ -40,18 +40,20 @@ describe('buildReviewEmail', () => {
     expect(() => buildReviewEmail({ ...base, reviewers: ['ok@x.com', 'bad-address'] })).toThrow(/email/i)
   })
 
-  it('escapes HTML-special chars in documentId in the HTML body (but not the text body)', () => {
-    const msg = buildReviewEmail({ ...base, documentId: 'a\'b"c<d>e&f' })
-    const escapedLink = 'https://studio.example.gov/preview/article/a&#39;b&quot;c&lt;d&gt;e&amp;f'
-    const rawLink = 'https://studio.example.gov/preview/article/a\'b"c<d>e&f'
+  it('percent-encodes documentId in both text and HTML bodies, and HTML-escapes the URL for safety', () => {
+    const msg = buildReviewEmail({ ...base, documentId: 'a"b<c' })
+    // Path segment is percent-encoded: a"b<c → a%22b%3Cc
+    const encodedLink = 'https://studio.example.gov/preview/article/a%22b%3Cc'
+    const htmlEscapedLink = 'https://studio.example.gov/preview/article/a%22b%3Cc'
 
-    // HTML body should contain escaped version
-    expect(msg.html).toContain(escapedLink)
-    // HTML body should NOT contain unescaped special chars from documentId
-    expect(msg.html).not.toContain('a\'b"c<d>e&f')
-
-    // Text body should contain the raw URL (plain-text link must be clickable)
-    expect(msg.text).toContain(rawLink)
+    // Text body should contain the percent-encoded URL (clickable and safe)
+    expect(msg.text).toContain(encodedLink)
+    // HTML body href should be HTML-escaped (percent-encoded chars are safe, but belt-and-suspenders)
+    expect(msg.html).toContain(`href="${htmlEscapedLink}"`)
+    // HTML body code tag should also show the HTML-escaped form
+    expect(msg.html).toContain(`<code>${htmlEscapedLink}</code>`)
+    // HTML body must NOT contain raw unencoded special chars from the documentId
+    expect(msg.html).not.toContain('a"b<c')
   })
 })
 

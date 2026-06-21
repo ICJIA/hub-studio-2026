@@ -9,13 +9,15 @@ mockNuxtImport('useAuth', () => () => ({
 }))
 
 const createMock = vi.fn()
-// ContentList mounts repos; stub list so the dashboard renders without network.
+// ContentList calls listPage — provide both to satisfy the Repository<T> interface
 mockNuxtImport('useArticles', () => () => ({
   list: vi.fn().mockResolvedValue([]),
+  listPage: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 }),
   findOne: vi.fn(),
   create: createMock,
   update: vi.fn(),
   remove: vi.fn(),
+  publish: vi.fn(),
 }))
 
 import Dashboard from '~/pages/index.vue'

@@ -40,7 +40,7 @@ const listType = ref<'article' | 'app' | 'dataset'>('article')
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="font-medium">Drafts</h2>
+          <h2 class="font-medium">Articles</h2>
           <USelect
             v-model="listType"
             :items="[
@@ -52,7 +52,7 @@ const listType = ref<'article' | 'app' | 'dataset'>('article')
           />
         </div>
       </template>
-      <ContentList :key="listType" :type="listType" status="draft" />
+      <ContentList :key="listType" :type="listType" />
     </UCard>
   </div>
 </template>

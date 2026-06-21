@@ -25,8 +25,17 @@ export interface WriteOptions { status?: ContentStatus }
 /** Relation arrays keyed by field name, as hydrated on findOne. */
 export type Relations = Record<string, RelationRef[]>
 
+export interface PagedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+  pageCount: number
+}
+
 export interface Repository<TDomain> {
   list(opts?: ListOptions): Promise<TDomain[]>
+  listPage(opts?: ListOptions): Promise<PagedResult<TDomain>>
   findOne(documentId: string, opts?: FindOptions): Promise<TDomain>
   create(model: TDomain, opts?: WriteOptions): Promise<TDomain>
   update(documentId: string, model: TDomain, opts?: WriteOptions): Promise<TDomain>
@@ -62,6 +71,21 @@ export function createRepository<TRaw, TDomain, TWrite>(
         },
       })
       return unwrapList(res).map((raw) => cfg.fromStrapi(raw))
+    },
+
+    async listPage(opts = {}) {
+      const res = await cfg.api<StrapiListResponse<TRaw>>(base, {
+        query: {
+          status: opts.status,
+          page: opts.page,
+          pageSize: opts.pageSize,
+          sort: opts.sort,
+          filters: opts.filters,
+        },
+      })
+      const items = res.results.map((raw) => cfg.fromStrapi(raw))
+      const p = res.pagination
+      return { items, total: p.total, page: p.page, pageSize: p.pageSize, pageCount: p.pageCount }
     },
 
     async findOne(documentId, opts = {}) {

@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { APP_NAME } from '~/lib/constants'
+import { isDemoSession } from '~/lib/demo'
 
 const auth = useAuthStore()
 const { logout } = useAuth()
+const demo = import.meta.dev && isDemoSession()
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col">
+    <!-- Demo mode banner -->
+    <div
+      v-if="demo"
+      class="w-full bg-amber-50 border-b border-amber-200 text-amber-800 text-xs text-center py-1.5 px-4"
+      role="status"
+    >
+      Demo mode — sample content. Changes are kept only for this session and are never saved to the server.
+    </div>
+
     <header class="sticky top-0 z-20 border-b border-default bg-default/85 backdrop-blur-md">
       <div class="max-w-6xl mx-auto w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <NuxtLink to="/" class="flex items-center gap-2.5 font-semibold text-highlighted transition-opacity hover:opacity-80">

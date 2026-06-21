@@ -8,13 +8,13 @@ import { resolve } from 'node:path'
 mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mockResolvedValue([]), remove: vi.fn() }))
 
 const findOneMock = vi.fn().mockResolvedValue({ documentId: 'a1', title: 'Existing', markdown: '', categories: [], tags: [], authors: [], images: [], apps: [], datasets: [], splash: null, thumbnail: null, mainfile: null, extrafile: null, type: null, mainfiletype: null, abstract: null, doi: null, citation: null, funding: null, date: '2020-01-01', slug: 'existing', external: false, hideFromBanner: false, publishedAt: null })
-mockNuxtImport('useArticles', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
+mockNuxtImport('useArticles', () => () => ({ list: vi.fn().mockResolvedValue([]), listPage: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 }), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const appFindOneMock = vi.fn().mockResolvedValue({ documentId: 'app1', title: 'Existing App', date: '2020-01-01', slug: 'existing-app', categories: [], tags: [], contributors: [], image: null, description: '', url: '', datasets: [], articles: [], publishedAt: null })
-mockNuxtImport('useApps', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: appFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
+mockNuxtImport('useApps', () => () => ({ list: vi.fn().mockResolvedValue([]), listPage: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 }), findOne: appFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const datasetFindOneMock = vi.fn().mockResolvedValue({ documentId: 'ds1', title: 'Existing Dataset', date: '2020-01-01', slug: 'existing-dataset', categories: [], tags: [], description: '', unit: '', timeperiod: null, sources: [], variables: [], notes: [], project: false, datafile: null, apps: [], articles: [], publishedAt: null })
-mockNuxtImport('useDatasets', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
+mockNuxtImport('useDatasets', () => () => ({ list: vi.fn().mockResolvedValue([]), listPage: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 }), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const routeRef = { params: { type: 'article', documentId: 'a1' } }
 mockNuxtImport('useRoute', () => () => routeRef)

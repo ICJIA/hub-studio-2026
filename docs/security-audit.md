@@ -557,3 +557,93 @@ for demos until launch). Each item below was implemented WITH a test; the suite 
 **Bottom line:** No Critical or Confirmed-exploitable vulnerability in the production code path. The
 work to do is hardening (CSP first), server-side Strapi/Media config verification, and an email-relay
 rate limit — plus the mandatory removal of the documented dev bypass before launch.
+
+---
+
+## 7. Demo Mode & Public Deploy Audit (2026-06-21)
+
+A second red/blue-team pass covering the additions that turn the Studio into a **public, self-contained
+Netlify demo**: `studio.config.ts`; demo mode (`app/lib/demo.ts` — `isDemoMode`/`isDemoSession`/
+`isDemoData`, the login lockdown in `app/pages/login.vue`, the hard write-block in
+`app/lib/repository.ts`, the review-email no-op); the static deploy (`netlify.toml`,
+`deploy/headers-demo.txt`); icon bundling (`@nuxt/icon` `clientBundle` + `@iconify-json/lucide`); and the
+bundled demo images (`public/images/demo/`).
+
+**Threat model.** Anyone on the internet with the demo URL and full browser devtools — they can edit
+running JS, mutate Pinia/localStorage/cookies, replay or forge network requests, and download the entire
+client bundle. (The demo is an *open link*, by design.)
+
+**Method.** Three parallel red-team probes (write/auth-bypass; secrets/disclosure;
+CSP-XSS-supply-chain-deploy), read-only, against the built static artifact (`.output/public`) and source.
+
+### Bottom line — safe to expose publicly
+
+An attacker **cannot** (a) create/update/delete/publish in the real Strapi, (b) authenticate as a real
+Strapi user, or (c) reach real data. This is defense-in-depth with an **independent network-layer
+backstop**:
+
+1. **In-memory data.** Content composables serve the in-memory demo repository; the real repository's
+   `create`/`update`/`remove`/`publish` (and every upload) call `assertWritesAllowed()`, which throws
+   **before any `$api` call** when `isDemoMode()`.
+2. **No usable credential.** The only token the demo ever holds is a synthetic sentinel
+   (`dev-admin-session-not-a-real-jwt`) the real Strapi never issued and rejects with 401; real
+   `login()` throws in demo mode before contacting `/admin/login`.
+3. **Network backstop.** The demo CSP `connect-src 'self'` makes `v2.hub.icjia-api.cloud` unreachable
+   from the browser — this holds **even if every JavaScript guard is defeated**.
+
+The build ships **no secrets, no source maps, and no PII** (Mailgun keys are server-only and verified
+absent; demo content + image EXIF are synthetic).
+
+### Findings & remediations
+
+| ID | Finding | Severity | Status |
+|----|---------|:--------:|--------|
+| D-1 | Dev Strapi admin URL baked into every demo HTML page (unused — the demo is in-memory) | Medium | **Fixed** — `strapiBaseUrl` blanked when `demoMode` (`studio.config.ts`) |
+| D-2 | `demoMode` is a runtime-mutable `runtimeConfig.public` property, not a frozen constant; devtools can flip it to re-select the real repo and disarm the JS write-guard | Medium | **Mitigated** — neutralized by the CSP `connect-src 'self'` backstop + the rejected sentinel token; optional hardening documented below |
+| D-3 | `@nuxt/icon` registered `api.iconify.design` (+ simplesvg/unisvg) as runtime providers; a non-bundled icon would attempt a runtime fetch | Medium | **Fixed** — `icon.fallbackToApi: false` (`nuxt.config.ts`); all 46 used icons bundled; CSP blocks any fetch regardless |
+| D-4 | Content reads gated only on the sentinel token (`isDemoSession`); a devtools-swapped token would make the demo attempt a real Strapi read (CSP-blocked, but noisy) | Low | **Fixed** — composables now gate on `isDemoData()` (true for the whole demo build) |
+| D-5 | The dev `admin/admin` credential + sentinel token ship in the demo bundle | Low | **Documented** — the sentinel is worthless against real Strapi; D-1 removes the only target it could pair with. Optional: split a `demo-auth` module with opaque labels |
+| D-6 | `@icjia.illinois.gov` appears in form-field *placeholders*, disclosing the real email domain | Low | **Documented** — minor; optional generic placeholder for the demo build |
+| D-7 | `@iconify-json/lucide` pinned with a `^` range (drift on fresh installs) | Low | **Fixed** — pinned exact `1.2.114`; lock committed |
+| D-8 | No `Permissions-Policy` header (powerful browser features unrestricted) | Low | **Fixed** — `camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()` on both header sets |
+| D-9 | HSTS without `preload` | Low | **Documented** — add `preload` + submit once the prod domain is stable |
+| D-10 | Auth cookie is JS-readable (no `HttpOnly`) | Low (prod) | **Documented** — same as prod H-1; **harmless in the demo** (cookie holds only the sentinel token) |
+
+**No Critical or High findings. 5 of 10 fixed in code; the remainder documented (four are prod-scoped or
+cosmetic; D-2's risk is fully absorbed by the CSP backstop).**
+
+### Detail — D-2 (the one genuine residual)
+
+Nuxt does **not** freeze `runtimeConfig.public`, so `window.__NUXT__.config.public.demoMode` is a
+writable property. An attacker can set it `false` in the console, which (a) re-selects the real Strapi
+repository in the content composables and (b) turns `assertWritesAllowed()` into a no-op. **This changes
+nothing reachable:** the resulting write/login request targets `https://v2.hub.icjia-api.cloud`, which is
+**not** in the demo CSP `connect-src` allowlist, so the browser refuses to send it; and the session
+carries only the sentinel token, which Strapi rejects anyway. The CSP (served via `_headers`, with no
+`<meta>` CSP or service worker able to override it) is the authoritative, JS-independent control.
+**Recommended hardening (not blocking for the demo):** inline a build-time `define` constant for the demo
+decision and/or `Object.freeze` the public config in an early client plugin, and add a CI check that
+fails the demo build if the demo CSP's `connect-src` ever gains a non-`'self'` entry.
+
+### Positive confirmations (verified safe)
+
+- **No real writes** — triple-blocked (`assertWritesAllowed` on all four repo writes + three upload
+  paths; no valid JWT; CSP `connect-src 'self'`).
+- **No real auth** — `login()` throws in demo mode before `/admin/login`; only the sentinel token is ever
+  minted; even chained with a flag-flip, `/admin/login` is CSP-blocked.
+- **No secrets in the bundle** — `MAILGUN_*` are server-only `runtimeConfig`; a grep of all built JS
+  chunks + every HTML page found zero secret material; the `public` payload carries only
+  `appName`/`demoMode`/`publicBaseUrl` (and, in real builds, `strapiBaseUrl`).
+- **No source maps** emitted to `.output/public`.
+- **No PII** — demo authors/titles/DOIs are lorem; bundled splash images are already-public Research Hub
+  cover photos with no GPS/author EXIF.
+- **Static-only deploy** — `nuxt generate` emits no `.output/server` and no `netlify/functions`; the
+  `server/api/request-review` route is absent from the published artifact; the only build env var is
+  `NUXT_PUBLIC_DEMO_MODE=true` (no secrets).
+- **XSS-safe renderer** — markdown-it `html:false` on all three instances; `safeHref` blocks
+  `javascript:`/`data:`/protocol-relative URLs; `v-html` sinks are fed only by the trusted pipeline.
+- **SPA fallback is a 200 rewrite**, not a 3xx redirect — no open-redirect.
+
+**Bottom line:** the public demo is a hardened, self-contained sandbox. The real Strapi backend is
+unreachable from it by construction, and the CSP is an independent backstop that holds even if all
+client-side guards are bypassed.

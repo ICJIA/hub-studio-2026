@@ -5,7 +5,7 @@
 import type { Article, App, Dataset } from '~/types/content'
 import { blankArticle, blankApp, blankDataset } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
-import { sampleImageUrl } from '~/lib/sample-images'
+import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 
 // ── Shared pools ──────────────────────────────────────────────────────────────
 
@@ -166,7 +166,7 @@ function makeArticle(i: number): Article {
     markdown: buildLoremBody(i),
     splash: {
       id: 0,
-      url: sampleImageUrl(i),
+      url: sampleSplashUrl(i),
       alternativeText: `${stem} — sample feature image`,
       width: 1200,
       height: 600,

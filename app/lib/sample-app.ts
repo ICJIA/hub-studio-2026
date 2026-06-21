@@ -12,7 +12,7 @@
 import type { App, MediaRef } from '~/types/content'
 import { blankApp } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
-import { sampleImageUrl } from '~/lib/sample-images'
+import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
@@ -24,7 +24,8 @@ let _imgCounter = 0
 /** A display-only Media Library ref (id 0 → never written; see mediaIdForWrite) with a real photo. */
 function demoImage(w: number, h: number, alt: string): MediaRef {
   const n = _imgCounter++
-  return { id: 0, url: sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
+  // Full-width images (the app's feature image, ~1200w) use the larger `large_` format.
+  return { id: 0, url: w >= 1000 ? sampleSplashUrl(n) : sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
 }
 
 interface AppTopic {

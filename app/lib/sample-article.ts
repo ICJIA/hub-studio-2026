@@ -13,7 +13,7 @@ import type { Article, MediaRef } from '~/types/content'
 import { blankArticle } from '~/lib/forms/blank-models'
 import { MAINFILETYPE_OPTIONS } from '~/lib/field-options'
 import { slugify } from '~/lib/slug'
-import { sampleImageUrl } from '~/lib/sample-images'
+import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
@@ -25,7 +25,8 @@ let _imgCounter = 0
 /** A display-only Media Library ref (id 0 → never written; see mediaIdForWrite) with a real photo. */
 function demoImage(w: number, h: number, alt: string): MediaRef {
   const n = _imgCounter++
-  return { id: 0, url: sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
+  // Full-width images (splash, ~1600w) use the larger `large_` format; narrower ones (thumbnail) use medium.
+  return { id: 0, url: w >= 1000 ? sampleSplashUrl(n) : sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
 }
 /** A hosted body image as a Markdown figure using a real Research Hub photo (saves fine — it's just markdown text). */
 function bodyImage(alt: string, w = 1000, h = 520): string {

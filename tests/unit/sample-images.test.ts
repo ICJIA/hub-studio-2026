@@ -1,6 +1,6 @@
 // tests/unit/sample-images.test.ts
 import { describe, it, expect } from 'vitest'
-import { sampleImageUrl } from '~/lib/sample-images'
+import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 
 describe('sampleImageUrl', () => {
   it('returns a https://v2.hub.icjia-api.cloud/uploads/… URL for any seed', () => {
@@ -42,5 +42,23 @@ describe('sampleImageUrl', () => {
     for (let i = 0; i < 16; i++) {
       expect(sampleImageUrl(i)).toMatch(/\.jpg$/)
     }
+  })
+})
+
+describe('sampleSplashUrl', () => {
+  it('returns a large_ /uploads/ URL from v2.hub for any seed', () => {
+    for (const seed of [0, 1, 7, 15, 16, 99, 210, -3]) {
+      expect(sampleSplashUrl(seed)).toMatch(/^https:\/\/v2\.hub\.icjia-api\.cloud\/uploads\/large_/)
+    }
+  })
+
+  it('never returns picsum or a data: URI, and is deterministic', () => {
+    for (let i = 0; i < 20; i++) {
+      const u = sampleSplashUrl(i)
+      expect(u).not.toContain('picsum')
+      expect(u).not.toMatch(/^data:/)
+    }
+    expect(sampleSplashUrl(3)).toBe(sampleSplashUrl(3))
+    expect(sampleSplashUrl(-3)).toBe(sampleSplashUrl(3))
   })
 })

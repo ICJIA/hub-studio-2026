@@ -1,13 +1,14 @@
 // app/composables/useArticles.ts
 import { createArticlesRepository } from '~/repositories/articles'
-import { isDemoSession } from '~/lib/demo'
+import { isDemoData } from '~/lib/demo'
 import { makeDemoRepository } from '~/lib/demo-repository'
 import { DEMO_ARTICLES } from '~/lib/demo-content'
 import type { Article } from '~/types/content'
 
-/** Articles data access. Returns the in-memory demo repo for a demo session (dev OR demo build); real Strapi repo otherwise. */
+/** Articles data access. In-memory demo repo for the whole demo build or a dev/demo session
+ *  (audit D-4: gate on isDemoData so a swapped token can't force a real Strapi read); real repo otherwise. */
 export function useArticles() {
-  if (isDemoSession()) {
+  if (isDemoData()) {
     return makeDemoRepository<Article>(DEMO_ARTICLES as Article[])
   }
   const { $api } = useNuxtApp()

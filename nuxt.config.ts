@@ -28,6 +28,10 @@ export default defineNuxtConfig({
   // templates; the explicit `icons` list covers Nuxt UI's internal indicators (chevrons, check,
   // loader, …) that a source scan cannot see because they live in node_modules.
   icon: {
+    // Never fetch icons from api.iconify.design at runtime — bundle-or-nothing (audit D-3): drops the
+    // Iconify/SimpleSVG/UniSVG API providers from the bundle, so a missing icon is a build-time signal
+    // rather than a blocked runtime request.
+    fallbackToApi: false,
     clientBundle: {
       scan: true,
       icons: [

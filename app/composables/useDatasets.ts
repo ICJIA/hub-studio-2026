@@ -1,13 +1,14 @@
 // app/composables/useDatasets.ts
 import { createDatasetsRepository } from '~/repositories/datasets'
-import { isDemoSession } from '~/lib/demo'
+import { isDemoData } from '~/lib/demo'
 import { makeDemoRepository } from '~/lib/demo-repository'
 import { DEMO_DATASETS } from '~/lib/demo-content'
 import type { Dataset } from '~/types/content'
 
-/** Datasets data access. Returns the in-memory demo repo for a demo session (dev OR demo build); real Strapi repo otherwise. */
+/** Datasets data access. In-memory demo repo for the whole demo build or a dev/demo session
+ *  (audit D-4: gate on isDemoData so a swapped token can't force a real Strapi read); real repo otherwise. */
 export function useDatasets() {
-  if (isDemoSession()) {
+  if (isDemoData()) {
     return makeDemoRepository<Dataset>(DEMO_DATASETS as Dataset[])
   }
   const { $api } = useNuxtApp()

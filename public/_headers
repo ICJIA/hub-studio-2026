@@ -24,6 +24,8 @@
   X-Frame-Options: DENY
   # Trim the Referer on cross-origin navigations (don't leak full Studio paths to third parties).
   Referrer-Policy: strict-origin-when-cross-origin
+  # Deny powerful browser features the Studio never uses, shrinking the post-XSS capability surface (audit D-8).
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
   # Force HTTPS for a year, including subdomains (defends the Bearer-cookie transport from downgrade).
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   # Content-Security-Policy — the H-1 blast-radius control. The tight `connect-src` is the core of

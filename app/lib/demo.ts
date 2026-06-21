@@ -29,3 +29,12 @@ export function isDemoSession(): boolean {
   if (!import.meta.dev && !isDemoMode()) return false
   return isDevAdminToken(useAuthStore().jwt)
 }
+
+/**
+ * Whether content composables should serve the in-memory demo repository instead of Strapi.
+ * True for the ENTIRE public demo build (isDemoMode) — so even a devtools-swapped auth token can
+ * never make the demo attempt a real Strapi read (audit D-4) — OR for a dev/demo admin session.
+ */
+export function isDemoData(): boolean {
+  return isDemoMode() || isDemoSession()
+}

@@ -37,18 +37,14 @@ describe('dashboard', () => {
     expect(wrapper.text()).toContain('Publish queue')
   })
 
-  it('renders the "Add sample article" button', async () => {
+  it('gates the dev/demo sample shortcuts out of production builds', async () => {
+    // The sample-content shortcuts live behind import.meta.dev (false in this build), so they are
+    // tree-shaken from production and never ship to the live site — see app/pages/index.vue.
     canPublish.value = false
     const wrapper = await mountSuspended(Dashboard)
-    expect(wrapper.text()).toContain('Add sample article')
-  })
-
-  it('links "Add sample article" to the create form seeded with the sample (?sample=1)', async () => {
-    canPublish.value = false
-    const wrapper = await mountSuspended(Dashboard)
-    const link = wrapper.findAll('a').find((a) => a.text().includes('Add sample article'))
-    expect(link).toBeDefined()
-    expect(link!.attributes('href')).toContain('/create/article')
-    expect(link!.attributes('href')).toContain('sample=1')
+    expect(wrapper.text()).not.toContain('Add sample article')
+    expect(wrapper.text()).not.toContain('Sample content')
+    // The real create actions remain.
+    expect(wrapper.text()).toContain('New article')
   })
 })

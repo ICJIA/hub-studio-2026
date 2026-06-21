@@ -12,7 +12,8 @@ const type = route.params.type as 'article' | 'app' | 'dataset'
 // "Add sample …" links here with ?sample=1 — seed the form once with a realistic draft so the
 // author can preview/edit and then Save (the Save is the create that actually writes to Strapi).
 // Built once (not a computed): build*() are randomized per call.
-const isSample = route.query?.sample === '1'
+// Sample seeding is DEV/DEMO ONLY — ignored in production (import.meta.dev is false there).
+const isSample = import.meta.dev && route.query?.sample === '1'
 const sampleArticle = type === 'article' && isSample ? buildSampleArticle() : undefined
 const sampleApp = type === 'app' && isSample ? buildSampleApp() : undefined
 const sampleDataset = type === 'dataset' && isSample ? buildSampleDataset() : undefined

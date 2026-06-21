@@ -37,7 +37,8 @@ const loading = ref(true)
 async function fetchPage() {
   loading.value = true
   try {
-    const data = await repo.listPage({ status: props.status, sort: 'updatedAt:desc', page: page.value, pageSize: props.pageSize })
+    // Sort by the article date so the Date column reads newest-first (true reverse-chronological).
+    const data = await repo.listPage({ status: props.status, sort: 'date:desc', page: page.value, pageSize: props.pageSize })
     result.value = data as PagedResult<AnyItem>
   } finally {
     loading.value = false

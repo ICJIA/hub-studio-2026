@@ -59,6 +59,7 @@ A running log of red / blue team security audits. The **latest** summary is show
 - **Other findings:** unthrottled review-email relay (M-5); client-only SVG / document-upload validation (M-3, M-4); fragile TOC id injection (M-2).
 - **Blue-team credit:** single `html:false` markdown seam, `safeHref` URL allowlist, default-deny routing with Strapi as the real authority, server-isolated secrets, dev bypass fails closed.
 - **Report:** [`docs/security-audit.md`](docs/security-audit.md) — reviewed `0f42014`, committed `5f4c951`.
+- **Remediation (2026-06-21):** in-repo findings addressed in `e402f3d` — security headers + CSP, email rate-limit, AST-based TOC ids, dataset URL gate, hard base64 write-guard, 403 logout, Dependabot (375 tests). Open: the CSP needs a Netlify deploy-preview check; the dev-login removal + Strapi-side config are launch-time.
 
 <details>
 <summary><strong>Previous audits</strong></summary>

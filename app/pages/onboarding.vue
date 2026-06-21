@@ -91,6 +91,7 @@ defineExpose({ setReviewers, setCenter, submit, errors, authorEmail })
           @update:model-value="reviewersRaw = String($event)"
         />
       </UFormField>
+      <p v-if="errorFor('reviewers')" role="alert" class="text-sm text-error">{{ errorFor('reviewers') }}</p>
 
       <SelectField :model-value="model.center" label="Your center" :options="CENTER_OPTIONS" @update:model-value="model.center = $event ?? ''" />
       <p v-if="errorFor('center')" role="alert" class="text-sm text-error">{{ errorFor('center') }}</p>

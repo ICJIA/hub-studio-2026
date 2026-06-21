@@ -42,6 +42,8 @@ describe('onboarding page', () => {
     await wrapper.vm.$.exposed!.submit()
     expect(createMock).not.toHaveBeenCalled()
     expect(wrapper.vm.$.exposed!.errors.value.some((e: { field: string }) => e.field === 'reviewers')).toBe(true)
+    // Assert that the reviewers error is announced via role="alert"
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
 
     // invalid reviewer
     wrapper.vm.$.exposed!.setReviewers(['not-an-email'])

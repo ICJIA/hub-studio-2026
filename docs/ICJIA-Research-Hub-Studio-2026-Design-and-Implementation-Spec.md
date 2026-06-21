@@ -1,122 +1,166 @@
-# ICJIA Research Hub Studio 2026
+# Hub Studio 2.0
 
-## Design & Implementation Specification
+## ICJIA Research Hub Studio — Design & Implementation Specification
+
+### A component of the Hub 2.0 publishing project (the modernization of the ICJIA Research Hub)
 
 | | |
 |---|---|
 | **Document** | Design & Implementation Specification |
+| **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub |
+| **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
 | **Status** | **Feature-complete in the workshop** — the full tool is built; not yet switched on for the public |
 | **Date** | 2026-06-21 |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
-| **Audience** | Project managers, directors, and stakeholders (no technical background required) |
+| **Audience** | Two readers, addressed separately: a **manager** (Sections 1–6) and a **developer** (Section 7) |
 
-> **Where the project stands, in one breath.** The Studio is built. Every feature
+> **Where the project stands, in one breath.** Hub Studio 2.0 is built. Every feature
 > a researcher will touch — signing in, writing, previewing exactly what will
 > publish, and publishing — exists today, runs on the team's shared, official copy
 > of the project, and is checked by **375 automated tests, all passing**. What is
-> *not* done is the handful of setup steps that only ICJIA's own Research & Analysis
-> staff can do (creating one storage type, plugging in the email keys and the
+> *not* done is the set of setup steps that only ICJIA's own Research & Analysis
+> staff can do (creating one storage type, supplying the email keys and the
 > "rebuild the public site" trigger) and a final dress rehearsal with real staff
 > accounts before it goes live. This document marks each claim as **built**
 > (it exists, it's been checked, you can see it) or **still ahead** (a named,
 > owned next step). Nothing here is live to the public yet — and where it isn't, it
-> says so plainly.
+> says so.
 
 ---
 
 ## TL;DR — the 30-second version
 
-- **What it is:** the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets).
-- **Status:** built and working in development — you can click through a complete demo today.
-- **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
+- **What it is:** Hub Studio 2.0 — the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets). It is the authoring-and-publishing component of the wider **Hub 2.0 publishing project**, the modernization of the ICJIA Research Hub.
+- **Why it matters:** the Research Hub is the most-read content on the agency's public site — roughly **45% of all pageviews and 57% of all visitors** to icjia.illinois.gov over the last six months. The Studio is the tool staff use to produce it.
+- **Status:** built and working in development — a complete demo is clickable today.
+- **How it works:** authors draft in a formatting editor (no formatting codes to learn) with a live "exactly-as-published" preview; an editor clicks **Publish**.
 - **Security:** independently red/blue-team audited — **0 critical issues**; the in-repo fixes are done and covered by 375 automated tests (`docs/security-audit.md`).
 - **What's left:** setup on the Strapi / email side (Research & Analysis) and a short launch checklist — not new building.
 
-*That's the whole project in five lines. Everything below is the supporting evidence, organized by section — read only what you need.*
+*That is the whole project in six lines. Everything below is the supporting evidence, organized by section — read what you need.*
+
+---
+
+## Why this matters — the audience the Studio serves
+
+This is scope-setting, not a victory lap: it explains why the investment in Hub
+Studio 2.0 is in proportion to the audience the Research Hub already reaches. The
+figures below come from two live sources — Plausible analytics for
+icjia.illinois.gov (trailing six months) and the live Research Hub content API
+(Strapi).
+
+- **The Research Hub is the bulk of the public site's traffic.** Over the last six
+  months it accounted for about **45% of all pageviews and 57% of all visitors** on
+  icjia.illinois.gov — roughly **107.9K of 240.4K pageviews** and **18K of 31.5K
+  visitors**.
+- **Research Hub articles are the four most-visited pages on the entire site after
+  the homepage** — and many more fill out the top 25.
+- **The single most-read article** drew about **2,900 visitors and 6,100 views** in
+  six months.
+- **For comparison, the meeting-agenda content** — agendas, minutes, and the
+  meetings listing — drew on the order of **800 visitors and 1,800 views** combined.
+  The meetings listing page itself got 514 visitors; a typical individual agenda
+  gets **15–30**. In round terms, the Research Hub out-draws meeting content by
+  about **20× in visitors and 60× in views**, and one popular article out-draws the
+  entire meetings section several times over.
+- **The Studio manages this content base.** Live in the Research Hub today: **236
+  articles, 13 apps, and 5 datasets** (counted directly from the Strapi content
+  API).
+
+The takeaway: this is the most-used content on the agency's public site, and Hub
+Studio 2.0 is the tool the staff use to produce and publish it. The level of care
+in the build is matched to the size of the audience it serves.
 
 ---
 
 ## How to read this document
 
-This document is written for an intelligent reader who does not write software.
-You should be able to read sections 1 through 5 from start to finish and come away
-able to explain — to your own leadership — what this tool is, why it is real work,
-what is finished, and why the work can be trusted. There is no jargon you are
-expected to already know; where a technical word is genuinely necessary, it is
-explained in one plain line right where it appears.
+This document is written for **two readers**, and you can go straight to the part
+that fits your role:
 
-**This document is built to be checked, not just read.** If you are the kind of
-manager who wants the receipts before you believe a "done," this is written for
-you. Almost every claim of "built" below comes with one of three kinds of proof
-you can verify yourself, without trusting anyone's word:
+- **If you are a manager, director, or stakeholder** — you want the *what*, the
+  *why*, the *status*, and the evidence behind it, not the engineering internals.
+  **Sections 1 through 6 are written for you.** They assume a sharp reader in a
+  different profession, not a software developer: where a technical term is
+  genuinely necessary, it is defined in a clause the first time it appears, the way
+  one professional would brief another. Read 1–6 start to finish and you can explain
+  to your own leadership what Hub Studio 2.0 is, why it is substantial work, what is
+  finished, and what the evidence shows.
+- **If you are a developer** — you want the full technical detail: the architecture,
+  the data layer, the security model, and the implementation plan. **Section 7 — the
+  developer reference — is written for you**, and the code-level specifics live
+  there.
 
-- **You can click it.** There is a running demonstration of the tool. Sign in with
-  the temporary user name `admin` and password `admin` and you can open, edit, and
-  preview hundreds of sample articles with your own hands — without changing or
+**This document shows its work.** Throughout Sections 1–6, claims of "built" come
+with something you can examine for yourself — offered in the spirit of one
+colleague handing another the evidence, not as an argument to win. Three kinds of
+evidence recur:
+
+- **A running demonstration you can use.** There is a working copy of the tool. Sign
+  in with the temporary user name `admin` and password `admin` and you can open,
+  edit, and preview hundreds of sample articles directly — without changing or
   saving anything to the real system. Wherever a feature says "you can see this,"
-  that demonstration is where you see it.
-- **A machine checks it, continuously.** The project carries **325 automated tests**
-  — small programs that re-prove the tool's promises every time the code changes,
-  and that stop the work cold if any promise breaks. When this document says a
-  promise is "guaranteed," it means a test enforces it, not that someone is being
-  careful.
-- **It's in the official record.** Every piece of work is a dated, reversible save
-  point in the project's shared history, independently reviewed before it was
-  accepted. "Built" here means *accepted into the shared project*, not "on
-  someone's laptop."
+  this demonstration is where you see it.
+- **An automated test suite.** The project carries **375 automated tests** — small
+  programs that re-check the tool's promises every time the code changes and stop
+  the work if a promise breaks. When this document says a promise is "guaranteed," a
+  test enforces it.
+- **The shared project record.** Every piece of work is a dated, reversible entry in
+  the project's shared history, independently reviewed before it was accepted.
+  "Built" here means *accepted into the shared project*, not sitting on one person's
+  laptop.
 
-Section 7 is an optional appendix for the technically curious. You can skip it
-entirely without missing anything you need.
+Section 7 is the developer reference. A manager can skip it; Sections 1–6 stand on
+their own.
 
-A word on intent: this is not a sales pitch and it is not a complaint. It is an
-honest accounting of what "let staff post articles to our website" actually
-involves when it is built to be safe, accessible, and dependable for a public
-government audience — and an honest accounting of exactly how much of that is now
-finished and how much remains.
+A word on intent: this is neither a sales pitch nor a complaint. It is a candid
+accounting of what "let staff post articles to our website" actually involves when
+it is built to be safe, accessible, and dependable for a public government
+audience — and of how much of that is now finished and how much remains.
 
 ---
 
 ## 1. What the Studio is
 
-The Studio is a private, staff-only website where ICJIA's researchers write and
-edit content — articles, the interactive apps ICJIA publishes, and datasets — in
-a safe, controlled place before any of it goes public. When a piece is approved,
-it flows out to the public **Research Hub**, the website the public actually
-visits. The public Research Hub is the storefront; the Studio is the back room
-where the work is prepared, reviewed, and signed off before it reaches the shelf.
+**Hub Studio 2.0** is one component of the **Hub 2.0 publishing project** — the
+agency-wide modernization of the ICJIA Research Hub. Within that project, the Studio
+is the internal, staff-only tool: a private workspace where ICJIA's researchers
+write and edit content — articles, the interactive apps ICJIA publishes, and
+datasets — in a controlled place before any of it goes public. When a piece is
+approved, it flows out to the public **Research Hub**, the website the public
+visits. The public Research Hub is the storefront; the Studio is the back room where
+the work is prepared, reviewed, and signed off before it reaches the shelf.
 
-In one sentence a non-technical executive can repeat: *the Studio is the
-secure, staff-only workspace where ICJIA researchers prepare and approve content,
-and from which approved content is published to the public Research Hub.*
+Stated once, plainly: *the Studio is the secure, staff-only workspace where ICJIA
+researchers prepare and approve content, and from which approved content is
+published to the public Research Hub — the authoring half of Hub 2.0.*
 
 The tool replaces one ICJIA built in 2019. That older tool still runs, but it is
-built on technology that is no longer supported, it stores images in a wasteful
-way that bloats the system, and it carries a confusing multi-step approval
-process. The new Studio is built on current, well-supported technology, handles
-images properly, and deliberately simplifies the process down to two clear roles:
-people who **write** and people who **approve and publish**.
+built on technology that is no longer supported, it stores images in a wasteful way
+that bloats the system, and it carries a confusing multi-step approval process. Hub
+Studio 2.0 is built on current, well-supported technology, handles images properly,
+and deliberately reduces the process to two clear roles: people who **write** and
+people who **approve and publish**.
 
-One important boundary, stated up front because it shapes everything else: **staff
-do not sign themselves up.** ICJIA's Research & Analysis unit creates each person's
-account; the sign-in screen says so and points anyone without an account to
-Research & Analysis. This is deliberate. The whole point of a controlled,
-staff-only workspace is that only the right people can get in, and that decision is
-made by ICJIA, not by a self-service form.
+One boundary shapes everything else, so it is stated up front: **staff do not sign
+themselves up.** ICJIA's Research & Analysis unit creates each person's account; the
+sign-in screen says so and points anyone without an account to Research & Analysis.
+This is deliberate. A controlled, staff-only workspace works only if entry is
+granted by ICJIA, not by a self-service form.
 
 ---
 
-## 2. "Is this a simple project?"
+## 2. The real scope behind "post an article"
 
-It is fair to look at this and ask: *we just need staff to post articles to a
-website — isn't that simple?* It is a reasonable question and it deserves a
-straight answer.
+A fair question to put to this project is: *we need staff to post articles to a
+website — isn't that straightforward?* It deserves a direct answer, because the
+honest scope is larger than the visible task suggests.
 
-The honest answer is that "posting an article" is the small, visible part. Almost
-everything that makes such a tool genuinely **safe, usable, accessible, and
-trustworthy** lives in the requirements that "post an article" quietly assumes
-but never states. None of what follows is padding. Each item is ordinary,
-professional work — and each is real. The point of this section is to make the
-part of the iceberg that sits below the waterline visible.
+"Posting an article" is the small, visible part. Almost everything that makes such a
+tool **safe, usable, accessible, and trustworthy** lives in the requirements that
+"post an article" assumes but never states. None of what follows is padding — each
+item is ordinary, professional work, and each one is real. This section makes the
+part below the waterline visible, so the scope is on the table rather than implied.
 
 ### Modeling the research content faithfully
 
@@ -156,7 +200,7 @@ And — the part that carries the most weight — it has to know **what you are
 allowed to do** once you are in. The whole tool hinges on one rule: people who
 write may save drafts but may not publish; people who approve may make content
 live. Hiding the "Publish" button from a writer is easy and, on its own,
-worthless: the button is just a picture. A web browser is fundamentally an
+worthless: the button is only a picture. A web browser is fundamentally an
 untrusted place — a determined person can read the page, watch every request it
 sends, and re-send those requests by hand with the button out of the picture
 entirely. So the rule has to be enforced where the request actually lands: at the
@@ -164,7 +208,7 @@ server that owns the content. And the rule the server enforces and the rule the
 screen implies have to agree *exactly*, in every situation, or you get either a
 silent security hole or a confusing tool that offers an action and then refuses
 it. Making those two layers agree, and being able to show they agree, is the
-genuine work hiding behind "just let them log in."
+genuine work behind "let them log in."
 
 ### Handling images without bloating the site or opening a security hole
 
@@ -184,9 +228,9 @@ Images are also an accessibility and a legal-grade obligation, not a polish item
 Every image needs **alt-text** — a short written description that a screen reader
 speaks aloud to a person who cannot see the image — and may carry an optional
 caption. For a public government website this is a compliance requirement. That
-means the tool cannot simply *offer* a description box; it has to make supplying a
-description the path of least resistance, so that accessible content is what
-naturally gets produced.
+means it is not enough for the tool to *offer* a description box; it has to make
+supplying a description the path of least resistance, so that accessible content is
+what naturally gets produced.
 
 And certain image files are an attack surface. One common image format is not a
 flat picture at all but a small text document that can legally contain hidden,
@@ -237,22 +281,22 @@ and respected precisely, and the only authoritative source for what they actuall
 are is the running system itself. Learning them, and discovering that the best way
 into the system was not the one the project first assumed, is itself part of the
 genuine work — and it is the single clearest illustration of why this is not a
-trivial project. (Section 5 tells that story in plain terms.)
+trivial project. (Section 5 tells that story.)
 
-### So — is it simple?
+### So — is it straightforward?
 
-The *workflow* is simple, deliberately: writers draft, approvers publish. That
-simplicity for the user is itself an achievement — it is the direct result of
-removing the old tool's confusing multi-stage approval chain. But "simple to use"
-sits on top of a real sign-in with real roles, three fully-modeled content types,
-accessible and safe image handling, a guard that blocks bad data before it is
-saved, an exact preview, and faithful integration with a professional content
-system. None of those are optional if the result is going to be safe, accessible,
-and trustworthy for a public government audience. That is the genuine scope —
-real, credible, and entirely ordinary professional work.
+The *workflow* is, deliberately: writers draft, approvers publish. That simplicity
+for the user is itself an achievement — it is the direct result of removing the old
+tool's confusing multi-stage approval chain. But "simple to use" sits on top of a
+real sign-in with real roles, three fully-modeled content types, accessible and safe
+image handling, a guard that blocks bad data before it is saved, an exact preview,
+and faithful integration with a professional content system. None of those are
+optional if the result is going to be safe, accessible, and trustworthy for a public
+government audience. That is the genuine scope — real, credible, and entirely
+ordinary professional work.
 
-Every one of those pieces is now built. The next section walks through them one at
-a time, and for each one tells you exactly where you can go to see it for yourself.
+Every one of those pieces is now built. The next section walks through them one at a
+time, and points to where each can be seen directly.
 
 ---
 
@@ -297,7 +341,7 @@ signed in across page reloads (no nagging), is re-checked with the server every
 time the tool starts (so a revoked account is locked out immediately, not a day
 later), and expires safely back to the login screen.
 
-*Receipt:* the login screen, the "contact Research & Analysis" message, and the
+*See it:* the login screen, the "contact Research & Analysis" message, and the
 official ICJIA logo are the first thing you see in the demonstration. The role rule
 is backed by its own automated tests.
 
@@ -323,7 +367,7 @@ Two deliberate, smaller choices round this out:
   abstract open in a new window.
 - The **App description** uses the full editor, the same as an article body.
 
-*Receipt:* open any sample article in the demonstration and you will see the toolbar,
+*See it:* open any sample article in the demonstration and you will see the toolbar,
 the Headings menu, and the live Preview, and you can type into them yourself.
 
 ### (c) Images and files — accessible and safe by construction
@@ -350,7 +394,7 @@ the old 2019 tool got wrong, bloating itself with image data. This is the single
 rule the team treats as non-negotiable, and it is guaranteed by automated tests that
 stop the build the instant anyone weakens it.
 
-*Receipt:* the picker shows the alt-text and caption fields and the name of the
+*See it:* the picker shows the alt-text and caption fields and the name of the
 file you selected; the body-image gallery thumbnails are visible in the editing
 panel when images have been uploaded to an article; the no-bloated-images rule is
 enforced by a dedicated guard test that runs across all three content types.
@@ -363,7 +407,7 @@ If something is wrong, the **save is blocked** and the person is told, in plain
 terms, what to fix — *before* anything reaches the content system. This is the
 guarantee from Section 2 made real, standing directly between a person and a save.
 
-*Receipt:* try to save an incomplete draft in the demonstration and the gate stops
+*See it:* try to save an incomplete draft in the demonstration and the gate stops
 you with a plain-language message; the gate's rules are covered by automated tests
 for every content type.
 
@@ -378,10 +422,10 @@ button. This is what staff approve against, so there are no surprises after they
 sign off.
 
 Each saved draft also gets a **shareable preview link** that opens for any signed-in
-staff member — which is precisely how a reviewer or a skeptical manager opens a
-specific draft and sees what will publish.
+staff member — exactly how a reviewer or a manager opens a specific draft and sees
+what will publish.
 
-*Receipt:* open the "Preview as published" view on a sample article in the
+*See it:* open the "Preview as published" view on a sample article in the
 demonstration — the sticky Table of Contents, the all-authors byline, the end
 matter, and the Print button are all there.
 
@@ -395,10 +439,10 @@ matter, and the Print button are all there.
 - **Light and dark mode** (it defaults to light; dark is opt-in) with the official
   ICJIA logo in the header. The theme toggle is the last button in the navigation.
 
-*Receipt:* all three are visible the moment you sign in to the demonstration — the
+*See it:* all three are visible the moment you sign in to the demonstration — the
 sortable list, the sample buttons, and the theme toggle.
 
-### (g) A self-contained Demo Mode for safe show-and-tell
+### (g) A self-contained Demo Mode for safe demonstrations
 
 The temporary `admin` / `admin` login opens a **fully self-contained Demo Mode**:
 **200-plus full-length sample articles** — each with complete sections, figures, and
@@ -409,10 +453,10 @@ grant, or finding is ever shown on a demo screen. It exists so the tool can be s
 to managers, reviewers, or leadership safely, with zero risk to live information and
 no risk of real ICJIA content appearing in a screenshot or a walkthrough.
 (This convenience login is temporary and is removed before the tool goes to
-production — see Section 4, the candid note in Section 5, and the security note in
-Section 6.)
+production — see Section 4, the note at the end of Section 5, and the security note
+in Section 6.)
 
-*Receipt:* this is the demonstration you have been using to check every other item.
+*See it:* this is the demonstration you have been using to check every other item.
 Open any sample article and you will see full multi-section body text, figures, and
 footnotes — all entirely fabricated.
 
@@ -485,12 +529,12 @@ an unknown or a research problem — they are known tasks with named owners.
 
 ---
 
-## 5. How we work — and why you can trust it
+## 5. How we work — and why the result is dependable
 
-The way this tool is built is as important as what it builds, because *how* it is
-built is what makes it dependable and maintainable for years. Three disciplines
-define the approach, and together they are the reason a manager can trust work
-even before it is switched on for the public.
+How this tool is built matters as much as what it builds, because the method is what
+makes it dependable and maintainable for years. Three disciplines define the
+approach, and together they are why the work holds up to scrutiny even before it is
+switched on for the public.
 
 - **Every piece is built test-first.** For each small piece of work, the team
   first writes an automated check that defines what "correct" means, then writes
@@ -539,44 +583,42 @@ own automatic guards. The result the process is aiming at is a tool that is
 correct, reviewable, safe to change, and maintainable for years — which is the
 entire reason to rebuild on a modern foundation in the first place.
 
-### Answering the skeptic directly
+### Three questions worth asking
 
-Three fair questions deserve straight answers, with no spin.
+These are the questions a project at this stage should expect. Here are direct
+answers.
 
-- ***"Is this overbuilt?"*** No — and Section 2 makes the case in detail. The
-  *workflow* is deliberately the simplest it can be (writers draft, approvers
-  publish), which is itself a simplification of the old tool's confusing approval
-  chain. Everything beneath it — real roles, accessible images, the save gate, the
-  exact preview — is the minimum a public **government** site requires to be safe
-  and accessible by law. None of it is decoration; remove any of it and you get a
-  tool that is unsafe, inaccessible, or untrustworthy. If anything was *added* for
-  comfort rather than necessity, it was the demo mode — and that exists precisely so
-  skeptics like you can verify the rest without risk.
+- ***Is it overbuilt?*** No, and Section 2 makes the case in detail. The *workflow*
+  is deliberately as simple as it can be (writers draft, approvers publish) — itself
+  a simplification of the old tool's confusing approval chain. Everything beneath it
+  — real roles, accessible images, the save gate, the exact preview — is the minimum
+  a public **government** site requires to be safe and accessible by law. None of it
+  is decoration; remove any of it and the result is unsafe, inaccessible, or
+  unreliable. The one piece added for convenience rather than necessity is the demo
+  mode, and it earns its place by letting anyone verify the rest without risk.
 
-- ***"Can I trust it?"*** You don't have to take it on faith — that is the whole
-  design of this document. You can *click* the running demonstration and use the
-  tool yourself; a *machine* re-proves 375 promises every time the code changes; and
-  every change is an independently reviewed, reversible entry in the official
-  record. The tool has also been through an independent red/blue-team security audit
-  (Section 6) — zero critical issues found. Trust here is something you can check,
-  not something you are asked to grant.
+- ***What is the evidence?*** It is built into this document, by design. You can
+  open the running demonstration and use the tool directly; the test suite re-checks
+  375 promises every time the code changes; and every change is an independently
+  reviewed, reversible entry in the official record. The tool has also been through
+  an independent red/blue-team security audit (Section 6), which found zero critical
+  issues. Every claim here points to something that can be examined.
 
-- ***"Is it on track?"*** Yes, and the remaining work is small and named. The
-  features are built. What's left (Section 4) is ICJIA's own setup (three steps), a
-  joint go-live rehearsal, and one piece of cleanup — not new construction and not
-  unknowns. The honest risks are the ordinary ones: the live email, publish, and
+- ***Is it on track?*** Yes, and the remaining work is small and named. The features
+  are built. What is left (Section 4) is ICJIA's own setup (three steps), a joint
+  go-live rehearsal, and one piece of cleanup — not new construction and not
+  unknowns. The genuine risks are the ordinary ones: the live email, publish, and
   onboarding flows still need to be exercised against real ICJIA services and a real
   Author account, which is exactly what step 4 of the roadmap is for.
 
-A note in the interest of being straight with you: during development only, there
-is a temporary local convenience login — the `admin` / `admin` demo login this
-document keeps pointing you to. It lets a person open the tool without a full
-account so the workflow can be shown and checked. It is **inert in any real build**
-(the code that creates it is stripped out when the production version is made, and
-its credential is a dummy the content system will never accept), it grants **no
-access to live data**, and it is **removed entirely before launch** (step 5 of the
-roadmap). It is called out here, and in the roadmap, so the record is complete —
-not because it presents any risk to live information.
+One detail noted for completeness: during development only, there is a temporary
+local convenience login — the `admin` / `admin` demo login referenced throughout
+this document. It lets a person open the tool without a full account so the workflow
+can be shown and checked. It is **inert in any real build** (the code that creates it
+is stripped out when the production version is made, and its credential is a dummy
+the content system will never accept), it grants **no access to live data**, and it
+is **removed entirely before launch** (step 5 of the roadmap). It appears here and in
+the roadmap so the record is complete — it presents no risk to live information.
 
 ---
 
@@ -598,7 +640,7 @@ automated tests (375 of them)**. The full report lives in the repository
 (`docs/security-audit.md`), and the README keeps a running log of every audit so
 the review history is visible at a glance.
 
-- **Receipt:** open `docs/security-audit.md` — each finding names the exact file,
+- **See it:** open `docs/security-audit.md` — each finding names the exact file,
   the attack, the existing defense, and the fix.
 - **The demo login** (`admin / admin`) is a deliberate development/demo convenience
   that is automatically removed from the production build; it is labeled as such on
@@ -610,12 +652,12 @@ the review history is visible at a glance.
 
 ---
 
-## 7. Appendix — for the technically curious
+## 7. Appendix — Developer reference (technical detail)
 
-*This appendix is optional. Everything a non-technical reader needs is in Sections
-1–6. What follows condenses the architecture and the implementation plan for
-readers who want the deeper detail, and is where the remaining technical terms
-live.*
+*This appendix is written for the developer audience. A manager has the complete
+picture from Sections 1–6 and can stop there. What follows condenses the
+architecture and the implementation plan for readers who want the full technical
+detail, and is where the remaining technical terms live.*
 
 ### 7.1 At a glance
 

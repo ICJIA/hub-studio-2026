@@ -59,13 +59,22 @@ describe('preview page', () => {
     expect(wrapper.text()).not.toContain('Variables')
   })
 
-  it('sanitizes javascript: url to # in Open app link', async () => {
+  it('never lets a javascript: url reach the DOM as an Open app link', async () => {
     routeParams = { type: 'app', documentId: 'app1' }
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
-    const link = wrapper.find('a')
-    expect(link.exists()).toBe(true)
-    expect(link.attributes('href')).toBe('#')
-    expect(link.attributes('href')).not.toBe('javascript:alert(1)')
+    // safeHref maps the hostile url to '#', and PublishedAppPreview hides the link rather than
+    // rendering a dead anchor — so no javascript: href ever reaches the DOM.
+    expect(wrapper.html()).not.toContain('javascript:')
+    expect(wrapper.findAll('a').every((l) => l.attributes('href') !== 'javascript:alert(1)')).toBe(true)
+  })
+
+  it('renders the Open app link for a safe url', async () => {
+    routeParams = { type: 'app', documentId: 'app1' }
+    appFindOneMock.mockResolvedValueOnce({ documentId: 'app1', title: 'Test App', url: 'https://example.com/app' })
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    const link = wrapper.findAll('a').find((l) => l.text().includes('Open app'))
+    expect(link?.attributes('href')).toBe('https://example.com/app')
   })
 })

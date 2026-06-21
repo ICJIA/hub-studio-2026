@@ -41,27 +41,12 @@ describe('dashboard', () => {
     expect(wrapper.text()).toContain('Add sample article')
   })
 
-  it('clicking "Add sample article" calls useArticles().create once with a valid article', async () => {
-    createMock.mockResolvedValue({ documentId: 'demo123' })
+  it('links "Add sample article" to the create form seeded with the sample (?sample=1)', async () => {
+    canPublish.value = false
     const wrapper = await mountSuspended(Dashboard)
-    const btn = wrapper.findAll('button').find((b) => b.text().includes('Add sample article'))
-    expect(btn).toBeDefined()
-    await btn!.trigger('click')
-    await new Promise((r) => setTimeout(r, 0))
-    expect(createMock).toHaveBeenCalledOnce()
-    const arg = createMock.mock.calls[0]![0]
-    expect(arg.title).toBe('Crime in Illinois: 2024 Trends and Analysis')
-    expect(arg.publishedAt).toBeNull()
-  })
-
-  it('shows loading state while sample article is being created', async () => {
-    // create never resolves during this test, so loading stays true
-    createMock.mockImplementation(() => new Promise(() => {}))
-    const wrapper = await mountSuspended(Dashboard)
-    const btn = wrapper.findAll('button').find((b) => b.text().includes('Add sample article'))
-    await btn!.trigger('click')
-    await nextTick()
-    // Button should be disabled while loading
-    expect(btn!.attributes('disabled')).toBeDefined()
+    const link = wrapper.findAll('a').find((a) => a.text().includes('Add sample article'))
+    expect(link).toBeDefined()
+    expect(link!.attributes('href')).toContain('/create/article')
+    expect(link!.attributes('href')).toContain('sample=1')
   })
 })

@@ -98,7 +98,7 @@ defineExpose({ submit, setField, errors, model })
       <UButton variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
     </div>
 
-    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-4xl' }">
+    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">
       <template #content>
         <div class="flex max-h-[88vh] flex-col bg-white">
           <div class="flex items-center justify-between border-b border-default px-4 py-2">

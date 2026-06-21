@@ -32,7 +32,7 @@ const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset |
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-6xl mx-auto">
     <p v-if="loading" class="text-muted">Loading…</p>
     <template v-else-if="entry">
       <p class="text-xs text-muted mb-4 uppercase tracking-wide">Draft preview</p>

@@ -7,28 +7,9 @@
 -->
 <script setup lang="ts">
 import { ref } from '#imports'
-import { buildSampleArticle } from '~/lib/sample-article'
 
 const { user, canPublish } = useAuth()
 const listType = ref<'article' | 'app' | 'dataset'>('article')
-const toast = useToast()
-const addingSample = ref(false)
-
-async function addSampleArticle() {
-  addingSample.value = true
-  try {
-    const saved = await useArticles().create(buildSampleArticle())
-    await navigateTo(`/edit/article/${saved.documentId}`)
-  } catch {
-    toast.add({
-      title: 'Could not create sample article',
-      description: 'Check your connection and Strapi session, then try again.',
-      color: 'error',
-    })
-  } finally {
-    addingSample.value = false
-  }
-}
 </script>
 
 <template>
@@ -45,14 +26,7 @@ async function addSampleArticle() {
           <UButton to="/create/article" variant="subtle" label="New article" />
           <UButton to="/create/app" variant="subtle" label="New app" />
           <UButton to="/create/dataset" variant="subtle" label="New dataset" />
-          <UButton
-            variant="soft"
-            color="primary"
-            :loading="addingSample"
-            :disabled="addingSample"
-            label="Add sample article"
-            @click="addSampleArticle"
-          />
+          <UButton to="/create/article?sample=1" variant="soft" color="primary" label="Add sample article" />
         </div>
       </UCard>
 

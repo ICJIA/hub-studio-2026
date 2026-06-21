@@ -64,11 +64,11 @@ describe('buildSampleApp', () => {
     expect(app.url).toMatch(/^https:\/\//)
   })
 
-  it('image is a display-only demo image (id 0, hosted https url, no base64)', () => {
+  it('image is a display-only demo image (id 0, local bundled url, no base64)', () => {
     const app = buildSampleApp()
     expect(app.image).not.toBeNull()
     expect(app.image!.id).toBe(0)
-    expect(app.image!.url).toMatch(/^https:\/\//)
+    expect(app.image!.url).toMatch(/^\/images\/demo\//)
     expect(containsBase64(app.image!.url)).toBe(false)
   })
 

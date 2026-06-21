@@ -66,20 +66,20 @@ describe('buildSampleArticle', () => {
     expect(article.images).toEqual([])
   })
 
-  it('splash & thumbnail are display-only demo images (id 0, hosted url, no base64); mainfile/extrafile null', () => {
+  it('splash & thumbnail are display-only demo images (id 0, local bundled url, no base64); mainfile/extrafile null', () => {
     const article = buildSampleArticle()
     expect(article.splash).not.toBeNull()
     expect(article.splash!.id).toBe(0)
-    expect(article.splash!.url).toMatch(/^https:\/\//)
+    expect(article.splash!.url).toMatch(/^\/images\/demo\//)
     expect(containsBase64(article.splash!.url)).toBe(false)
     expect(article.thumbnail).not.toBeNull()
     expect(article.mainfile).toBeNull()
     expect(article.extrafile).toBeNull()
   })
 
-  it('markdown embeds a hosted image (random photo, never base64)', () => {
+  it('markdown embeds a hosted image (local bundled photo, never base64)', () => {
     const article = buildSampleArticle()
-    expect(article.markdown).toMatch(/!\[[^\]]*\]\(https?:\/\/[^)]+\)/)
+    expect(article.markdown).toMatch(/!\[[^\]]*\]\(\/images\/demo\/[^)]+\)/)
     expect(containsBase64(article.markdown)).toBe(false)
   })
 

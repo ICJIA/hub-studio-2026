@@ -99,34 +99,7 @@ A running log of red / blue team security audits. The **latest** summary is show
 
 <!-- Maintenance: when a new audit is run, move the current "Latest" block into a new entry under "Previous audits" below, then replace the Latest block with the new summary. -->
 
-### Latest — 2026-06-21 · Red / Blue Team
-
-**Posture: strong** for a client-side staff tool — **0 Critical**, nothing confirmed-exploitable in the production path.
-
-| Critical | High | Medium | Low | Info |
-|:--:|:--:|:--:|:--:|:--:|
-| 0 | 1 | 4 | 4 | 4 |
-
-- **Top risk (H-1):** no Content-Security-Policy / security headers, plus the admin JWT in a JS-readable cookie → **add a CSP**.
-- **Other findings:** unthrottled review-email relay (M-5); client-only SVG / document-upload validation (M-3, M-4); fragile TOC id injection (M-2).
-- **Blue-team credit:** single `html:false` markdown seam, `safeHref` URL allowlist, default-deny routing with Strapi as the real authority, server-isolated secrets, dev bypass fails closed.
-- **Report:** [`docs/security-audit.md`](docs/security-audit.md) — reviewed `0f42014`, committed `5f4c951`.
-**Findings & remediation**
-
-| Finding | Severity | Remediation | Status |
-|---|---|---|---|
-| H-1 — No CSP / security headers (admin JWT in a JS-readable cookie) | High | Added a Content-Security-Policy + security headers via `public/_headers` (CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, HSTS, Referrer-Policy) | ✅ Fixed in repo (`e402f3d`); CSP to be confirmed on a deploy preview |
-| M-1 — Session kept on transient/5xx boot errors | Medium | `init()` now clears the session on a definitive `403` | ✅ Fixed (`e402f3d`) |
-| M-2 — Fragile regex Table-of-Contents id injection | Medium | Heading ids now derived from the Markdown AST and HTML-escaped | ✅ Fixed (`e402f3d`) |
-| M-3 / M-4 — SVG + document-upload validation is client-side only | Medium | Enforce MIME/size limits at the Strapi Media Library; serve uploads as non-inline (`attachment` / `nosniff`) | ⏳ Launch-time (Strapi side — Research & Analysis) |
-| M-5 — Unthrottled review-email relay | Medium | Rate-limited the endpoint (5 sends / 10 min → HTTP 429) | ✅ Fixed (`e402f3d`) |
-| L-4 — Dataset source/datafile URLs not gated at save time | Low | `validateDataset` now rejects `javascript:` / `data:` / `vbscript:` / `file:` URLs | ✅ Fixed (`e402f3d`) |
-| L-5 — Error page could surface raw error text | Low | Production error page renders a generic message (detail only in dev) | ✅ Fixed (`e402f3d`) |
-| I-5 — Zero-base64 enforced only at the form | Info | `assertNoBase64` wired into the repository write boundary | ✅ Fixed (`e402f3d`) |
-| Server-side authorization / admin-JWT lifetime (incl. L-1 token revocation) | — | Verify in the Strapi instance: publisher-only publish, per-role permissions, a sane admin-JWT lifetime | ⏳ Launch-time (Strapi side — Research & Analysis) |
-| Dev `admin/admin` bypass (D-1/2/3) | Dev-only | Remove end-to-end before production and add a CI check that fails if it ships; meanwhile it is tree-shaken out of production builds | ⏳ Launch-time |
-
-Dependency monitoring (Dependabot) was also added in `e402f3d`; the full detail is in [`docs/security-audit.md`](docs/security-audit.md).
+### Latest — 2026-06-21 · Demo & public-deploy audit
 
 **Demo & public-deploy audit (2026-06-21).** A second adversarial pass covered the new **public-demo** capability — demo mode, the static Netlify deploy, the demo CSP/headers, and icon/image bundling. **Verdict: safe to expose publicly — 0 Critical, 0 High.** The demo cannot write to Strapi, cannot sign in as a real user, and ships no secrets; this holds three deep — in-memory data, a sentinel token Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachable *even if every client-side guard is bypassed*. Of 10 findings (all Medium/Low), **5 were fixed in code and 5 documented.**
 
@@ -145,7 +118,35 @@ Full detail in [`docs/security-audit.md`](docs/security-audit.md) §7.
 <details>
 <summary><strong>Previous audits</strong></summary>
 
-_No earlier audits yet — 2026-06-21 is the first._
+### 2026-06-21 · Production red/blue team
+
+**Posture: strong** for a client-side staff tool — **0 Critical**, nothing confirmed-exploitable in the production path.
+
+| Critical | High | Medium | Low | Info |
+|:--:|:--:|:--:|:--:|:--:|
+| 0 | 1 | 4 | 4 | 4 |
+
+- **Top risk (H-1):** no Content-Security-Policy / security headers, plus the admin JWT in a JS-readable cookie → **add a CSP**.
+- **Other findings:** unthrottled review-email relay (M-5); client-only SVG / document-upload validation (M-3, M-4); fragile TOC id injection (M-2).
+- **Blue-team credit:** single `html:false` markdown seam, `safeHref` URL allowlist, default-deny routing with Strapi as the real authority, server-isolated secrets, dev bypass fails closed.
+- **Report:** [`docs/security-audit.md`](docs/security-audit.md) — reviewed `0f42014`, committed `5f4c951`.
+
+**Findings & remediation**
+
+| Finding | Severity | Remediation | Status |
+|---|---|---|---|
+| H-1 — No CSP / security headers (admin JWT in a JS-readable cookie) | High | Added a Content-Security-Policy + security headers via `public/_headers` (CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, HSTS, Referrer-Policy) | ✅ Fixed in repo (`e402f3d`); CSP to be confirmed on a deploy preview |
+| M-1 — Session kept on transient/5xx boot errors | Medium | `init()` now clears the session on a definitive `403` | ✅ Fixed (`e402f3d`) |
+| M-2 — Fragile regex Table-of-Contents id injection | Medium | Heading ids now derived from the Markdown AST and HTML-escaped | ✅ Fixed (`e402f3d`) |
+| M-3 / M-4 — SVG + document-upload validation is client-side only | Medium | Enforce MIME/size limits at the Strapi Media Library; serve uploads as non-inline (`attachment` / `nosniff`) | ⏳ Launch-time (Strapi side — Research & Analysis) |
+| M-5 — Unthrottled review-email relay | Medium | Rate-limited the endpoint (5 sends / 10 min → HTTP 429) | ✅ Fixed (`e402f3d`) |
+| L-4 — Dataset source/datafile URLs not gated at save time | Low | `validateDataset` now rejects `javascript:` / `data:` / `vbscript:` / `file:` URLs | ✅ Fixed (`e402f3d`) |
+| L-5 — Error page could surface raw error text | Low | Production error page renders a generic message (detail only in dev) | ✅ Fixed (`e402f3d`) |
+| I-5 — Zero-base64 enforced only at the form | Info | `assertNoBase64` wired into the repository write boundary | ✅ Fixed (`e402f3d`) |
+| Server-side authorization / admin-JWT lifetime (incl. L-1 token revocation) | — | Verify in the Strapi instance: publisher-only publish, per-role permissions, a sane admin-JWT lifetime | ⏳ Launch-time (Strapi side — Research & Analysis) |
+| Dev `admin/admin` bypass (D-1/2/3) | Dev-only | Remove end-to-end before production and add a CI check that fails if it ships; meanwhile it is tree-shaken out of production builds | ⏳ Launch-time |
+
+Dependency monitoring (Dependabot) was also added in `e402f3d`; the full detail is in [`docs/security-audit.md`](docs/security-audit.md).
 
 </details>
 

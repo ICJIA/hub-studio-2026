@@ -5,6 +5,7 @@ import { isDemoSession } from '~/lib/demo'
 const auth = useAuthStore()
 const { logout } = useAuth()
 const demo = import.meta.dev && isDemoSession()
+const logoSrc = '/images/icjia-logo.png'
 
 const colorMode = useColorMode()
 function toggleColorMode() {
@@ -26,7 +27,7 @@ function toggleColorMode() {
     <header class="sticky top-0 z-20 border-b border-default bg-default/85 backdrop-blur-md">
       <div class="max-w-6xl mx-auto w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <NuxtLink to="/" class="flex items-center gap-2.5 font-semibold text-highlighted transition-opacity hover:opacity-80">
-          <span class="grid place-items-center size-8 rounded-lg bg-primary text-inverted text-[0.7rem] font-bold tracking-tight">IC</span>
+          <img :src="logoSrc" alt="ICJIA" class="h-9 w-auto rounded">
           <span class="hidden sm:inline">{{ APP_NAME }}</span>
         </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-3">

@@ -6,6 +6,7 @@ import { DEV_ADMIN_IDENTIFIER, DEV_ADMIN_PASSWORD } from '~/lib/dev-auth'
 definePageMeta({ public: true, layout: false })
 
 const { login } = useAuth()
+const logoSrc = '/images/icjia-logo.png'
 const toast = useToast()
 
 const state = reactive({ identifier: '', password: '' })
@@ -41,7 +42,7 @@ function signInAsDevAdmin() {
       <UCard>
       <template #header>
         <div class="flex items-center gap-2.5">
-          <span class="grid place-items-center size-9 rounded-lg bg-primary text-inverted text-xs font-bold tracking-tight">IC</span>
+          <img :src="logoSrc" alt="ICJIA" class="h-10 w-auto rounded">
           <div>
             <h1 class="text-base font-semibold text-highlighted leading-tight">{{ APP_NAME }}</h1>
             <p class="text-sm text-muted">Sign in to continue</p>

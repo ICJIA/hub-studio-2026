@@ -32,6 +32,23 @@ onMounted(async () => {
       <ArticleForm v-if="type === 'article'" mode="edit" :initial="entry as Article" />
       <AppForm v-else-if="type === 'app'" mode="edit" :initial="entry as App" />
       <DatasetForm v-else-if="type === 'dataset'" mode="edit" :initial="entry as Dataset" />
+      <div class="mt-6 border-t border-default pt-4 space-y-3">
+        <div class="flex items-center gap-3">
+          <PublishButton
+            :type="(type as 'article' | 'app' | 'dataset')"
+            :document-id="documentId"
+            :published="entry.publishedAt != null"
+            @published="entry.publishedAt = ($event as typeof entry).publishedAt"
+          />
+          <span v-if="entry.publishedAt" class="text-sm text-muted">Published.</span>
+        </div>
+        <details>
+          <summary class="cursor-pointer text-sm font-medium">Request review by email</summary>
+          <div class="mt-2 max-w-md">
+            <RequestReviewForm :type="(type as 'article' | 'app' | 'dataset')" :document-id="documentId" />
+          </div>
+        </details>
+      </div>
     </template>
     <p v-else class="text-muted">Not found.</p>
   </div>

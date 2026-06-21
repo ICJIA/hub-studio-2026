@@ -12,7 +12,7 @@ import type { ContentStatus } from '~/types/content'
 const props = withDefaults(defineProps<{ type: 'article' | 'app' | 'dataset'; status?: ContentStatus }>(), { status: 'draft' })
 
 const repo = props.type === 'article' ? useArticles() : props.type === 'app' ? useApps() : useDatasets()
-const items = ref<{ documentId: string; title: string }[]>([])
+const items = ref<{ documentId: string; title: string; publishedAt?: string | null }[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
@@ -31,9 +31,10 @@ onMounted(async () => {
     <ul v-else class="divide-y divide-default">
       <li v-for="item in items" :key="item.documentId" class="py-2 flex items-center justify-between gap-3">
         <span class="truncate">{{ item.title || '(untitled)' }}</span>
-        <span class="flex gap-3 text-sm shrink-0">
+        <span class="flex gap-3 text-sm shrink-0 items-center">
           <NuxtLink :to="`/edit/${type}/${item.documentId}`" class="text-primary underline">Edit</NuxtLink>
           <NuxtLink :to="`/preview/${type}/${item.documentId}`" class="text-primary underline">Preview</NuxtLink>
+          <slot name="row-actions" :document-id="item.documentId" :published="item.publishedAt != null" />
         </span>
       </li>
     </ul>

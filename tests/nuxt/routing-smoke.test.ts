@@ -8,16 +8,22 @@ import { resolve } from 'node:path'
 mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mockResolvedValue([]), remove: vi.fn() }))
 
 const findOneMock = vi.fn().mockResolvedValue({ documentId: 'a1', title: 'Existing', markdown: '', categories: [], tags: [], authors: [], images: [], apps: [], datasets: [], splash: null, thumbnail: null, mainfile: null, extrafile: null, type: null, mainfiletype: null, abstract: null, doi: null, citation: null, funding: null, date: '2020-01-01', slug: 'existing', external: false, hideFromBanner: false, publishedAt: null })
-mockNuxtImport('useArticles', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
+mockNuxtImport('useArticles', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const appFindOneMock = vi.fn().mockResolvedValue({ documentId: 'app1', title: 'Existing App', date: '2020-01-01', slug: 'existing-app', categories: [], tags: [], contributors: [], image: null, description: '', url: '', datasets: [], articles: [], publishedAt: null })
-mockNuxtImport('useApps', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: appFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
+mockNuxtImport('useApps', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: appFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const datasetFindOneMock = vi.fn().mockResolvedValue({ documentId: 'ds1', title: 'Existing Dataset', date: '2020-01-01', slug: 'existing-dataset', categories: [], tags: [], description: '', unit: '', timeperiod: null, sources: [], variables: [], notes: [], project: false, datafile: null, apps: [], articles: [], publishedAt: null })
-mockNuxtImport('useDatasets', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
+mockNuxtImport('useDatasets', () => () => ({ list: vi.fn().mockResolvedValue([]), findOne: datasetFindOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const routeRef = { params: { type: 'article', documentId: 'a1' } }
 mockNuxtImport('useRoute', () => () => routeRef)
+
+const managerCanPublish = ref(true)
+mockNuxtImport('useAuth', () => () => ({
+  user: computed(() => ({ email: 'manager@example.com' })),
+  canPublish: managerCanPublish, isLoggedIn: computed(() => true), logout: vi.fn(),
+}))
 
 import CreatePage from '~/pages/create/[type].vue'
 import EditPage from '~/pages/edit/[type]/[documentId].vue'
@@ -39,10 +45,10 @@ describe('routing glue', () => {
     expect(wrapper.text()).toContain('Save draft')
   })
 
-  it('/manage declares adminOnly and renders the draft queue', async () => {
+  it('/manage renders the publish queue (no longer a Plan-6 placeholder)', async () => {
     const wrapper = await mountSuspended(ManagePage)
-    // Publish is deferred to Plan 6 — the queue lists but cannot publish yet.
-    expect(wrapper.text()).toMatch(/Publish queue|Drafts|Plan 6/i)
+    expect(wrapper.text()).toMatch(/Publish queue|Drafts/i)
+    expect(wrapper.text()).not.toMatch(/Coming in Plan 6/i)
   })
 
   // Step 2: structural guard — fails if definePageMeta({ adminOnly: true }) is removed

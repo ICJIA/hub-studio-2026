@@ -11,7 +11,14 @@ import {
   type StrapiListResponse, type StrapiSingleResponse, type StrapiRelationsResponse,
 } from '~/lib/strapi-rest'
 
-export interface ListOptions { status?: ContentStatus; page?: number; pageSize?: number; sort?: string }
+export interface ListOptions {
+  status?: ContentStatus
+  page?: number
+  pageSize?: number
+  sort?: string
+  /** Content-Manager filters, e.g. { authorEmail: { $eq: 'a@x.gov' } }. Backward-compatible: existing callers omit it. */
+  filters?: Record<string, unknown>
+}
 export interface FindOptions { status?: ContentStatus }
 export interface WriteOptions { status?: ContentStatus }
 
@@ -51,6 +58,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
           page: opts.page,
           pageSize: opts.pageSize,
           sort: opts.sort,
+          filters: opts.filters,
         },
       })
       return unwrapList(res).map((raw) => cfg.fromStrapi(raw))

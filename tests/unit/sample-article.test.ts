@@ -66,12 +66,32 @@ describe('buildSampleArticle', () => {
     expect(article.images).toEqual([])
   })
 
-  it('splash, thumbnail, mainfile, extrafile are all null', () => {
+  it('splash & thumbnail are display-only demo images (id 0, hosted url, no base64); mainfile/extrafile null', () => {
     const article = buildSampleArticle()
-    expect(article.splash).toBeNull()
-    expect(article.thumbnail).toBeNull()
+    expect(article.splash).not.toBeNull()
+    expect(article.splash!.id).toBe(0)
+    expect(article.splash!.url).toMatch(/^https:\/\//)
+    expect(containsBase64(article.splash!.url)).toBe(false)
+    expect(article.thumbnail).not.toBeNull()
     expect(article.mainfile).toBeNull()
     expect(article.extrafile).toBeNull()
+  })
+
+  it('markdown embeds a hosted image (random photo, never base64)', () => {
+    const article = buildSampleArticle()
+    expect(article.markdown).toMatch(/!\[[^\]]*\]\(https?:\/\/[^)]+\)/)
+    expect(containsBase64(article.markdown)).toBe(false)
+  })
+
+  it('fills every field for a one-click demo (type, doi, citation, funding, mainfiletype, categories, tags)', () => {
+    const a = buildSampleArticle()
+    expect(a.type).toBeTruthy()
+    expect(a.doi).toBeTruthy()
+    expect(a.citation).toBeTruthy()
+    expect(a.funding).toBeTruthy()
+    expect(a.mainfiletype).toBeTruthy()
+    expect(a.categories.length).toBeGreaterThan(0)
+    expect(a.tags.length).toBeGreaterThan(0)
   })
 
   it('has at least one author with a non-empty title', () => {

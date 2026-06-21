@@ -43,7 +43,9 @@ export function mediaFromStrapi(m: StrapiMedia | null | undefined): MediaRef | n
 }
 
 export function mediaIdForWrite(ref: MediaRef | null | undefined): number | null {
-  return ref?.id ?? null
+  // Only a real Media Library upload (positive id) is written. Demo/placeholder refs (id <= 0)
+  // carry a display url but no upload, so they map to null — no bogus media id reaches Strapi.
+  return ref && ref.id > 0 ? ref.id : null
 }
 
 /**

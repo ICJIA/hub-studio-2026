@@ -1,40 +1,65 @@
 /**
- * Builds a complete, realistic ICJIA-style research article draft for demo purposes.
- * Pure function — no side effects, no network calls, no base64.
- * Passes validateArticle() with zero errors.
+ * Builds a complete, realistic ICJIA-style research article draft for demos — every field
+ * populated so an author can one-click a full article (and open the published preview) instead
+ * of typing it piece by piece. Rotates through several topics and uses random real photos.
+ *
+ * Pure function (only Math.random for variety) — no network, no base64. Images are hosted urls.
+ * Splash/thumbnail are DISPLAY-ONLY refs (id 0): they show in the preview but map to null on Save
+ * (see mediaIdForWrite), so a demo image never sends a bogus media id to Strapi. Passes
+ * validateArticle() with zero errors.
  */
-import type { Article } from '~/types/content'
+import type { Article, MediaRef } from '~/types/content'
 import { blankArticle } from '~/lib/forms/blank-models'
+import { MAINFILETYPE_OPTIONS } from '~/lib/field-options'
 import { slugify } from '~/lib/slug'
 
-const TITLE = 'Crime in Illinois: 2024 Trends and Analysis'
+function pick<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]!
+}
+function seed(): string {
+  return Math.floor(Math.random() * 1_000_000).toString(36)
+}
+/** A display-only Media Library ref (id 0 → never written; see mediaIdForWrite) with a real photo. */
+function demoImage(w: number, h: number, alt: string): MediaRef {
+  const s = seed()
+  return { id: 0, url: `https://picsum.photos/seed/${s}/${w}/${h}`, name: `demo-${s}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
+}
+/** A random hosted body image as a Markdown figure (saves fine — it's just markdown text). */
+function bodyImage(alt: string, w = 1000, h = 520): string {
+  return `![${alt}](https://picsum.photos/seed/${seed()}/${w}/${h} "${alt}")`
+}
 
-const ABSTRACT =
-  'This report examines statewide crime trends in Illinois for calendar year 2024, drawing on ' +
-  'Uniform Crime Reporting (UCR) data submitted by law enforcement agencies across all 102 counties. ' +
-  'Key findings include a continued decline in violent crime rates, shifting patterns in property ' +
-  'crime, and notable regional disparities in drug-related offenses. Findings are contextualized ' +
-  'within longer-term historical baselines and compared against national trends.'
+interface Topic {
+  title: string
+  abstract: string
+  categories: string[]
+  tags: string[]
+  authors: { title: string; description: string }[]
+  body: () => string
+}
 
-const MARKDOWN = `## Executive Summary
+const TOPICS: Topic[] = [
+  {
+    title: 'Crime in Illinois: 2024 Trends and Analysis',
+    abstract:
+      'This report examines statewide crime trends in Illinois for calendar year 2024, drawing on Uniform Crime Reporting (UCR) data submitted by law enforcement agencies across all 102 counties. Key findings include a continued decline in violent crime rates, shifting patterns in property crime, and notable regional disparities in drug-related offenses.',
+    categories: ['crimes', 'law enforcement'],
+    tags: ['crime trends', 'Illinois', 'UCR', 'violent crime', 'property crime', '2024'],
+    authors: [
+      { title: 'Amanda L. Vasquez, MA', description: 'Senior Research Analyst, ICJIA' },
+      { title: 'Caleb Schaffner, PhD', description: 'Research Director, ICJIA' },
+    ],
+    body: () => `## Executive Summary
 
 Illinois recorded **47,312 violent crime incidents** in 2024, representing a _3.4 percent_ decrease
 from the prior year. Property crimes declined for the fifth consecutive year, while drug-related
-offenses showed more complex geographic variation. This report synthesizes data from all
-**795 reporting law enforcement agencies** across the state.
+offenses showed more complex geographic variation.
+
+${bodyImage('Statewide crime rates declined for the fifth consecutive year')}
 
 > "Understanding crime trends requires more than raw counts — it demands context, consistency in
 > reporting methodology, and sensitivity to the communities behind the numbers."
 > — ICJIA Research Director
-
-## Introduction
-
-The Illinois Criminal Justice Information Authority (ICJIA) has published annual crime trend reports
-since 1983. This edition covers **calendar year 2024** and employs the [Hierarchy Rule](https://ucr.fbi.gov/nibrs/2011/resources/nibrs-offense-definitions)
-consistent with National Incident-Based Reporting System (NIBRS) standards.
-
-Data for this report were collected through the [Illinois Uniform Crime Reporting Program](https://icjia.illinois.gov/researchhub/datasets/illinois-uniform-crime-reporting-program-data-1985-2022)
-administered by the Illinois State Police.
 
 ## Key Findings
 
@@ -44,99 +69,135 @@ The following trends were identified for 2024:
 - Homicides declined 8.1% in urban counties but increased 2.3% in rural counties
 - Motor vehicle theft increased 11.2%, reversing a four-year downward trend
 - Aggravated assault remained the most frequently reported violent offense category
-- Rape offenses, as defined under the revised UCR definition, decreased 4.7%
 
 ## Methodology
 
-### Data Sources
+County-level rates were calculated per 100,000 residents using the [Illinois UCR Program](https://icjia.illinois.gov/researchhub) data administered by the Illinois State Police.[^1]
 
-This analysis draws on three primary data sources:
-
-1. Illinois Uniform Crime Reporting (UCR) Program submissions (January–December 2024)
-2. National Crime Victimization Survey (NCVS) supplemental estimates for unreported crime
-3. Illinois State Police administrative records for arrest dispositions
-
-### Analytical Approach
-
-County-level rates were calculated per 100,000 residents using **2024 U.S. Census Bureau
-population estimates**. Multi-year trend analysis employs a five-year rolling average to
-smooth year-to-year volatility.
-
-## Findings by Crime Category
-
-### Violent Crime
-
-Violent crime encompasses homicide, rape, robbery, and aggravated assault. Illinois recorded
-47,312 violent incidents in 2024 — a rate of **373 per 100,000 residents**, below both the
-prior-year rate (387) and the five-year average (401).
-
-### Property Crime
-
-Property crime — including burglary, larceny-theft, motor vehicle theft, and arson — totaled
-**192,847 incidents**, a 1.9% decrease from 2023. _Motor vehicle theft_ was the sole subcategory
-to increase, rising 11.2% and warranting focused attention from law enforcement and policymakers.
-
-### Drug-Related Offenses
-
-Drug arrests totaled 68,441 in 2024. The geographic distribution of drug offenses continues to
-reflect significant **regional variation**: Cook County accounted for 41% of statewide drug arrests,
-while suburban collar counties showed the steepest per-capita increases.
-
-## Discussion
-
-These findings reinforce that crime in Illinois is not monolithic. Urban, suburban, and rural
-jurisdictions face distinct challenges that require tailored policy responses. The continued
-decline in violent crime is encouraging, yet the motor vehicle theft spike and rural homicide
-increase demand sustained attention.
-
-Limitations of this analysis include the voluntary nature of UCR reporting, potential changes
-in agency reporting practices over time, and the inherent lag between incident occurrence
-and data publication.
+1. UCR Program submissions (January–December 2024)
+2. National Crime Victimization Survey supplemental estimates
+3. Illinois State Police administrative records
 
 ## Conclusion
 
-Illinois crime trends for 2024 present a mixed but broadly positive picture. Violent crime
-continues its multi-year decline, and most property crime categories remain at historic lows.
-However, targeted increases in motor vehicle theft and rural violence underscore the need for
-ongoing, data-driven policy engagement.
+Illinois crime trends for 2024 present a mixed but broadly positive picture. Targeted increases in
+motor vehicle theft and rural violence underscore the need for ongoing, data-driven policy engagement.[^2]
 
-ICJIA will release county-level data tables and an interactive dashboard companion to this
-report in Q2 2025. Researchers and practitioners are encouraged to access the full dataset
-through the [ICJIA Research Hub](https://icjia.illinois.gov/researchhub).
+[^1]: UCR statistics represent crimes _known to police_ and may undercount total victimization.
 
----
+[^2]: Population denominators are intercensal estimates; final Census figures were not yet available.
+`,
+  },
+  {
+    title: 'Victim Service Data Quality in the InfoNet System',
+    abstract:
+      'InfoNet is a statewide administrative data system used by publicly funded domestic violence and sexual assault service providers in Illinois. This study assesses the quality and completeness of more than 25 years of victim service data and offers targeted recommendations for strengthening data collection and reporting.',
+    categories: ['victims'],
+    tags: ['InfoNet', 'victim services', 'domestic violence', 'data quality'],
+    authors: [
+      { title: 'Lucia F. Gonzalez, MA', description: 'Research Analyst, ICJIA' },
+      { title: 'Jennifer Hiselman, MA', description: 'Program Director, ICJIA' },
+    ],
+    body: () => `## Background
 
-[^1]: Uniform Crime Reporting statistics represent crimes _known to police_ and may undercount
-total victimization. NCVS estimates, while broader, carry their own sampling limitations.
+The InfoNet system contains over **25 years** of victim service data, including approximately
+900,000 domestic violence and 180,000 sexual assault client records.
 
-[^2]: Population denominators are intercensal estimates; final 2024 Census Bureau figures were
-not yet available at time of publication.
-`
+${bodyImage('Victim service providers rely on InfoNet to track client services')}
+
+## Assessing Data Quality
+
+We used internal consistency across related fields as the primary indicator of data quality.[^1]
+
+- Most InfoNet data fields are _consistent and complete_
+- Five recurring challenges relate to **data collection and reporting**
+- Client care appropriately takes precedence over data entry
+
+> "Responsible interpretation of administrative data depends on systematically assessing its quality
+> and completeness." — Study authors
+
+## Recommendations
+
+We offer targeted recommendations including potential [system upgrades](https://icjia.illinois.gov/researchhub) and
+expanded training on data collection standards. While findings are specific to InfoNet, the
+recommendations apply broadly to administrative data systems documenting sensitive services.[^2]
+
+[^1]: Internal consistency measures whether related fields agree, not whether client reports are accurate.
+
+[^2]: Standardized reporting must balance against the flexibility providers need for diverse practices.
+`,
+  },
+  {
+    title: 'Juvenile Diversion Outcomes in Illinois Courts',
+    abstract:
+      'This evaluation examines outcomes for youth referred to community-based diversion programs across Illinois judicial circuits. Drawing on three years of case-level data, it assesses recidivism, program completion, and disparities in referral, and identifies practices associated with successful diversion.',
+    categories: ['courts', 'corrections'],
+    tags: ['juvenile justice', 'diversion', 'recidivism', 'courts'],
+    authors: [
+      { title: 'Marcus T. Reedy, JD', description: 'Senior Policy Analyst, ICJIA' },
+      { title: 'Priya N. Anand, PhD', description: 'Evaluation Lead, ICJIA' },
+    ],
+    body: () => `## Overview
+
+Community-based diversion redirects eligible youth away from formal court processing and toward
+**locally administered services**. This evaluation covers _three years_ of case-level data across
+Illinois judicial circuits.
+
+${bodyImage('Community-based diversion programs serve youth across Illinois circuits')}
+
+## Outcomes
+
+Key outcomes observed across participating circuits:
+
+- Program completion exceeded **70 percent** in most circuits
+- 12-month recidivism was lower among completers than a matched comparison group
+- Referral rates varied substantially by circuit and demographic group
+
+> "Diversion works best when services are matched to need and delivered close to home."
+> — Evaluation Lead
+
+## Disparities and Practice
+
+We identified disparities in referral that merit attention from [court stakeholders](https://icjia.illinois.gov/researchhub).
+Circuits with structured eligibility screening and timely service linkage showed the strongest
+outcomes.[^1]
+
+1. Structured, written eligibility criteria
+2. Timely linkage to services (within 14 days)
+3. Sustained funding for community providers
+
+These findings can inform statewide efforts to expand effective, equitable diversion.[^2]
+
+[^1]: Comparison groups were matched on age, prior referrals, and offense category.
+
+[^2]: Circuit-level variation reflects both policy and the local availability of provider capacity.
+`,
+  },
+]
 
 export function buildSampleArticle(): Article {
+  const t = pick(TOPICS)
   return {
     ...blankArticle(),
-    title: TITLE,
-    slug: slugify(TITLE),
-    date: '2025-01-15',
-    type: 'researchReport',
-    categories: ['crimes', 'law enforcement'],
-    tags: ['crime trends', 'Illinois', 'UCR', 'violent crime', 'property crime', '2024'],
-    authors: [
-      { title: 'ICJIA Research Staff', description: 'Illinois Criminal Justice Information Authority' },
-    ],
-    abstract: ABSTRACT,
-    markdown: MARKDOWN,
-    // Media fields: null — author adds splash/thumbnail via the editor after reviewing the draft.
-    splash: null,
-    thumbnail: null,
+    title: t.title,
+    slug: slugify(t.title),
+    date: pick(['2025-01-15', '2025-03-02', '2024-11-20', '2025-05-09', '2025-02-18']),
+    type: pick(['researchReport', 'researchBulletin', 'article', 'evaluation']),
+    categories: t.categories,
+    tags: t.tags,
+    authors: t.authors,
+    abstract: t.abstract,
+    markdown: t.body(),
+    // Display-only demo images (id 0 → shown in the preview, dropped on Save by mediaIdForWrite).
+    splash: demoImage(1600, 800, `${t.title} — feature image`),
+    thumbnail: demoImage(600, 400, `${t.title} — thumbnail`),
     images: [],
-    mainfiletype: null,
+    mainfiletype: pick(MAINFILETYPE_OPTIONS),
     mainfile: null,
     extrafile: null,
-    doi: null,
-    citation: null,
-    funding: null,
+    doi: `10.13140/RG.${Math.floor(Math.random() * 9000 + 1000)}.${seed()}`,
+    citation: `ICJIA. (2025). ${t.title}. Illinois Criminal Justice Information Authority.`,
+    funding: 'Prepared with support from the Illinois Criminal Justice Information Authority.',
     hideFromBanner: false,
     external: false,
     publishedAt: null,

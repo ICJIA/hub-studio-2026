@@ -39,6 +39,20 @@ describe('buildReviewEmail', () => {
   it('throws when any reviewer address is invalid (→ the route returns 400)', () => {
     expect(() => buildReviewEmail({ ...base, reviewers: ['ok@x.com', 'bad-address'] })).toThrow(/email/i)
   })
+
+  it('escapes HTML-special chars in documentId in the HTML body (but not the text body)', () => {
+    const msg = buildReviewEmail({ ...base, documentId: 'a\'b"c<d>e&f' })
+    const escapedLink = 'https://studio.example.gov/preview/article/a&#39;b&quot;c&lt;d&gt;e&amp;f'
+    const rawLink = 'https://studio.example.gov/preview/article/a\'b"c<d>e&f'
+
+    // HTML body should contain escaped version
+    expect(msg.html).toContain(escapedLink)
+    // HTML body should NOT contain unescaped special chars from documentId
+    expect(msg.html).not.toContain('a\'b"c<d>e&f')
+
+    // Text body should contain the raw URL (plain-text link must be clickable)
+    expect(msg.text).toContain(rawLink)
+  })
 })
 
 describe('sendViaMailgun (direct HTTP, no SDK)', () => {

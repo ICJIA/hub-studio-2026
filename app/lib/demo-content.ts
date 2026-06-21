@@ -6,6 +6,7 @@ import type { Article, App, Dataset } from '~/types/content'
 import { blankArticle, blankApp, blankDataset } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
 import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
+import { sampleFigureUrl } from '~/lib/sample-figures'
 
 // ── Shared pools ──────────────────────────────────────────────────────────────
 
@@ -72,8 +73,9 @@ const ABSTRACTS = [
 
 // A LONG, deterministic lorem-ipsum article body with ACTIVE footnote references, generic
 // section headings (so the Table of Contents reads realistically), lists, a quote, bold/italic,
-// a link, and inline sample images. Every demo article gets one (varied by index) — so the
-// demo-list articles are full-length, just like the "Add sample article" topics.
+// a link, and inline sample FIGURES (synthetic charts/tables, NOT photos) with numbered
+// "*Figure N.*" captions. Every demo article gets one (varied by index) — so the demo-list
+// articles are full-length, just like the "Add sample article" topics.
 const LOREM_SENTENCES = [
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
   'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
@@ -89,8 +91,22 @@ function loremPara(i: number, sentences: number): string {
 
 const DEMO_SECTIONS = ['Introduction', 'Background', 'Methodology', 'Findings', 'Analysis', 'Discussion', 'Limitations', 'Conclusion'] as const
 
+// Per-figure caption stems (no leading "Figure" word — the number/label is added below). Picked by index.
+const FIGURE_CAPTIONS = [
+  'Placeholder counts by category for the sample reporting period',
+  'Annual placeholder rate trend across the sample study window',
+  'Distribution of sample records across placeholder service types',
+  'Summary statistics by subgroup, with placeholder means and intervals',
+  'Placeholder program enrollment by cohort year across the sample units',
+  'Series A versus Series B placeholder values by reporting period',
+] as const
+
 function buildLoremBody(i: number): string {
-  const figure = (n: number) => `![Sample figure ${n}](${sampleImageUrl(i + n * 50)} "Sample figure ${n} — placeholder")`
+  // Inline body FIGURE: a synthetic chart/table SVG (NOT a photo) as a block image followed by a
+  // numbered "*Figure N.*" markdown caption. Renderer is html:false, so the caption is plain
+  // markdown text, never a <figure>. Figures are numbered sequentially within the article.
+  const figure = (n: number) =>
+    `![Sample research figure ${n} — illustrative chart with placeholder data](${sampleFigureUrl(i + n * 50)})\n\n*Figure ${n}. ${FIGURE_CAPTIONS[(i + n) % FIGURE_CAPTIONS.length]} — illustrative sample data.*`
   const sections = DEMO_SECTIONS.map((heading, s) => {
     const blocks = [`## ${heading}`, `${loremPara(i + s, 3)}[^${s + 1}]`, loremPara(i + s + 1, 2)]
     if (s === 0) blocks.push('Key terms include **lorem ipsum** and _dolor sit amet_. See the [sample reference](https://example.com).')

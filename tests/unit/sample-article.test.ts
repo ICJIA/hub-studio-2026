@@ -77,10 +77,19 @@ describe('buildSampleArticle', () => {
     expect(article.extrafile).toBeNull()
   })
 
-  it('markdown embeds a hosted image (local bundled photo, never base64)', () => {
+  it('markdown embeds inline FIGURES (bundled chart/table SVGs under /figures/, never base64)', () => {
     const article = buildSampleArticle()
-    expect(article.markdown).toMatch(/!\[[^\]]*\]\(\/images\/demo\/[^)]+\)/)
+    expect(article.markdown).toMatch(/!\[[^\]]*\]\(\/images\/demo\/figures\/figure-[\w-]+\.svg\)/)
     expect(containsBase64(article.markdown)).toBe(false)
+  })
+
+  it('inline figures carry sequential "Figure N." captions (Figure 1, Figure 2, …)', () => {
+    const article = buildSampleArticle()
+    expect(article.markdown).toContain('*Figure 1.')
+    expect(article.markdown).toContain('*Figure 2.')
+    const figureImgs = article.markdown.match(/!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)/g) ?? []
+    expect(figureImgs.length).toBeGreaterThanOrEqual(1)
+    expect(figureImgs.length).toBeLessThanOrEqual(2)
   })
 
   it('fills every field for a one-click demo (type, doi, citation, funding, mainfiletype, categories, tags)', () => {

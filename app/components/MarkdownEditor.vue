@@ -20,6 +20,8 @@ import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
 import { handleImageFiles, buildImageMarkdown, type InsertedImage } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
+import { isDemoMode } from '~/lib/demo'
+import { sampleFigureRef } from '~/lib/sample-figures'
 import type { MediaRef } from '~/types/content'
 
 /** A tray entry for the body-image gallery (full mode only). */
@@ -281,6 +283,16 @@ onMounted(() => {
 
   content.addEventListener('paste', onPaste)
   content.addEventListener('drop', onDrop)
+
+  // Demo mode blocks uploads, so the "Body images" tray (full mode only) would stay empty. Seed it
+  // with a deterministic set of bundled sample FIGURES (charts/tables) so authors can click-to-Insert
+  // them into the body. Display-only refs (id 0) — never written. Non-demo behavior is unchanged.
+  if (!props.compact && isDemoMode() && trayImages.value.length === 0) {
+    for (let n = 0; n < 8; n++) {
+      const ref = sampleFigureRef(n)
+      addToTray(ref, ref.name ?? `figure-${n}.svg`)
+    }
+  }
 })
 
 // External modelValue changes → replace the document, without re-emitting.

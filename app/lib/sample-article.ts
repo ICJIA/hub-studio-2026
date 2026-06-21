@@ -14,6 +14,7 @@ import { blankArticle } from '~/lib/forms/blank-models'
 import { MAINFILETYPE_OPTIONS } from '~/lib/field-options'
 import { slugify } from '~/lib/slug'
 import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
+import { sampleFigureUrl } from '~/lib/sample-figures'
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
@@ -21,6 +22,8 @@ function pick<T>(arr: readonly T[]): T {
 
 /** Module-level counter so each demoImage/bodyImage call gets a stable, unique per-call seed. */
 let _imgCounter = 0
+/** Per-article figure number; reset to 0 at the start of each topic body() so captions read "Figure 1, 2…". */
+let _figureNum = 0
 
 /** A display-only Media Library ref (id 0 → never written; see mediaIdForWrite) with a real photo. */
 function demoImage(w: number, h: number, alt: string): MediaRef {
@@ -28,10 +31,16 @@ function demoImage(w: number, h: number, alt: string): MediaRef {
   // Full-width images (splash, ~1600w) use the larger `large_` format; narrower ones (thumbnail) use medium.
   return { id: 0, url: w >= 1000 ? sampleSplashUrl(n) : sampleImageUrl(n), name: `sample-feature-${n}.jpg`, alternativeText: alt, width: w, height: h, mime: 'image/jpeg' }
 }
-/** A hosted body image as a Markdown figure using a real Research Hub photo (saves fine — it's just markdown text). */
-function bodyImage(alt: string, w = 1000, h = 520): string {
+/**
+ * An inline body FIGURE (synthetic chart/table SVG, NOT a photo) rendered as a block image followed
+ * by a numbered Markdown caption line. The renderer is html:false, so the caption is plain markdown
+ * (`*Figure N. …*`) — never a <figure>. `caption` is a short description that should NOT repeat the
+ * word "Figure" (the number/label is supplied here). Figures are numbered sequentially per article.
+ */
+function bodyImage(alt: string, caption: string): string {
   const n = _imgCounter++
-  return `![${alt}](${sampleImageUrl(n)} "${alt}")`
+  const num = ++_figureNum
+  return `![${alt}](${sampleFigureUrl(n)})\n\n*Figure ${num}. ${caption} — illustrative sample data.*`
 }
 
 interface Topic {
@@ -71,7 +80,7 @@ const TOPICS: Topic[] = [
 
 **Lorem ipsum dolor sit amet**, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore _magna aliqua_. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[^1]
 
-${bodyImage('Sample figure — placeholder image for demonstration only')}
+${bodyImage('Bar chart of placeholder incident counts by category', 'Incident counts by category for the sample reporting period')}
 
 > "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
 > — Sample Placeholder, Demonstration Purposes Only
@@ -100,7 +109,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
 Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.[^4]
 
-${bodyImage('Sample figure — secondary placeholder image for demonstration only')}
+${bodyImage('Line chart of the placeholder annual rate trend', 'Annual rate per 1,000 across the placeholder study window')}
 
 ## Methodology
 
@@ -138,8 +147,6 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 - Duis aute irure dolor: placeholder value 3 (see also methodology section)
 
 ### Sample Regional Variation
-
-${bodyImage('Sample figure — tertiary placeholder image for demonstration only')}
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore **magna aliqua**. _Ut enim ad minim veniam_ quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.
 
@@ -221,7 +228,7 @@ The sample system contains over **placeholder years** of demonstration data — 
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. _Sed do eiusmod tempor incididunt_ ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
 
-${bodyImage('Sample figure — placeholder chart for demonstration only')}
+${bodyImage('Donut chart of placeholder case distribution by type', 'Distribution of sample records across placeholder service types')}
 
 ## Introduction
 
@@ -247,7 +254,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^2] **Sed do eiusmod te
 
 Prior sample research on placeholder data quality has consistently found that completeness and consistency vary by field sensitivity, staff capacity, and system design.[^3] _Fictitious fields_ — such as demonstration categories — are systematically underrepresented in this example. Fields with large free-text options show high placeholder variability.
 
-${bodyImage('Sample figure — data completeness placeholder')}
+${bodyImage('Table of placeholder summary statistics by subgroup', 'Summary statistics by subgroup, with placeholder means and intervals')}
 
 Placeholder research also shows that sample size moderates demonstration quality: larger placeholder organizations with dedicated sample entry staff produce more complete records.[^4]
 
@@ -286,8 +293,6 @@ Our placeholder methodology cannot assess the accuracy of data entered — only 
 ### Overall Sample Quality
 
 Sample placeholder data are, on balance, **remarkably complete and consistent** given the demonstration context. Thirty-eight of 47 analyzed placeholder fields met our sample threshold in the most recent demonstration period.
-
-${bodyImage('Sample figure — field completion placeholder chart')}
 
 The five sample challenge areas identified are:
 
@@ -377,7 +382,7 @@ The sample placeholder system is a strong demonstration asset. Five recurring pl
 
 Sample-based programs redirect eligible placeholder participants away from formal processing and toward **locally administered services** — counseling, mentoring, restorative practices, and skill-building. This evaluation covers _three years_ of placeholder case-level data (0000–0000) across 00 sample units that volunteered to participate in the demonstration initiative.
 
-${bodyImage('Sample figure — placeholder enrollment chart for demonstration only')}
+${bodyImage('Bar chart of placeholder program enrollment by cohort year', 'Program enrollment by cohort year across the sample units')}
 
 Key placeholder findings:
 
@@ -421,7 +426,7 @@ The sample initiative, launched in 0000 with demonstration support and placehold
 
 A substantial research base supports demonstration programs as effective, cost-efficient alternatives to formal processing for eligible participants.[^4] Meta-analyses consistently find reductions in recidivism of 00–00 percentage points compared to formal processing, with the strongest effects for first-time placeholder offenders.
 
-${bodyImage('Sample figure — placeholder recidivism comparison chart')}
+${bodyImage('Grouped bar chart comparing placeholder recidivism across two series', 'Placeholder recidivism for completers versus the matched comparison group')}
 
 Less well understood is what _makes_ demonstration programs work. The placeholder literature points to several candidate mechanisms: therapeutic alliance, family engagement, matching services to needs, and the absence of formal stigma.[^5]
 
@@ -484,8 +489,6 @@ Sample placeholder recidivism was **00.0 percent** among demonstration completer
 These findings are consistent with the range reported in placeholder meta-analyses and suggest that completion — not mere referral — is the active ingredient for sample recidivism reduction.[^4]
 
 ### Disparities in Placeholder Referral
-
-${bodyImage('Sample figure — placeholder referral disparity chart for demonstration only')}
 
 Analysis of who was referred to sample programs versus formally processed revealed meaningful placeholder disparities. Certain demonstration groups were referred to the sample program at a rate meaningfully lower than other groups with comparable placeholder offense histories and risk levels.
 
@@ -552,6 +555,8 @@ These findings can inform sample efforts to expand effective, equitable demonstr
 
 export function buildSampleArticle(): Article {
   const t = pick(TOPICS)
+  _figureNum = 0 // reset per-article figure numbering so captions read "Figure 1, Figure 2, …"
+  const markdown = t.body()
   return {
     ...blankArticle(),
     title: t.title,
@@ -562,7 +567,7 @@ export function buildSampleArticle(): Article {
     tags: t.tags,
     authors: t.authors,
     abstract: t.abstract,
-    markdown: t.body(),
+    markdown,
     // Display-only demo images (id 0 → shown in the preview, dropped on Save by mediaIdForWrite).
     splash: demoImage(1600, 800, `${t.title} — feature image`),
     thumbnail: demoImage(600, 400, `${t.title} — thumbnail`),

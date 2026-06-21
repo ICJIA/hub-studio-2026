@@ -5,6 +5,9 @@ import { isDemoSession } from '~/lib/demo'
 const auth = useAuthStore()
 const { logout } = useAuth()
 const demo = isDemoSession()
+// The demo banner is dismissable, but its dismissed state is intentionally NOT persisted — it
+// returns each session (a plain ref resets on reload). Light/dark IS persisted (colorMode storageKey).
+const showBanner = ref(true)
 const logoSrc = '/images/icjia-logo.png'
 
 const colorMode = useColorMode()
@@ -17,11 +20,20 @@ function toggleColorMode() {
   <div class="min-h-screen flex flex-col">
     <!-- Demo mode banner -->
     <div
-      v-if="demo"
-      class="w-full bg-amber-50 border-b border-amber-200 text-amber-800 text-xs text-center py-1.5 px-4"
+      v-if="demo && showBanner"
+      class="relative w-full bg-amber-100 border-b border-amber-300 text-amber-900 text-xs text-center py-2 pl-4 pr-10"
       role="status"
     >
-      Demo mode — sample content. Changes are kept only for this session and are never saved to the server.
+      <span class="font-semibold">Demo mode</span> — public demonstration with sample content. There is
+      <span class="font-semibold">no secure login</span>, and nothing you change is saved (all data is in-memory and resets each session).
+      <button
+        type="button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-amber-700 transition-colors hover:bg-amber-200/70 hover:text-amber-900"
+        aria-label="Dismiss demo notice"
+        @click="showBanner = false"
+      >
+        <UIcon name="i-lucide-x" class="size-4 block" />
+      </button>
     </div>
 
     <header class="sticky top-0 z-20 border-b border-default bg-default/85 backdrop-blur-md">

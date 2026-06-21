@@ -64,8 +64,11 @@ function signInAsDevAdmin() {
             Demonstration
           </p>
           <p class="mt-1 text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
-            This is a public, self-contained demonstration of the Hub Studio. There is no real sign-in,
-            all content is sample data held only in your browser, and nothing is ever saved to the server.
+            This is a public, self-contained demonstration of the Hub Studio. Because it is running in
+            <strong>demo mode</strong>, there is <strong>no secure, authenticated login</strong> — anyone may
+            enter, all content is sample data held only in your browser, and nothing is ever saved to the
+            server. In the live (non-demo) Studio, sign-in is a <strong>secure username&nbsp;/&nbsp;password
+            login</strong> through ICJIA's Strapi staff accounts.
           </p>
         </div>
         <UButton block size="lg" :loading="loading" icon="i-lucide-flask-conical" label="Enter the demo" @click="signInAsDevAdmin" />

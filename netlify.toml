@@ -1,8 +1,27 @@
-# Netlify deployment for the ICJIA Research Hub Studio (Nuxt 4 SPA).
-# Nuxt auto-detects Netlify and uses the Nitro `netlify` preset, emitting
-# static assets plus serverless functions (the publish build-hook proxy
-# will live there in a later phase). The Node version comes from .nvmrc.
+# netlify.toml — ICJIA Hub Studio 2.0 — PUBLIC DEMO deploy.
+#
+# A fully self-contained, pure-STATIC SPA demo: `nuxt generate` (NO serverless functions and
+# NO env secrets) with DEMO MODE turned on. Demo mode = demo login only, all content in-memory,
+# ZERO writes to the Strapi backend, no secrets. Safe to expose on a public URL.
+#
+# For a REAL (non-demo) production deploy later, switch command back to `npm run build`
+# (Nitro/Netlify functions for the publish + review-email server routes), leave
+# NUXT_PUBLIC_DEMO_MODE unset, and set the real secrets as Netlify environment variables.
 
 [build]
-  command = "npm run build"
-  publish = "dist"
+  command = "npm run generate && cp deploy/headers-demo.txt .output/public/_headers"
+  publish = ".output/public"        # Nuxt 4 static-generate output (confirmed on build)
+  [build.environment]
+    NUXT_PUBLIC_DEMO_MODE = "true"   # <-- the demo switch (studio.config.ts reads this)
+    NODE_VERSION = "20"
+
+# Client-side routing (ssr:false): serve the app shell for every path so deep links work.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers: the build command copies deploy/headers-demo.txt over the published `_headers`,
+# giving the DEMO a demo-appropriate CSP (script-src 'unsafe-inline' for Nuxt's static bootstrap
+# scripts; connect-src 'self' since the demo is fully self-contained). The strict PRODUCTION header
+# set in public/_headers is left untouched for the real launch.

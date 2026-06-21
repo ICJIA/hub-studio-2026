@@ -1,0 +1,21 @@
+# Response headers for the PUBLIC DEMO deploy only.
+#
+# The netlify.toml build command copies this over the published `_headers`
+# (`cp deploy/headers-demo.txt .output/public/_headers`) so the strict production header set in
+# public/_headers is left completely untouched for the real launch.
+#
+# Why the demo set differs from production:
+#   - The demo holds NO admin JWT and NO secrets, so the prod CSP's whole purpose (containing the
+#     blast radius of JWT theft) does not apply here. That makes `script-src 'unsafe-inline'`
+#     acceptable — and it is REQUIRED, because a static Nuxt SPA emits inline bootstrap scripts
+#     that `script-src 'self'` alone would block (this is the "verify on a deploy preview" finding).
+#   - The demo is fully self-contained — images, icons (bundled via @nuxt/icon clientBundle), and
+#     fonts (self-hosted via @nuxt/fonts) are all served from the origin — so `connect-src 'self'`
+#     is enough; it makes NO third-party requests at runtime.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'

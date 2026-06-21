@@ -37,7 +37,8 @@ function signInAsDevAdmin() {
 
 <template>
   <div class="min-h-screen flex items-center justify-center p-4">
-    <UCard class="w-full max-w-sm">
+    <div class="w-full max-w-sm space-y-3">
+      <UCard>
       <template #header>
         <div class="flex items-center gap-2.5">
           <span class="grid place-items-center size-9 rounded-lg bg-primary text-inverted text-xs font-bold tracking-tight">IC</span>
@@ -76,6 +77,12 @@ function signInAsDevAdmin() {
           />
         </div>
       </template>
-    </UCard>
+      </UCard>
+
+      <!-- No self-signup: accounts are provisioned by Research & Analysis in Strapi. -->
+      <p class="text-center text-xs text-muted leading-relaxed">
+        Don't have a Hub Studio 2.0 ID? Contact <span class="font-medium text-toned">Research &amp; Analysis</span> for more information.
+      </p>
+    </div>
   </div>
 </template>

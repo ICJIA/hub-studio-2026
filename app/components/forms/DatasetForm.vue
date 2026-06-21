@@ -22,6 +22,7 @@ const toast = useToast()
 const model = reactive<Dataset>(props.initial ? { ...props.initial } : blankDataset())
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
+const previewOpen = ref(false)
 
 const sourceColumns = [
   { key: 'title', label: 'Title' },
@@ -79,42 +80,70 @@ defineExpose({ submit, setField, errors, model })
 </script>
 
 <template>
-  <UForm :state="model" class="space-y-5" @submit.prevent="submit">
+  <UForm :state="model" class="space-y-6" @submit.prevent="submit">
+    <div class="flex justify-end">
+      <UButton variant="outline" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+    </div>
+
     <TextField v-model="model.title" label="Title" />
-    <DateField v-model="model.date" label="Date" />
-    <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
-    <ChipsField v-model="model.tags" label="Tags" />
-    <TextField v-model="model.description" label="Description" />
-    <SelectField v-model="model.unit" label="Unit" :options="UNIT_OPTIONS" />
 
-    <UFormField label="Time period">
-      <div class="flex gap-2">
-        <USelect v-model="tpYeartype" :items="(TIMEPERIOD_TYPE_OPTIONS as readonly string[]).map((o) => ({ label: o, value: o }))" placeholder="Type" />
-        <UInput v-model="tpYearmin" placeholder="From (yyyy)" />
-        <UInput v-model="tpYearmax" placeholder="To (yyyy)" />
+    <div class="grid gap-6 lg:grid-cols-3 items-start">
+      <!-- Writing column -->
+      <div class="lg:col-span-2 space-y-5">
+        <TextField v-model="model.description" label="Description" />
+        <RepeatableField v-model="model.variables" label="Variables" :columns="variableColumns" :paste-parser="parseVariables" />
+        <RepeatableField v-model="model.sources" label="Sources" :columns="sourceColumns" :paste-parser="parseSources" />
+        <UFormField label="Notes (one per line)">
+          <UTextarea v-model="notesText" :rows="3" class="w-full" />
+        </UFormField>
       </div>
-    </UFormField>
 
-    <RepeatableField v-model="model.sources" label="Sources" :columns="sourceColumns" :paste-parser="parseSources" />
-    <RepeatableField v-model="model.variables" label="Variables" :columns="variableColumns" :paste-parser="parseVariables" />
-
-    <UFormField label="Notes (one per line)">
-      <UTextarea v-model="notesText" :rows="3" class="w-full" />
-    </UFormField>
-
-    <UFormField label="Project dataset">
-      <USwitch v-model="model.project" />
-    </UFormField>
-
-    <MediaField v-model="model.datafile" label="Data file" />
-
-    <RelationList label="Linked apps" :items="model.apps" />
-    <RelationList label="Linked articles" :items="model.articles" />
+      <!-- Details sidebar -->
+      <UCard class="lg:col-span-1">
+        <template #header><h3 class="font-medium text-highlighted">Details</h3></template>
+        <div class="space-y-5">
+          <DateField v-model="model.date" label="Date" />
+          <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
+          <ChipsField v-model="model.tags" label="Tags" />
+          <SelectField v-model="model.unit" label="Unit" :options="UNIT_OPTIONS" />
+          <UFormField label="Time period">
+            <div class="flex gap-2">
+              <USelect v-model="tpYeartype" :items="(TIMEPERIOD_TYPE_OPTIONS as readonly string[]).map((o) => ({ label: o, value: o }))" placeholder="Type" />
+              <UInput v-model="tpYearmin" placeholder="From (yyyy)" />
+              <UInput v-model="tpYearmax" placeholder="To (yyyy)" />
+            </div>
+          </UFormField>
+          <UFormField label="Project dataset">
+            <USwitch v-model="model.project" />
+          </UFormField>
+          <MediaField v-model="model.datafile" label="Data file" />
+          <RelationList label="Linked apps" :items="model.apps" />
+          <RelationList label="Linked articles" :items="model.articles" />
+        </div>
+      </UCard>
+    </div>
 
     <ul v-if="errors.length" class="text-sm text-error list-disc pl-5" role="alert">
       <li v-for="(e, i) in errors" :key="i">{{ e.field }}: {{ e.message }}</li>
     </ul>
 
-    <UButton type="submit" :loading="saving" label="Save draft" />
+    <div class="flex items-center gap-3">
+      <UButton type="submit" :loading="saving" label="Save draft" />
+      <UButton variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+    </div>
+
+    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">
+      <template #content>
+        <div class="flex max-h-[88vh] flex-col bg-white">
+          <div class="flex items-center justify-between border-b border-default px-4 py-2">
+            <span class="text-sm font-medium text-gray-700">Published preview</span>
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
+          </div>
+          <div class="overflow-y-auto p-6">
+            <PublishedDatasetPreview :dataset="model" />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </UForm>
 </template>

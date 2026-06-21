@@ -106,3 +106,28 @@
 }
 .published-article .published-authors { font-weight: 900; color: #1565c0; }
 .published-article .published-rule { border: 0; border-top: 1px solid #e0e0e0; margin: 1.25rem 0 2rem; }
+
+/* ---------- App / Dataset preview extras ---------- */
+/* "Open app" and "Download data" CTA links */
+.published-open-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: #1565c0;
+  padding: 0.45rem 1.25rem;
+  border-radius: 4px;
+  text-decoration: none;
+}
+.published-open-link:hover { background: #0d47a1; }
+
+/* Labelled fact rows (unit / time period) in the Dataset preview */
+.published-dataset-facts { margin-top: 1.5rem; }
+.published-dataset-facts dl { display: grid; gap: 0.4rem; }
+.published-fact-row { display: flex; gap: 1rem; font-family: 'Oswald', sans-serif; font-size: 15px; }
+.published-fact-row dt { font-weight: 600; color: rgba(0, 0, 0, 0.6); text-transform: uppercase; letter-spacing: 0.03em; min-width: 7rem; }
+.published-fact-row dd { color: rgba(0, 0, 0, 0.87); margin: 0; }

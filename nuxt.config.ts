@@ -9,7 +9,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', '~/assets/css/prose-preview.css'],
   fonts: {
     families: [
-      // Serve the editor's intended typeface; the vendored CM themes request 'JetBrains Mono'.
+      // The UI typeface — modern, highly legible. Used as --font-sans in main.css.
+      { name: 'Inter', provider: 'google', weights: [400, 500, 600, 700], styles: ['normal'] },
+      // The editor's intended monospace; the vendored CM themes request 'JetBrains Mono'.
       { name: 'JetBrains Mono', provider: 'google', weights: [400, 500, 700], styles: ['normal'] },
     ],
   },
@@ -25,6 +27,15 @@ export default defineNuxtConfig({
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
     },
   },
-  devtools: { enabled: true },
+  // A clean, controlled light theme (the dark/system default produced a low-contrast
+  // mismatch; the Studio is a government content tool — light is the right default).
+  colorMode: { preference: 'light', fallback: 'light' },
+  app: {
+    head: {
+      htmlAttrs: { lang: 'en' },
+      title: 'ICJIA Research Hub Studio',
+    },
+  },
+  devtools: { enabled: false },
   compatibilityDate: '2026-06-19',
 })

@@ -1,2 +1,58 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ICJIA Research Hub Studio — theme
+   Modern, calm, government-grade: the Inter UI typeface, a soft slate canvas
+   with crisp elevated white surfaces, gently rounded corners, and text tokens
+   tuned one neutral step DARKER than the Nuxt UI defaults so secondary copy
+   clears WCAG AA contrast on the page. Colour roles live in app/app.config.ts.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: 'Inter', 'InterVariable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* ---- Light mode (default) ---- */
+:root {
+  --ui-radius: 0.625rem;
+
+  /* Darker primary so WHITE text on solid primary buttons / the brand mark clears AA
+     (blue-500 ≈ 3.1:1 fails; blue-600 ≈ 4.7:1 passes). Applies app-wide. */
+  --ui-primary: var(--ui-color-primary-600);
+
+  /* Text — one step darker than stock (dimmed-400 / muted-500 / toned-600 /
+     text-700 / highlighted-900) so muted/secondary text clears AA on the canvas. */
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-600);
+  --ui-text-toned: var(--ui-color-neutral-700);
+  --ui-text: var(--ui-color-neutral-800);
+  --ui-text-highlighted: var(--ui-color-neutral-900);
+
+  /* Surfaces — white cards/header on a faint slate canvas (quiet depth). */
+  --ui-bg: #ffffff;
+  --ui-bg-muted: var(--ui-color-neutral-100);
+  --ui-border: var(--ui-color-neutral-200);
+  --ui-border-muted: var(--ui-color-neutral-100);
+  --ui-border-accented: var(--ui-color-neutral-300);
+}
+
+/* ---- Dark mode (kept high-contrast too) ---- */
+.dark {
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-400);
+  --ui-text-toned: var(--ui-color-neutral-300);
+  --ui-text: var(--ui-color-neutral-200);
+  --ui-text-highlighted: #ffffff;
+}
+
+/* The page canvas — a soft slate so the white header and cards lift off it. */
+body { background-color: var(--ui-color-neutral-50); }
+.dark body { background-color: var(--ui-color-neutral-950); }
+
+/* Always-visible keyboard focus ring (accessibility). */
+:where(a, button, input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-color-blue-500);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

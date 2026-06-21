@@ -39,8 +39,13 @@ function signInAsDevAdmin() {
   <div class="min-h-screen flex items-center justify-center p-4">
     <UCard class="w-full max-w-sm">
       <template #header>
-        <h1 class="text-lg font-semibold">{{ APP_NAME }}</h1>
-        <p class="text-sm text-muted">Sign in to continue</p>
+        <div class="flex items-center gap-2.5">
+          <span class="grid place-items-center size-9 rounded-lg bg-primary text-inverted text-xs font-bold tracking-tight">IC</span>
+          <div>
+            <h1 class="text-base font-semibold text-highlighted leading-tight">{{ APP_NAME }}</h1>
+            <p class="text-sm text-muted">Sign in to continue</p>
+          </div>
+        </div>
       </template>
 
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
@@ -56,7 +61,7 @@ function signInAsDevAdmin() {
       <template v-if="showDevAdmin" #footer>
         <div class="space-y-2 text-xs text-muted">
           <p>
-            <span class="font-medium text-warning">Dev only:</span>
+            <span class="font-semibold text-amber-700">Dev only:</span>
             fixed admin (<code>{{ DEV_ADMIN_IDENTIFIER }}</code> / <code>{{ DEV_ADMIN_PASSWORD }}</code>),
             no Strapi account needed.
           </p>

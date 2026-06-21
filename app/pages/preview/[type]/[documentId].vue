@@ -43,7 +43,8 @@ async function copyShareLink() {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto">
+  <!-- the page has the sticky Studio header (~4rem), so the TOC sticks below it -->
+  <div class="max-w-6xl mx-auto" style="--published-toc-top: 5rem">
     <p v-if="loading" class="text-muted">Loading…</p>
     <template v-else-if="entry">
       <div class="flex items-center justify-between gap-4 mb-5">

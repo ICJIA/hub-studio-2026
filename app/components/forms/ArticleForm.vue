@@ -67,7 +67,7 @@ defineExpose({ submit, setField, errors, model })
     <div class="grid gap-6 lg:grid-cols-3 items-start">
       <!-- Writing column -->
       <div class="lg:col-span-2 space-y-5">
-        <TextField v-model="model.abstract" label="Abstract" />
+        <MarkdownField :model-value="model.abstract ?? ''" label="Abstract" compact @update:model-value="model.abstract = $event" />
         <RepeatableField v-model="model.authors" label="Authors" :columns="authorColumns" :paste-parser="parseAuthors" />
         <MarkdownField v-model="model.markdown" label="Body (Markdown)" />
       </div>

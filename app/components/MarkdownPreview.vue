@@ -7,10 +7,10 @@
 -->
 <script setup lang="ts">
 import { computed } from '#imports'
-import { renderMarkdown } from '~/lib/markdown'
+import { renderMarkdown, renderInline } from '~/lib/markdown'
 
-const props = defineProps<{ source: string }>()
-const html = computed(() => renderMarkdown(props.source))
+const props = defineProps<{ source: string; inline?: boolean }>()
+const html = computed(() => props.inline ? renderInline(props.source) : renderMarkdown(props.source))
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderMarkdown } from '~/lib/markdown'
+import { renderMarkdown, renderInline } from '~/lib/markdown'
 
 describe('renderMarkdown', () => {
   it('renders a heading and a link', () => {
@@ -36,5 +36,37 @@ describe('renderMarkdown', () => {
 
   it('renders a GFM table to <table> with <td> cells', () => {
     expect(renderMarkdown('| a | b |\n|---|---|\n| 1 | 2 |')).toMatch(/<table/)
+  })
+
+  it('opens links in a new window (target=_blank, rel=noopener noreferrer)', () => {
+    const html = renderMarkdown('[x](https://y)')
+    expect(html).toMatch(/target="_blank"/)
+    expect(html).toMatch(/rel="noopener noreferrer"/)
+  })
+})
+
+describe('renderInline', () => {
+  it('does NOT produce a footnote ref for [^1] notation', () => {
+    const html = renderInline('text [^1]')
+    expect(html).not.toMatch(/class="footnote-ref"/)
+    expect(html).not.toMatch(/class="footnotes"/)
+  })
+
+  it('opens links in a new window (target=_blank, rel=noopener noreferrer)', () => {
+    const html = renderInline('[x](https://y)')
+    expect(html).toMatch(/target="_blank"/)
+    expect(html).toMatch(/rel="noopener noreferrer"/)
+  })
+
+  it('renders bold, italic, inline code, and links', () => {
+    const html = renderInline('**bold** _italic_ `code` [link](https://example.com)')
+    expect(html).toMatch(/<strong>bold<\/strong>/)
+    expect(html).toMatch(/<em>italic<\/em>/)
+    expect(html).toMatch(/<code>code<\/code>/)
+    expect(html).toMatch(/<a href="https:\/\/example\.com"/)
+  })
+
+  it('returns an empty string for empty input', () => {
+    expect(renderInline('')).toBe('')
   })
 })

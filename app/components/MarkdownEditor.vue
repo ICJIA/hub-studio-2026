@@ -21,7 +21,7 @@ import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
 import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
 
-const props = defineProps<{ modelValue: string; label?: string }>()
+const props = defineProps<{ modelValue: string; label?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
 const labelId = useId()
@@ -174,6 +174,21 @@ const toolbarGroups: { icon: string; label: string; run: () => void }[][] = [
   ],
 ]
 
+/** Compact toolbar: inline formatting only (Bold, Italic, Inline code, Link, Undo, Redo).
+ *  No headings, no lists/blocks, no image insert. Used when compact prop is true. */
+const compactToolbarGroups: { icon: string; label: string; run: () => void }[][] = [
+  [
+    { icon: 'i-lucide-bold', label: 'Bold', run: toggleBold },
+    { icon: 'i-lucide-italic', label: 'Italic', run: toggleItalic },
+    { icon: 'i-lucide-code', label: 'Inline code', run: toggleInlineCode },
+    { icon: 'i-lucide-link', label: 'Link', run: insertLink },
+  ],
+  [
+    { icon: 'i-lucide-undo-2', label: 'Undo', run: undo },
+    { icon: 'i-lucide-redo-2', label: 'Redo', run: redo },
+  ],
+]
+
 /** Heading levels collapsed into a dropdown menu (H1–H3). */
 const headingItems: DropdownMenuItem[][] = [[
   { label: 'Heading 1', icon: 'i-lucide-heading-1', onSelect: () => insertHeading(1) },
@@ -241,35 +256,51 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
     <label v-if="label" :id="labelId" class="block text-sm font-medium mb-1">{{ label }}</label>
     <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
       <div class="flex items-center gap-0.5 flex-wrap rounded-md border border-default bg-elevated/40 px-1 py-0.5">
-        <!-- Inline formatting -->
-        <UButton
-          v-for="btn in toolbarGroups[0]"
-          :key="btn.label"
-          size="xs" variant="ghost" color="neutral"
-          :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
-          @click="btn.run"
-        />
-        <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
-        <!-- Headings dropdown (H1–H3) -->
-        <UDropdownMenu :items="headingItems">
+        <!-- Compact mode: inline formatting only (Bold, Italic, Inline code, Link, Undo, Redo) -->
+        <template v-if="compact">
+          <template v-for="(group, gi) in compactToolbarGroups" :key="gi">
+            <span v-if="gi > 0" class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+            <UButton
+              v-for="btn in group"
+              :key="btn.label"
+              size="xs" variant="ghost" color="neutral"
+              :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
+              @click="btn.run"
+            />
+          </template>
+        </template>
+        <!-- Full mode: inline formatting + headings dropdown + lists/blocks + insert + history -->
+        <template v-else>
+          <!-- Inline formatting -->
           <UButton
-            size="xs" variant="ghost" color="neutral"
-            icon="i-lucide-heading" trailing-icon="i-lucide-chevron-down"
-            aria-label="Heading" title="Heading"
-          />
-        </UDropdownMenu>
-        <!-- Lists / blocks, insert, history -->
-        <template v-for="(group, gi) in toolbarGroups.slice(1)" :key="gi">
-          <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
-          <UButton
-            v-for="btn in group"
+            v-for="btn in toolbarGroups[0]"
             :key="btn.label"
             size="xs" variant="ghost" color="neutral"
             :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
             @click="btn.run"
           />
+          <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+          <!-- Headings dropdown (H1–H3) -->
+          <UDropdownMenu :items="headingItems">
+            <UButton
+              size="xs" variant="ghost" color="neutral"
+              icon="i-lucide-heading" trailing-icon="i-lucide-chevron-down"
+              aria-label="Heading" title="Heading"
+            />
+          </UDropdownMenu>
+          <!-- Lists / blocks, insert, history -->
+          <template v-for="(group, gi) in toolbarGroups.slice(1)" :key="gi">
+            <span class="w-px h-5 bg-border mx-1" aria-hidden="true" />
+            <UButton
+              v-for="btn in group"
+              :key="btn.label"
+              size="xs" variant="ghost" color="neutral"
+              :icon="btn.icon" :aria-label="btn.label" :title="btn.label"
+              @click="btn.run"
+            />
+          </template>
+          <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
         </template>
-        <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
       </div>
       <UButton
         size="xs"
@@ -283,10 +314,10 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
     </div>
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
     <div class="grid gap-3" :class="showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
-      <div ref="host" data-test="cm-host" class="cm-host border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
-      <div v-if="showPreview" class="markdown-preview-pane rounded border border-default bg-elevated/30 p-4 overflow-auto">
+      <div ref="host" data-test="cm-host" :class="compact ? 'cm-host cm-host--compact' : 'cm-host'" class="border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
+      <div v-if="showPreview" :class="compact ? 'markdown-preview-pane markdown-preview-pane--compact' : 'markdown-preview-pane'" class="rounded border border-default bg-elevated/30 p-4 overflow-auto">
         <div class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Preview</div>
-        <MarkdownPreview :source="modelValue" />
+        <MarkdownPreview :source="modelValue" :inline="compact" />
       </div>
     </div>
   </div>
@@ -296,9 +327,12 @@ defineExpose({ __emitChange: emitChange, __handleFiles: handleFiles, __uploadErr
 /* Give the CodeMirror host a roomy authoring height; CM owns its inner DOM/theme. */
 .cm-host :deep(.cm-editor) { min-height: 32rem; }
 .cm-host :deep(.cm-scroller) { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+/* Compact mode: a shorter editor for abstract/summary fields. */
+.cm-host--compact :deep(.cm-editor) { min-height: 9rem; }
 /* The live preview pane matches the editor height so the two read as a pair. The published
    prose is em-relative off a 20px base; scale it down here so it fits the narrow split pane
    (the full-size published view is the form's "Preview as published" modal). */
 .markdown-preview-pane { min-height: 32rem; }
+.markdown-preview-pane--compact { min-height: 9rem; }
 .markdown-preview-pane :deep(.prose-preview) { font-size: 14px; }
 </style>

@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { computed } from '#imports'
 import type { Article } from '~/types/content'
-import { renderMarkdown } from '~/lib/markdown'
+import { renderMarkdown, renderInline } from '~/lib/markdown'
 import { safeHref } from '~/lib/safe-url'
 
 const props = defineProps<{ article: Partial<Article> }>()
@@ -89,7 +89,8 @@ function printArticle() {
 
         <h1 class="published-title">{{ article.title || 'Untitled article' }}</h1>
 
-        <div v-if="article.abstract" class="published-abstract">{{ article.abstract }}</div>
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted: renderInline runs markdown-it with html:false -->
+        <div v-if="article.abstract" class="published-abstract" v-html="renderInline(article.abstract)" />
 
         <div v-if="authorLine || article.date" class="published-byline">
           <span v-if="authorLine" class="published-authors">{{ authorLine }}</span>

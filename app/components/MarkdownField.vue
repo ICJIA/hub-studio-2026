@@ -7,7 +7,7 @@
   (the only mounter) and the other forms are untouched. The live preview remains OUR renderMarkdown.
 -->
 <script setup lang="ts">
-const props = defineProps<{ modelValue: string; label?: string }>()
+const props = defineProps<{ modelValue: string; label?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
 const value = computed({
@@ -17,5 +17,5 @@ const value = computed({
 </script>
 
 <template>
-  <MarkdownEditor v-model="value" :label="label" />
+  <MarkdownEditor v-model="value" :label="label" :compact="compact" />
 </template>

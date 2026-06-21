@@ -27,6 +27,8 @@ const listType = ref<'article' | 'app' | 'dataset'>('article')
           <UButton to="/create/app" variant="subtle" label="New app" />
           <UButton to="/create/dataset" variant="subtle" label="New dataset" />
           <UButton to="/create/article?sample=1" variant="soft" color="primary" label="Add sample article" />
+          <UButton to="/create/app?sample=1" variant="soft" color="primary" label="Add sample app" />
+          <UButton to="/create/dataset?sample=1" variant="soft" color="primary" label="Add sample dataset" />
         </div>
       </UCard>
 

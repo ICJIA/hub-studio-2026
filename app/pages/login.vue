@@ -123,10 +123,11 @@ function onDemoSignIn() {
       </template>
       </UCard>
 
-      <!-- No self-signup: accounts are provisioned by Research & Analysis in Strapi. Hidden in the
-           public demo (there is no real account to provision). -->
-      <p v-if="!demoMode" class="text-center text-xs text-muted leading-relaxed">
-        Don't have a Hub Studio 2.0 ID? Contact <span class="font-medium text-toned">Research &amp; Analysis</span> for more information.
+      <!-- No self-signup: accounts are vetted & provisioned by Research & Analysis in Strapi.
+           Shown in EVERY build (incl. the demo) so it's clear there are no live signups. -->
+      <p class="text-center text-xs text-muted leading-relaxed">
+        New user and need a Hub Studio sign-in? Please contact <span class="font-medium text-toned">Research &amp; Analysis</span>.
+        There are no live signups — each new account is vetted &amp; provisioned by R&amp;A.
       </p>
     </div>
   </div>

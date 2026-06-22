@@ -1,0 +1,259 @@
+/**
+ * Guided Tour — base highlight styles
+ * PORTED from ICJIA/nuxt-guided-tour `runtime/styles/tour.css` (copied into the app, no module).
+ *
+ * Applied to elements the composable marks with `data-tour-active="true"` (and, for
+ * overflow:hidden elements, `data-tour-overflow="true"`). All colors are CSS custom properties
+ * so they can be tuned by overriding `--tour-*`. Imported via nuxt.config's css array.
+ */
+
+:root {
+  /* ---- Primary colors ---- */
+  --tour-highlight: #22c55e;
+  --tour-highlight-bright: #4ade80;
+
+  /* ---- Ring geometry ---- */
+  --tour-border-width: 5px;
+  --tour-border-radius: 10px;
+  --tour-ring-offset: -8px;
+  --tour-ring-spread: 8px;
+  --tour-ring-spread-pulse: 12px;
+
+  /* ---- Glow intensities (0–100, used as color-mix percentages) ---- */
+  --tour-glow-ring-opacity: 60%;
+  --tour-glow-near-opacity: 90%;
+  --tour-glow-mid-opacity: 60%;
+  --tour-glow-far-opacity: 30%;
+  --tour-glow-inset-opacity: 20%;
+
+  /* ---- Glow radii ---- */
+  --tour-glow-near: 40px;
+  --tour-glow-mid: 80px;
+  --tour-glow-far: 120px;
+  --tour-glow-inset: 25px;
+
+  /* ---- Animation ---- */
+  --tour-pulse-duration: 1s;
+  --tour-pulse-scale: 1.03;
+
+  /* ---- Dark mode overrides ---- */
+  --tour-dark-highlight: var(--tour-highlight);
+  --tour-dark-highlight-bright: var(--tour-highlight-bright);
+  --tour-dark-ring-spread: 10px;
+  --tour-dark-ring-spread-pulse: 14px;
+  --tour-dark-pulse-scale: 1.04;
+
+  /* ---- Focus ring ---- */
+  --tour-focus-width: 3px;
+  --tour-focus-offset: 6px;
+
+  /* ---- Backdrop ---- */
+  --tour-backdrop-color: rgba(0, 0, 0, 0.5);
+
+  /* ---- Z-index layers ---- */
+  --tour-z-popover: 99999;
+  --tour-z-highlight: 9998;
+}
+
+/* =============================================================================
+   TOUR HIGHLIGHT RING — applied to elements with data-tour-active="true"
+   ============================================================================= */
+
+[data-tour-active='true'] {
+  position: relative;
+  z-index: var(--tour-z-highlight);
+}
+
+[data-tour-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: var(--tour-ring-offset);
+  border: var(--tour-border-width) solid var(--tour-highlight);
+  border-radius: var(--tour-border-radius);
+  box-shadow:
+    0 0 0 var(--tour-ring-spread)
+      color-mix(in srgb, var(--tour-highlight-bright) var(--tour-glow-ring-opacity), transparent),
+    0 0 var(--tour-glow-near)
+      color-mix(in srgb, var(--tour-highlight) var(--tour-glow-near-opacity), transparent),
+    0 0 var(--tour-glow-mid)
+      color-mix(in srgb, var(--tour-highlight) var(--tour-glow-mid-opacity), transparent),
+    0 0 var(--tour-glow-far)
+      color-mix(in srgb, var(--tour-highlight) var(--tour-glow-far-opacity), transparent),
+    inset 0 0 var(--tour-glow-inset)
+      color-mix(in srgb, var(--tour-highlight-bright) var(--tour-glow-inset-opacity), transparent);
+  pointer-events: none;
+  animation: tour-highlight-pulse var(--tour-pulse-duration) ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes tour-highlight-pulse {
+  0%,
+  100% {
+    border-color: var(--tour-highlight);
+    box-shadow:
+      0 0 0 var(--tour-ring-spread)
+        color-mix(in srgb, var(--tour-highlight-bright) var(--tour-glow-ring-opacity), transparent),
+      0 0 var(--tour-glow-near)
+        color-mix(in srgb, var(--tour-highlight) var(--tour-glow-near-opacity), transparent),
+      0 0 var(--tour-glow-mid)
+        color-mix(in srgb, var(--tour-highlight) var(--tour-glow-mid-opacity), transparent),
+      0 0 var(--tour-glow-far)
+        color-mix(in srgb, var(--tour-highlight) var(--tour-glow-far-opacity), transparent),
+      inset 0 0 var(--tour-glow-inset)
+        color-mix(in srgb, var(--tour-highlight-bright) var(--tour-glow-inset-opacity), transparent);
+    transform: scale(1);
+  }
+  50% {
+    border-color: var(--tour-highlight-bright);
+    box-shadow:
+      0 0 0 var(--tour-ring-spread-pulse)
+        color-mix(in srgb, var(--tour-highlight-bright) 70%, transparent),
+      0 0 60px var(--tour-highlight-bright),
+      0 0 100px color-mix(in srgb, var(--tour-highlight) 80%, transparent),
+      0 0 150px color-mix(in srgb, var(--tour-highlight) 40%, transparent),
+      inset 0 0 35px color-mix(in srgb, var(--tour-highlight-bright) 30%, transparent);
+    transform: scale(var(--tour-pulse-scale));
+  }
+}
+
+/* =============================================================================
+   DARK MODE ADJUSTMENTS
+   ============================================================================= */
+
+.dark [data-tour-active='true']::before {
+  border-color: var(--tour-dark-highlight-bright);
+  box-shadow:
+    0 0 0 var(--tour-dark-ring-spread)
+      color-mix(in srgb, var(--tour-dark-highlight-bright) 70%, transparent),
+    0 0 50px var(--tour-dark-highlight-bright),
+    0 0 100px color-mix(in srgb, var(--tour-dark-highlight) 80%, transparent),
+    0 0 150px color-mix(in srgb, var(--tour-dark-highlight) 40%, transparent),
+    inset 0 0 30px color-mix(in srgb, var(--tour-dark-highlight-bright) 25%, transparent);
+  animation: tour-highlight-pulse-dark var(--tour-pulse-duration) ease-in-out infinite;
+}
+
+@keyframes tour-highlight-pulse-dark {
+  0%,
+  100% {
+    border-color: var(--tour-dark-highlight-bright);
+    box-shadow:
+      0 0 0 var(--tour-dark-ring-spread)
+        color-mix(in srgb, var(--tour-dark-highlight-bright) 70%, transparent),
+      0 0 50px var(--tour-dark-highlight-bright),
+      0 0 100px color-mix(in srgb, var(--tour-dark-highlight) 80%, transparent),
+      0 0 150px color-mix(in srgb, var(--tour-dark-highlight) 40%, transparent),
+      inset 0 0 30px color-mix(in srgb, var(--tour-dark-highlight-bright) 25%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    border-color: var(--tour-dark-highlight-bright);
+    box-shadow:
+      0 0 0 var(--tour-dark-ring-spread-pulse)
+        color-mix(in srgb, var(--tour-dark-highlight-bright) 80%, transparent),
+      0 0 70px var(--tour-dark-highlight-bright),
+      0 0 130px color-mix(in srgb, var(--tour-dark-highlight-bright) 90%, transparent),
+      0 0 180px color-mix(in srgb, var(--tour-dark-highlight) 50%, transparent),
+      inset 0 0 40px color-mix(in srgb, var(--tour-dark-highlight-bright) 35%, transparent);
+    transform: scale(var(--tour-dark-pulse-scale));
+  }
+}
+
+/* =============================================================================
+   REDUCED MOTION (WCAG 2.3.3)
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tour-active='true']::before {
+    animation: none;
+    transform: none;
+  }
+
+  .dark [data-tour-active='true']::before {
+    animation: none;
+    transform: none;
+  }
+
+  [data-tour-overflow='true'][data-tour-active='true'] {
+    animation: none;
+  }
+
+  .dark [data-tour-overflow='true'][data-tour-active='true'] {
+    animation: none;
+  }
+}
+
+/* =============================================================================
+   FOCUS VISIBLE OVERRIDE
+   ============================================================================= */
+
+[data-tour-active='true']:focus-visible {
+  outline: var(--tour-focus-width) solid var(--tour-highlight);
+  outline-offset: var(--tour-focus-offset);
+}
+
+[data-tour-active='true']:focus-visible::before {
+  border-color: transparent;
+}
+
+.dark [data-tour-active='true']:focus-visible {
+  outline-color: var(--tour-dark-highlight-bright);
+}
+
+/* =============================================================================
+   OVERFLOW ELEMENT HIGHLIGHTS
+   For elements with overflow:hidden, use outline instead of ::before (outline is not clipped by
+   overflow). Auto-detected by the useGuidedTour composable (sets data-tour-overflow="true").
+   ============================================================================= */
+
+[data-tour-overflow='true'][data-tour-active='true'] {
+  outline: 6px solid var(--tour-highlight) !important;
+  outline-offset: -6px;
+  box-shadow:
+    inset 0 0 40px color-mix(in srgb, var(--tour-highlight-bright) 40%, transparent),
+    0 0 60px color-mix(in srgb, var(--tour-highlight) 70%, transparent);
+  animation: tour-overflow-pulse var(--tour-pulse-duration) ease-in-out infinite;
+}
+
+[data-tour-overflow='true'][data-tour-active='true']::before {
+  display: none;
+}
+
+@keyframes tour-overflow-pulse {
+  0%,
+  100% {
+    outline-color: var(--tour-highlight);
+    box-shadow:
+      inset 0 0 40px color-mix(in srgb, var(--tour-highlight-bright) 40%, transparent),
+      0 0 60px color-mix(in srgb, var(--tour-highlight) 70%, transparent);
+  }
+  50% {
+    outline-color: var(--tour-highlight-bright);
+    box-shadow:
+      inset 0 0 60px color-mix(in srgb, var(--tour-highlight-bright) 50%, transparent),
+      0 0 90px color-mix(in srgb, var(--tour-highlight-bright) 90%, transparent);
+  }
+}
+
+.dark [data-tour-overflow='true'][data-tour-active='true'] {
+  outline-color: var(--tour-dark-highlight-bright) !important;
+  box-shadow:
+    inset 0 0 50px color-mix(in srgb, var(--tour-dark-highlight-bright) 45%, transparent),
+    0 0 80px color-mix(in srgb, var(--tour-dark-highlight-bright) 80%, transparent);
+  animation: tour-overflow-pulse-dark var(--tour-pulse-duration) ease-in-out infinite;
+}
+
+@keyframes tour-overflow-pulse-dark {
+  0%,
+  100% {
+    outline-color: var(--tour-dark-highlight-bright);
+    box-shadow:
+      inset 0 0 50px color-mix(in srgb, var(--tour-dark-highlight-bright) 45%, transparent),
+      0 0 80px color-mix(in srgb, var(--tour-dark-highlight-bright) 80%, transparent);
+  }
+  50% {
+    outline-color: var(--tour-dark-highlight-bright);
+    box-shadow:
+      inset 0 0 70px color-mix(in srgb, var(--tour-dark-highlight-bright) 55%, transparent),
+      0 0 120px var(--tour-dark-highlight-bright);
+  }
+}

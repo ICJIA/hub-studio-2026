@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { APP_NAME } from '~/lib/constants'
 import { isDemoSession } from '~/lib/demo'
+import GuidedTour from '~/components/tour/GuidedTour.vue'
+import GuidedTrigger from '~/components/tour/GuidedTrigger.vue'
 
 const auth = useAuthStore()
 const { logout } = useAuth()
@@ -14,6 +16,13 @@ const colorMode = useColorMode()
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
+
+// Guided onboarding tour: one instance mounted below. The nav trigger calls launch() via this ref.
+// Calling a setup METHOD (never an inline navigateTo in the template) keeps every page safe.
+const guidedTour = ref<{ launch: () => void } | null>(null)
+function launchTour() {
+  guidedTour.value?.launch()
+}
 </script>
 
 <template>
@@ -21,6 +30,7 @@ function toggleColorMode() {
     <!-- Demo mode banner -->
     <div
       v-if="demo && showBanner"
+      data-tour="demo-banner"
       class="relative w-full bg-amber-100 border-b border-amber-300 text-amber-900 text-xs text-center py-2 pl-4 pr-10"
       role="status"
     >
@@ -43,13 +53,26 @@ function toggleColorMode() {
           <span class="hidden sm:inline">{{ APP_NAME }}</span>
         </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Replay the guided tour (both roles). Calls a setup method — never an inline
+               navigateTo in the template (that scoping bug crashed the prior attempt). -->
+          <GuidedTrigger
+            v-if="auth.isLoggedIn"
+            label="Tour"
+            icon="i-lucide-compass"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            tooltip="Replay the guided tour"
+            @click="launchTour"
+          />
           <template v-if="auth.isLoggedIn">
             <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
-            <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
+            <UBadge data-tour="role-badge" :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
             <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
           </template>
           <!-- Theme toggle is always the last button -->
           <UButton
+            data-tour="theme-toggle"
             size="sm" variant="ghost" color="neutral"
             :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
             :aria-label="`Switch to ${colorMode.value === 'dark' ? 'light' : 'dark'} mode`"
@@ -62,5 +85,15 @@ function toggleColorMode() {
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <slot />
     </main>
+
+    <!-- Single guided-tour instance (welcome → intro → spotlight). Auto-starts first-run-once on
+         the dashboard; the nav "Tour" button replays it via launchTour(). Only meaningful when
+         logged in (the dashboard targets require a session). -->
+    <GuidedTour
+      v-if="auth.isLoggedIn"
+      ref="guidedTour"
+      :show-demo-banner="demo && showBanner"
+      :logo-url="logoSrc"
+    />
   </div>
 </template>

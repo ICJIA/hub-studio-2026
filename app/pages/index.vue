@@ -24,7 +24,7 @@ const showDevSamples = import.meta.dev
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <UCard>
+      <UCard data-tour="create">
         <template #header><h2 class="font-medium">Create</h2></template>
         <!-- Primary CTAs use the SOLID variant for the highest, mode-independent contrast: the
              subtle variant's blue-on-faint-tint text fell below WCAG AA (~4:1) in BOTH light and
@@ -59,7 +59,7 @@ const showDevSamples = import.meta.dev
         </div>
       </div>
 
-      <UCard v-if="canPublish">
+      <UCard v-if="canPublish" data-tour="publish-queue">
         <template #header><h2 class="font-medium">Publish queue</h2></template>
         <p class="text-sm text-muted mb-2">Review submitted drafts.</p>
         <!-- Solid (not subtle) so the CTA text clears WCAG AA in both light and dark — see Create above. -->
@@ -67,7 +67,7 @@ const showDevSamples = import.meta.dev
       </UCard>
     </div>
 
-    <UCard>
+    <UCard data-tour="drafts">
       <template #header>
         <div class="flex items-center justify-between">
           <h2 class="font-medium">Articles</h2>

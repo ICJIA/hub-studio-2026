@@ -10,7 +10,12 @@ export default defineNuxtConfig({
   // field components in app/components/fields/ as <TextField>/<DateField>/… rather than
   // <FieldsTextField>/…. Without this, those nested components fail to resolve and render nothing.
   components: [{ path: '~/components', pathPrefix: false }],
-  css: ['~/assets/css/main.css', '~/assets/css/prose-preview.css'],
+  css: [
+    '~/assets/css/main.css',
+    '~/assets/css/prose-preview.css',
+    // Guided onboarding tour — base highlight-ring styles (ported from nuxt-guided-tour).
+    '~/assets/css/guided-tour.css',
+  ],
   fonts: {
     families: [
       // The UI typeface — modern, highly legible. Used as --font-sans in main.css.
@@ -41,6 +46,11 @@ export default defineNuxtConfig({
         'lucide:arrow-left', 'lucide:arrow-right', 'lucide:moon', 'lucide:sun',
         'lucide:circle-check', 'lucide:info', 'lucide:triangle-alert', 'lucide:circle-alert',
         'lucide:ellipsis', 'lucide:external-link', 'lucide:file-text', 'lucide:download',
+        // Guided onboarding tour icons (welcome/intro/overlay + step icons). Listed explicitly
+        // because the tour's step/slide icons are string literals in a .ts config the source scan
+        // may miss — and fallbackToApi:false means an un-bundled icon would silently not render.
+        'lucide:compass', 'lucide:pen-line', 'lucide:eye', 'lucide:users', 'lucide:lightbulb',
+        'lucide:play', 'lucide:circle-help', 'lucide:files', 'lucide:id-card', 'lucide:send',
       ],
       sizeLimitKb: 512,
     },

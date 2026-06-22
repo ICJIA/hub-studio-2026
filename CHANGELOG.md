@@ -13,6 +13,7 @@ The core Studio is built and working in development (pre-launch). Highlights sin
 
 _Added_
 
+- **Guided onboarding tour** — a first‑run, skippable walkthrough on the dashboard. Two intro slides ("What is the ICJIA Research Hub 2.0?" and "Why Markdown?") then role‑aware spotlight steps (Create, your content list, the role badge, the light/dark toggle, the demo banner, and — **editors only** — the Publish queue). Auto‑starts once per browser (versioned `localStorage` key), dismisses on Esc / backdrop / Skip, and replays anytime from **Tour** in the top nav. Built from the [ICJIA `nuxt-guided-tour`](https://github.com/ICJIA/nuxt-guided-tour) runtime **ported into the app as plain code** under a renamed `useGuidedTour` composable — deliberately not the npm module, so it can never collide with Nuxt UI's own `useTour`. Tour icons are bundled lucide (no runtime Iconify fetch under the demo CSP).
 - **Demo role comparison** — enter the demo as **Author** or **Editor**: an author drafts & previews but the Publish/Unpublish control is **dimmed** with an "editors only" popup; an editor publishes. The navbar badge reflects the role.
 - **Multiple Main Files** — drop one or more **PDFs** (max 3, configurable in `studio.config.ts`), each listed by filename; the published preview shows a distinct **download button per file** under the Table of Contents. Main‑file type defaults to **PDF**.
 - **Live Publish/Unpublish in the demo** — toggling updates the article lists and the publish queue live for the session (shared in‑memory store; resets on reload).

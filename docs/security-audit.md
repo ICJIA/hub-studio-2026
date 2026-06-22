@@ -1,5 +1,95 @@
 # Security Audit — ICJIA Research Hub Studio (Red Team / Blue Team)
 
+> **Ordering:** newest audit first. The latest pass is **§8 (2026-06-22)** immediately below;
+> the 2026-06-21 production audit (§1–§6) and demo/public-deploy audit (§7) follow, unchanged.
+
+---
+
+## 8. Demo Roles, Main Files, Guided Tour & Dependency Refresh Audit (2026-06-22)
+
+**Target:** `hub-studio-2026` — Nuxt 4 SPA (`ssr: false`) staff content tool
+**Reviewed commit:** `d8ae8e0` (branch `main`, HEAD = the dependency refresh)
+**Date:** 2026-06-22
+**Method:** Static, read-only source review (red team) + defensive credit (blue team) **plus** a live
+`npm audit`. The Strapi 5 backend is managed separately and was **not** in scope.
+
+### 8.1 Scope — the new surface since §7
+
+A third adversarial pass over the work landed since the 2026-06-21 demo audit (CHANGELOG
+`[Unreleased]`):
+
+- **Public DEMO mode** — in-memory content, the hard write-block (`assertWritesAllowed`), demo login.
+- **Demo AUTHOR/EDITOR roles** — `loginAsDemo`, `app/lib/dev-auth.ts` (`makeDevAdminSession(role)`),
+  `app/lib/admin-roles.ts` (`canPublish` gating + `roleLabel`/`rolePermissions`), the navbar role chip + popover.
+- **Multiple Main Files** — the PDF array (`app/lib/mappers/article.ts`, `mediaListFromStrapi`/`mediaIdsForWrite`),
+  bundled demo PDFs in `public/files/demo/`, per-file download links in `PublishedArticlePreview.vue`.
+- **Live Publish/Unpublish in the demo** — shared in-memory store + a real `unpublish` action on the repo.
+- **The in-app guided tour** — `app/composables/useGuidedTour.ts` + `app/components/tour/*` + a versioned
+  `localStorage` key + `data-tour` anchors.
+- **Splash / sticky toolbar / dark-mode CSS** and the **dependency refresh** (Nuxt 4.4.8, Vue 3.5.38,
+  Pinia 3, vue-router 5, TypeScript 6, Vitest 4, @nuxt/ui 4.9, etc.).
+
+### 8.2 Bottom line
+
+**No Critical, High, or Medium finding on the new surface.** Every concern in the engagement brief was
+already correctly mitigated by the code under review: the demo cannot write to or authenticate against
+real Strapi; publish/unpublish is enforced server-side (Strapi 403) with the UI gate as
+defense-in-depth; the demo identities are dev/demo-only and tree-shaken from a normal production build;
+Main-File download links pass through the `safeHref` URL-scheme allowlist and the array mapper is
+numeric/type-strict; the guided tour has **zero** `v-html`/innerHTML and a namespaced+versioned
+`localStorage` key; markdown stays `html:false` with a 2-attribute (`id`/`class`) markdown-it-attrs
+allowlist across all three instances; both CSP header sets are intact. `npm audit` reports **0
+critical / 0 high / 0 moderate**, with a single **known dev-only Low** (esbuild dev-server file-read on
+Windows) that does not affect the built static artifact.
+
+Two **defense-in-depth** improvements were nonetheless implemented (turning previously-accepted §7
+residuals into tested guarantees) — see F-1 and F-2.
+
+### 8.3 Findings
+
+| ID | Finding | Severity | Status |
+|----|---------|:--------:|--------|
+| F-1 | `runtimeConfig.public` (incl. `demoMode`) was runtime-mutable — devtools could flip `demoMode=false` to disarm the demo's JS write-guards (the §7 D-2 residual; CSP still backstopped it) | Low | **Fixed** — deep-freeze the public config in an early client plugin (`app/plugins/00.freeze-config.ts` + `app/lib/freeze-public-config.ts`); test `tests/unit/freeze-public-config.test.ts` |
+| F-2 | The demo header set (`deploy/headers-demo.txt`) — the demo's authoritative network backstop — had **no** regression guard; only production `public/_headers` was tested (the §7 D-2 "CI guard" recommendation) | Low | **Fixed** — added assertions that the demo CSP keeps `connect-src 'self'` (no Strapi/Mailgun/Iconify) + the full hardening set, in `tests/unit/security-headers.test.ts` |
+| F-3 | Demo isolation — can a swapped token/flag force a real read/write? | Info | **Accepted (safe).** Reads route to the in-memory repo for the whole demo build via `isDemoData()` (audit D-4); writes throw in `assertWritesAllowed()` before any `$api` call (now also harder to disarm via F-1); the only token minted is the sentinel Strapi rejects; and the demo CSP `connect-src 'self'` refuses any real request even if every JS guard is defeated. Verified the built demo bundle contains **no** `v2.hub.icjia-api.cloud` in any JS chunk (only in the prod `_headers` placeholder, which Netlify overwrites with `headers-demo.txt`). |
+| F-4 | Auth/roles — is publish/unpublish enforced server-side, and are the demo identities dev-only? | Info | **Accepted (correct).** `PublishButton.vue` is default-deny (`v-if="canPublish"` — an author renders nothing); `repository.publish`/`unpublish` both document the Strapi 403 backstop and both call `assertWritesAllowed()`. `loginAsDemo` throws unless `import.meta.dev \|\| isDemoMode()`, so it cannot mint a session in a normal production build; `init()` and the `$api` 401 interceptor only honor the sentinel token under the same guard. Covered by `tests/nuxt/demo-mode.test.ts` (rejects real login in demo; create/update/remove/publish/unpublish throw before `$api`). |
+| F-5 | Main Files — injection via filename/URL or the array mapper? | Info | **Accepted (safe).** Download links bind `:href="safeHref(f.url)"` (no `javascript:`/`data:`), the filename renders via `{{ }}` (Vue-escaped) and a `:download` string attribute; `articleFromStrapi`/`articleToWrite` use `mediaListFromStrapi`/`mediaIdsForWrite`, which are numeric/type-strict and drop placeholder refs (`id <= 0`). Bundled demo PDFs are static files under `public/files/demo/`. |
+| F-6 | Guided tour — XSS via step content, unsafe `localStorage`, or hostile anchors? | Info | **Accepted (safe).** No `v-html`/`innerHTML` in any of the 5 tour components or the config; all step titles/bodies are hardcoded strings rendered via `{{ }}`. The single `localStorage` key is namespaced + versioned (`icjia-studio-tour-v1`) and only ever stores the literal `'true'`. `data-tour="…"` anchors are static template strings used as `querySelector` targets. |
+| F-7 | Markdown/render — `html:false`, DOMPurify, and the attrs allowlist still enforced? | Info | **Accepted (correct).** All three markdown-it instances (`md`, `mdInline`, `mdArticle`) set `html: false`; markdown-it-attrs is restricted to `allowedAttributes: ['id','class']` (no `style`/`on*`/`href`/`src`); `link_open` only adds `target`/`rel`; TOC ids are AST-derived, slug-allowlisted, and attribute-escaped; the three `v-html` sinks are all fed by this pipeline; DOMPurify is used only on SVG uploads. |
+| F-8 | CSP/headers — demo + prod sets intact? | Info | **Accepted (correct).** Prod `public/_headers`: `script-src 'self'` (no `unsafe-inline`), tight `connect-src`, `object-src/base-uri/frame-ancestors 'none'`, nosniff, XFO, HSTS, Referrer-Policy, Permissions-Policy. Demo `deploy/headers-demo.txt`: `connect-src 'self'` only (the network backstop), same hardening set. No `<meta http-equiv="Content-Security-Policy">` anywhere that could weaken the header CSP. Icons bundled (`icon.fallbackToApi: false`, `@iconify-json/lucide` pinned exact `1.2.114`). |
+| F-9 | Dependencies — any high/critical? | Info | **Accepted.** `npm audit` → 0 critical, 0 high, 0 moderate, **1 low** (esbuild ≤ a known advisory: dev-server arbitrary file read **on Windows only**). Dev-only, not in the production/static build path; tracked via Dependabot. No action required. |
+| F-10 | Prior protections still hold? | Info | **Accepted (re-confirmed).** Rate-limited `request-review` (5/10 min → 429), 403-clears-session in `init()`, AST-escaped TOC ids, dataset URL-scheme save-gate, hard zero-base64 write guard in `repository.create/update`, secrets server-only — all unchanged and still covered by their tests. |
+
+**Severity counts (this pass):** Critical 0 · High 0 · Medium 0 · Low 2 (both fixed) · Info 8.
+
+### 8.4 Remediations implemented
+
+- **F-1 — Deep-freeze the public runtime config.** `app/lib/freeze-public-config.ts` exports a pure,
+  unit-tested `deepFreeze`; `app/plugins/00.freeze-config.ts` (ordered first via the `00.` prefix, ahead
+  of `api.ts`) freezes `useRuntimeConfig().public` on client boot. `demoMode` (and the rest of the
+  non-secret public config) can no longer be reassigned from devtools to silently disarm
+  `isDemoMode()`/`isDemoData()`/`assertWritesAllowed()`. Reads are unaffected; the demo CSP remains the
+  authoritative, JS-independent backstop. Verified the freeze logic ships in the generated demo bundle.
+- **F-2 — Demo CSP regression guard.** `tests/unit/security-headers.test.ts` now also reads
+  `deploy/headers-demo.txt` and asserts its CSP `connect-src` is **exactly** `'self'` (explicit
+  negatives for `v2.hub.icjia-api.cloud`, `api.iconify.design`, `api.mailgun.net`) plus the full
+  hardening set — so a future edit that re-opens the demo's network surface fails CI.
+
+### 8.5 Verification
+
+`npx vitest run` → **514 passed** (507 prior + 7 new). `npm run typecheck` → exit **0**.
+`NUXT_PUBLIC_DEMO_MODE=true npm run generate` → builds (7 routes prerendered, static `.output/public`).
+`npm audit` → 0 critical / 0 high / 0 moderate / 1 low (dev-only esbuild, Windows).
+
+---
+
+## 1–7. Prior audits (2026-06-21) — unchanged below
+
+The original production audit (§1–§6) and the demo/public-deploy audit (§7), both dated 2026-06-21, are
+preserved verbatim below for the record.
+
+---
+
 **Target:** `hub-studio-2026` — Nuxt 4 SPA (`ssr: false`) staff content tool
 **Reviewed commit:** `0f42014` (branch `main`)
 **Date:** 2026-06-21

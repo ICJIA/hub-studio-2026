@@ -4,13 +4,35 @@
 
 > This website is funded through a grant from the Bureau of Justice Statistics, Office of Justice Programs, U.S. Department of Justice. Neither the U.S. Department of Justice nor any of its components operate, control, are responsible for, or necessarily endorse, this website (including, without limitation, its content, technical infrastructure, and policies, and any services or tools provided).
 
+## Table of contents
+
+- [TL;DR — the 30-second version](#tldr--the-30-second-version)
+- [Why this matters — the audience the Studio serves](#why-this-matters--the-audience-the-studio-serves)
+- [Developer reference](#developer-reference)
+- [Status: built and working in development (pre-launch)](#status-built-and-working-in-development-pre-launch)
+- [Workflow](#workflow)
+- [Security audits](#security-audits) — running red/blue team log (newest first)
+- [Architecture](#architecture)
+- [Tech stack](#tech-stack)
+- [Authentication & authorization](#authentication--authorization) — roles, demo mode, dev bypass
+- [Content authoring & the editor](#content-authoring--the-editor)
+- [Data layer & validation](#data-layer--validation)
+- [Demo mode & the guided tour](#demo-mode--the-guided-tour)
+- [Testing](#testing)
+- [Security](#security) — CSP, XSS seam, URL allowlist, rate limiting
+- [Build & deployment](#build--deployment)
+- [Local development](#local-development)
+- [Repository layout](#repository-layout)
+- [Reference](#reference)
+- [License](#license)
+
 ## TL;DR — the 30-second version
 
 - **What it is:** Hub Studio 2.0 — the internal tool Research & Analysis (R&A) staff use to write, preview, and publish Research Hub content (articles, apps, datasets); the authoring-and-publishing component of the wider **Hub 2.0** project.
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
-- **Status:** built and working in development — you can click through a complete demo today.
-- **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager clicks **Publish**.
-- **Security:** independently red/blue-team audited (production **and** the public demo) — **0 critical issues**; in-repo fixes done and covered by 405 automated tests ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Status:** built and working in development — you can click through a complete demo today, **as an Author or an Editor**, with a first-run **guided tour**.
+- **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager (Editor) clicks **Publish**.
+- **Security:** independently red/blue-team audited three times (production, the public demo, and the demo-roles/main-files/tour/dependency surface) — **0 critical issues**; in-repo fixes done and covered by **514 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -81,7 +103,7 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 ## Status: built and working in development (pre-launch)
 
-The core Studio is **built and working** — authoring, the live "exactly-as-published" preview, publishing, image handling, and a full clickable demo are all in place and covered by automated tests. It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus a short launch checklist remain. The full design and the security review live here:
+The core Studio is **built and working** — authoring, the live "exactly-as-published" preview, publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), and a first-run **guided tour** are all in place and covered by **514 automated tests**. It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus a short launch checklist remain. The full design and the security review live here:
 
 - 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
@@ -99,24 +121,36 @@ A running log of red / blue team security audits. The **latest** summary is show
 
 <!-- Maintenance: when a new audit is run, move the current "Latest" block into a new entry under "Previous audits" below, then replace the Latest block with the new summary. -->
 
-### Latest — 2026-06-21 · Demo & public-deploy audit
+### Latest — 2026-06-22 · Demo roles, Main Files, guided tour & dependency refresh
 
-**Demo & public-deploy audit (2026-06-21).** A second adversarial pass covered the new **public-demo** capability — demo mode, the static Netlify deploy, the demo CSP/headers, and icon/image bundling. **Verdict: safe to expose publicly — 0 Critical, 0 High.** The demo cannot write to Strapi, cannot sign in as a real user, and ships no secrets; this holds three deep — in-memory data, a sentinel token Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachable *even if every client-side guard is bypassed*. Of 10 findings (all Medium/Low), **5 were fixed in code and 5 documented.**
+**Third adversarial pass (2026-06-22).** Covered the surface added since the demo audit: the **Author/Editor demo roles**, **multiple Main Files** (the PDF array + per-file download links), the in-app **guided tour**, live **Publish/Unpublish** in the demo, and the **dependency refresh** (Nuxt 4.4.8 / Vue 3.5.38 / Pinia 3 / vue-router 5 / TypeScript 6 / Vitest 4 / @nuxt/ui 4.9). **Verdict: 0 Critical, 0 High, 0 Medium.** Every brief concern was already correctly mitigated — publish/unpublish is enforced server-side (Strapi 403) with the UI gate as defense-in-depth; the demo identities are dev/demo-only and tree-shaken from a normal build; Main-File links pass through `safeHref`; the tour has zero `v-html` and a namespaced+versioned `localStorage` key; markdown stays `html:false` with an `id`/`class`-only attrs allowlist. `npm audit` → **0 critical / 0 high / 0 moderate**, 1 known **dev-only Low** (esbuild dev-server file-read, Windows). Two **defense-in-depth** fixes turned prior §7 residuals into tested guarantees.
+
+| Finding | Severity | Remediation | Status |
+|---|---|---|---|
+| F-1 — `runtimeConfig.public` (incl. `demoMode`) was runtime-mutable (the §7 D-2 residual) | Low | Deep-freeze the public config in an early client plugin (`app/plugins/00.freeze-config.ts`) so devtools can't flip `demoMode` to disarm the JS write-guards; CSP still backstops it | ✅ Fixed (`d8ae8e0`) |
+| F-2 — Demo header set had no CI regression guard (the §7 D-2 "CI guard" note) | Low | Test asserts `deploy/headers-demo.txt` keeps `connect-src 'self'` (no Strapi/Mailgun/Iconify) + the full hardening set | ✅ Fixed (`d8ae8e0`) |
+| F-3..F-10 — demo isolation, server-side publish/unpublish, Main-Files injection, tour XSS, markdown `html:false`/attrs allowlist, CSP sets, deps, prior protections | Info | Reviewed; already correctly mitigated — accepted with rationale | ✅ Accepted (safe) |
+
+Full detail in [`docs/security-audit.md`](docs/security-audit.md) §8. Verification: **514 tests + typecheck (0) + demo `generate`** green.
+
+<details>
+<summary><strong>Previous audits</strong></summary>
+
+### 2026-06-21 · Demo & public-deploy audit
+
+**Demo & public-deploy audit (2026-06-21).** A second adversarial pass covered the new **public-demo** capability — demo mode, the static Netlify deploy, the demo CSP/headers, and icon/image bundling. **Verdict: safe to expose publicly — 0 Critical, 0 High.** The demo cannot write to Strapi, cannot sign in as a real user, and ships no secrets; this holds three deep — in-memory data, a sentinel token Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachable *even if every client-side guard is bypassed*. Of 10 findings (all Medium/Low), **5 were fixed in code and 5 documented** (D-2 later hardened in the 2026-06-22 pass — see F-1).
 
 | Finding | Severity | Remediation | Status |
 |---|---|---|---|
 | D-1 — Dev Strapi URL baked into the public demo bundle | Medium | Blank `strapiBaseUrl` in demo mode (unused — the demo is in-memory) | ✅ Fixed (`cdff530`) |
-| D-2 — `demoMode` flag is runtime-mutable (devtools could flip it) | Medium | Neutralized by the CSP `connect-src 'self'` backstop + the rejected sentinel token; optional freeze + CI guard noted | 🛡️ Mitigated |
-| D-3 — Icons could fetch `api.iconify.design` at runtime | Medium | `icon.fallbackToApi:false` + all 46 icons bundled locally | ✅ Fixed (`cdff530`) |
+| D-2 — `demoMode` flag is runtime-mutable (devtools could flip it) | Medium | CSP `connect-src 'self'` backstop + rejected sentinel token; **now also deep-frozen** (2026-06-22, F-1) | ✅ Fixed (`d8ae8e0`) |
+| D-3 — Icons could fetch `api.iconify.design` at runtime | Medium | `icon.fallbackToApi:false` + all icons bundled locally | ✅ Fixed (`cdff530`) |
 | D-4 — Content reads gated only by the token, not the demo build | Low | `isDemoData()` read-guard (in-memory repo for the whole demo build) | ✅ Fixed (`cdff530`) |
 | D-7 — Icon dependency pinned with a `^` range | Low | Pinned exact (`1.2.114`) | ✅ Fixed (`cdff530`) |
 | D-8 — No `Permissions-Policy` header | Low | Added to both header sets | ✅ Fixed (`cdff530`) |
 | D-5, D-6, D-9, D-10 — minor disclosure / prod-scoped | Low | Documented (sentinel creds worthless vs real Strapi; email-domain placeholder; HSTS `preload`; cookie `HttpOnly` = prod H-1) | 📄 Documented |
 
 Full detail in [`docs/security-audit.md`](docs/security-audit.md) §7.
-
-<details>
-<summary><strong>Previous audits</strong></summary>
 
 ### 2026-06-21 · Production red/blue team
 
@@ -156,11 +190,13 @@ Dependency monitoring (Dependabot) was also added in `e402f3d`; the full detail 
 
 The Studio is a **Nuxt 4 SPA** (`ssr: false`) that talks exclusively to Strapi 5's **admin Content-Manager API** (`/content-manager/collection-types/…`, `/admin/login`, `/admin/users/me`). There is no public REST or GraphQL surface in the critical path; everything requires a valid Strapi admin JWT.
 
+In the **public demo build** (`NUXT_PUBLIC_DEMO_MODE=true`) the composables read an **in-memory** repository instead (`isDemoData()`), and every real write is hard-blocked (`assertWritesAllowed()` throws before `$api`) — so the bottom two layers below are never reached.
+
 **Layer model** (thin to thick):
 
 ```
 Pages / Components
-    └── Composables  (useAuth, useArticles, useUpload, …)
+    └── Composables  (useAuth, useArticles, useUpload, …)   ── demo: in-memory repo (isDemoData)
           └── app/lib/  (pure TypeScript: validators, repository, markdown, safe-url, …)
                 └── $api  (ofetch client, injected by plugins/api.ts, attaches Bearer JWT)
                       └── Strapi 5 admin API  (https://v2.hub.icjia-api.cloud)
@@ -172,11 +208,12 @@ Pages / Components
 Author fills form
   → field-level validate (app/lib/validators/)
   → save-gate: assertNoBase64 + field validation before any write
-  → repository.create / .update  (POST / PUT to Content-Manager)
+  → repository.create / .update  (assertWritesAllowed, then POST / PUT to Content-Manager)
   → Strapi saves draft
   → MarkdownPreview / PublishedArticlePreview shows "exactly-as-published" output
-  → Manager clicks Publish → repository.publish (POST .../actions/publish)
+  → Editor clicks Publish → repository.publish (POST .../actions/publish; Strapi 403s a non-Editor)
   → Strapi sets publishedAt → triggers site-rebuild webhook
+  (Unpublish mirrors this via repository.unpublish → POST .../actions/unpublish)
 ```
 
 **State management:** Pinia store (`auth.ts`) persisted to cookies; everything else is composable-local reactive state.
@@ -189,13 +226,13 @@ Exact versions from `package.json`:
 
 | Package | Version | Role |
 |---|---|---|
-| `nuxt` | ^4.0.0 | Framework (SPA mode, `ssr: false`) |
-| `vue` | ^3.5.0 | UI runtime |
-| `vue-router` | ^4.4.0 | Client-side routing |
-| `@nuxt/ui` | ^4.0.1 | Component library (Tailwind CSS v4) |
-| `pinia` | ^2.2.0 | State management |
-| `@pinia/nuxt` | ^0.6.1 | Pinia Nuxt module |
-| `pinia-plugin-persistedstate` | 4.1.3 | Cookie persistence for auth store |
+| `nuxt` | ^4.4.8 | Framework (SPA mode, `ssr: false`) |
+| `vue` | ^3.5.38 | UI runtime |
+| `vue-router` | ^5.1.0 | Client-side routing (router 5 is what Nuxt 4 expects) |
+| `@nuxt/ui` | ^4.9.0 | Component library (Tailwind CSS v4) |
+| `pinia` | ^3.0.4 | State management |
+| `@pinia/nuxt` | ^0.11.3 | Pinia Nuxt module |
+| `pinia-plugin-persistedstate` | ^4.7.1 | Cookie persistence for auth store |
 | `@codemirror/state` | ^6.6.0 | CodeMirror 6 editor state |
 | `@codemirror/view` | ^6.43.1 | CodeMirror 6 editor view |
 | `@codemirror/lang-markdown` | ^6.5.0 | Markdown language support |
@@ -206,16 +243,18 @@ Exact versions from `package.json`:
 | `@codemirror/language-data` | ^6.5.2 | Language data |
 | `@lezer/highlight` | ^1.2.3 | Syntax highlighting |
 | `markdown-it` | ^14.2.0 | Markdown renderer (`html: false`) |
+| `markdown-it-attrs` | 4.5.0 | `{.class #id}` attrs (allowlist: `id`/`class` only; v5 pinned out — breaks Vite interop) |
 | `markdown-it-footnote` | ^4.0.0 | Footnote plugin |
 | `markdown-it-multimd-table` | ^4.2.3 | Advanced table plugin |
 | `@vscode/markdown-it-katex` | ^1.1.2 | KaTeX math rendering |
-| `dompurify` | ^3.4.11 | SVG sanitization |
-| `vitest` | ^4.0.0 | Test runner |
+| `dompurify` | ^3.4.11 | SVG sanitization (ships its own types — the `@types/dompurify` stub was dropped) |
+| `@iconify-json/lucide` | 1.2.114 | Lucide icons, bundled into the client (exact pin; no runtime Iconify fetch) |
+| `vitest` | ^4.1.9 | Test runner |
 | `@nuxt/test-utils` | ^4.0.3 | Nuxt component testing |
-| `@vue/test-utils` | ^2.4.6 | Vue component helpers |
-| `happy-dom` | ^20.0.0 | DOM environment for tests |
-| `typescript` | ^5.6.0 | Type system |
-| `vue-tsc` | ^2.1.0 | Vue type-checking |
+| `@vue/test-utils` | ^2.4.11 | Vue component helpers |
+| `happy-dom` | ^20.10.6 | DOM environment for tests |
+| `typescript` | ^6.0.3 | Type system |
+| `vue-tsc` | ^3.3.5 | Vue type-checking |
 
 Google Fonts loaded via `@nuxt/fonts`: **Inter** (UI), **Oswald** (preview headings — matches the live Research Hub), **JetBrains Mono** (editor).
 
@@ -256,18 +295,25 @@ On every app load, `useAuth().init()` re-calls `/admin/users/me` with the persis
 
 `app/lib/admin-roles.ts` defines two role tiers:
 
-- **Publisher roles** (`strapi-super-admin`, `strapi-editor`): `canPublish = true` → can publish and see the Manage page.
+- **Publisher roles** (`strapi-super-admin`, `strapi-editor`): `canPublish = true` → can publish/unpublish and see the Manage page.
 - **Author role** (`strapi-author`): `canPublish = false` → can draft, save, and request review only.
 
-`canPublish` is a **Strapi-enforced server rule**: an author's JWT gets a 403 from `/actions/publish`. The Studio's `canPublish` flag is defence-in-depth UX only.
+`canPublish` is a **Strapi-enforced server rule**: an author's JWT gets a 403 from `/actions/publish` (and `/actions/unpublish`). The Studio's `canPublish` flag is **defence-in-depth UX only** — and it is **default-deny**: the Publish/Unpublish control is hidden entirely for authors (`<div v-if="canPublish">` in `PublishButton.vue` — it never renders), so an author can never even invoke the action.
+
+**User-facing terminology** is just two labels, written for non-technical R&A staff: an account that can publish is an **"Editor"** (a super-admin also reads as "Editor" — no "Superadmin" label is surfaced), everything else is an **"Author"**. The navbar shows a single, keyboard-accessible **role chip** whose popover explains the role in plain language; both the label and the text come from pure, unit-tested helpers (`roleLabel` / `rolePermissions` in `app/lib/admin-roles.ts`).
 
 ### Route guard
 
 `app/middleware/auth.global.ts` is a global Nuxt route middleware. It delegates all logic to `app/lib/guard.ts` (`resolveAuthRedirect`), which is pure and unit-tested. Default-deny: every route requires authentication unless explicitly marked `meta.public = true`.
 
-### Dev bypass
+### Dev bypass & demo identities
 
-`app/lib/dev-auth.ts` provides an `admin`/`admin` login shortcut for local development. It is **tree-shaken in production builds** (all call sites are inside `import.meta.dev` guards, which Vite replaces with `false`). The synthetic JWT is a sentinel string Strapi will never accept, so any API call made with it fails closed (401). See [`docs/security-audit.md`](docs/security-audit.md) for the full audit note; remove the file and its three call sites before production.
+`app/lib/dev-auth.ts` provides an `admin`/`admin` login shortcut. Both the local-dev bypass **and** the public demo's "Enter as Author / Enter as Editor" buttons mint the **same synthetic sentinel session** (`makeDevAdminSession(role)`); the two demo identities differ **only** in their Strapi role codes (`strapi-editor` → `canPublish` true; `strapi-author` → false), which is what lets a manager compare both views. The whole path is gated by `import.meta.dev || isDemoMode()`, so:
+
+- In a **normal production build** (not dev, `demoMode` false) it is fully **tree-shaken / inert** — `login()` and `loginAsDemo()` never mint a synthetic session, and `init()` / the `$api` 401 interceptor never honor the sentinel token.
+- The synthetic JWT is a **sentinel string Strapi will never accept**, so any API call made with it fails closed (401).
+
+The public demo additionally **hard-blocks all writes** (`assertWritesAllowed()` throws before any `$api` call) and serves **in-memory content** (`isDemoData()`), with the demo CSP `connect-src 'self'` as an independent network backstop. The non-secret public runtime config (including `demoMode`) is **deep-frozen on boot** (`app/plugins/00.freeze-config.ts`) so devtools cannot flip it to disarm the guards (audit §8 F-1). See [`docs/security-audit.md`](docs/security-audit.md) §7–§8 for the full notes; remove `app/lib/dev-auth.ts` and its call sites before the real production launch.
 
 ---
 
@@ -315,6 +361,11 @@ A single generic `createRepository<TRaw, TDomain, TWrite>` factory produces type
 | `update(id, model)` | `PUT` with flat body |
 | `remove(id)` | `DELETE` |
 | `publish(id)` | `POST .../id/actions/publish` (Strapi enforces publisher role) |
+| `unpublish(id)` | `POST .../id/actions/unpublish` (mirror of publish; Strapi enforces publisher role) |
+
+Every **write** method (`create`/`update`/`remove`/`publish`/`unpublish`) first calls `assertWritesAllowed()`, which **throws before any `$api` call** in the public demo build — a hard, belt-and-suspenders write-block independent of the in-memory demo repository.
+
+**Multiple Main Files:** an article carries an array of Main Files (PDFs, max `studio.config.ts` → `maxMainFiles`, default 3). The mapper (`app/lib/mappers/article.ts`) reads them via `mediaListFromStrapi` and writes only numeric upload ids via `mediaIdsForWrite` (placeholder/demo refs with `id <= 0` are dropped) — numeric/type-strict, so no user string reaches Strapi as an id.
 
 ### Save-gate
 
@@ -322,37 +373,59 @@ Forms call `app/lib/forms/submit.ts` which validates all fields before any netwo
 
 ### Markdown rendering &amp; TOC
 
-`app/lib/markdown.ts` exports three functions:
+`app/lib/markdown.ts` exports three functions, each backed by a `markdown-it` instance with **`html: false`** (raw author HTML/script is escaped, never executed) and `markdown-it-attrs` restricted to an **`id`/`class`-only allowlist** (no `style`, `on*`, `href`, or `src` overrides):
 
-- `renderMarkdown(source)` — full markdown-it instance with `html: false`, footnotes, KaTeX, multimd-table, link → `target="_blank"`.
+- `renderMarkdown(source)` — full instance with footnotes, KaTeX, multimd-table, link → `target="_blank"` + `rel="noopener noreferrer"`.
 - `renderInline(source)` — inline-only (no footnotes); for abstract/summary fields.
 - `renderArticleBody(source)` → `{ html, toc }` — same plugin set + an AST-level h2 core rule that assigns slugified, de-duplicated, HTML-attribute-escaped ids to every `<h2>` in a single pass over the token stream (audit M-2 fix — never touches rendered HTML strings).
+
+The published preview renders a **per-file download button** for each Main File under the Table of Contents; every download `href` passes through `safeHref` (no `javascript:` / `data:`), and the filename is rendered as Vue-escaped text.
+
+---
+
+## Demo mode &amp; the guided tour
+
+### Public demo mode
+
+Setting `NUXT_PUBLIC_DEMO_MODE=true` at build (read by `studio.config.ts` → `runtimeConfig.public.demoMode`) produces a **fully self-contained, safe-to-expose public deploy**:
+
+- **Demo login only** — the real Strapi login is impossible; a manager enters via **"Enter as Author"** or **"Enter as Editor"** to compare both views (the Author never sees the Publish control).
+- **In-memory content** — `isDemoData()` routes every read to an in-memory repository (`app/lib/demo-repository.ts`) seeded with synthetic, 100%-phony content; Publish/Unpublish update the lists and the publish queue **live for the session** (a shared in-memory store; resets on reload).
+- **Zero Strapi writes** — `assertWritesAllowed()` throws before any `$api` call; uploads are blocked the same way.
+- **No secrets, no real host** — `strapiBaseUrl` is **blanked** in demo mode; Mailgun keys are server-only and absent from the static build.
+- **Independent network backstop** — the demo CSP (`deploy/headers-demo.txt`) pins `connect-src 'self'`, so the real backend is unreachable from the browser **even if every JS guard were bypassed**. The non-secret public config is **deep-frozen on boot** so `demoMode` can't be flipped from devtools (audit §8 F-1).
+
+The demo deploys statically on Netlify (`netlify.toml`: `nuxt generate` + a build step that copies `deploy/headers-demo.txt` over the published `_headers`).
+
+### Guided onboarding tour
+
+A first-run, skippable walkthrough on the dashboard (`app/composables/useGuidedTour.ts` + `app/components/tour/*`): two intro slides, then role-aware spotlight steps (Create, your content list, the role chip, the light/dark toggle, the demo banner, and — **editors only** — the Publish queue). It **auto-starts once per browser** (a namespaced, versioned `localStorage` key — `icjia-studio-tour-v1`), dismisses on Esc / backdrop / Skip, and replays anytime from **Tour** in the top nav. The runtime is **ported from [ICJIA `nuxt-guided-tour`](https://github.com/ICJIA/nuxt-guided-tour) as plain app code** under a renamed `useGuidedTour` composable (deliberately not the npm module, so it can never collide with Nuxt UI's own `useTour`). All step content is **hardcoded** (no `v-html`, no user data); `data-tour="…"` anchors are static `querySelector` targets; tour icons are bundled lucide (no runtime Iconify fetch under the demo CSP).
 
 ---
 
 ## Testing
 
-**Runner:** Vitest `^4.0.0` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.0.0`.
+**Runner:** Vitest `^4.1.9` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.10.6`.
 
-**Current totals:** **375 tests** across **66 test files** (46 unit + 20 Nuxt component).
+**Current totals:** **514 tests** across **78 test files** (54 unit + 24 Nuxt component).
 
 **Structure:**
 
 ```
 tests/
-  unit/       # 46 files — pure app/lib/ logic (no DOM, no network)
-  nuxt/       # 20 files — components via mountSuspended (Nuxt test environment)
+  unit/       # 54 files — pure app/lib/ logic (no DOM, no network)
+  nuxt/       # 24 files — components via mountSuspended (Nuxt test environment)
   fixtures/   # shared data helpers
 ```
 
-**Unit coverage includes:** auth store, guard logic, all validators, repository logic, mappers (article/app/dataset), markdown rendering + TOC, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository and demo session, profile gate, form submit, studio-profile repository.
+**Unit coverage includes:** auth store, guard logic, all validators, repository logic (incl. publish/unpublish + the demo write-block), mappers (article/app/dataset, incl. the Main-Files array), markdown rendering + TOC + the `markdown-it-attrs` allowlist, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository / demo session / demo content, the guided-tour config, the deep-freeze public-config guard, the security-header sets (production **and** demo), profile gate, form submit, studio-profile repository.
 
-**Component coverage includes:** login, dashboard, content-list, article/app/dataset forms, markdown editor, markdown field, media picker, media field, image dropzone, repeatable field, publish button, request-review form, preview page, onboarding form, routing smoke.
+**Component coverage includes:** login (incl. demo-role entry), dashboard, content-list, article/app/dataset forms, the Main-Files field, body-images field, markdown editor, markdown field, media picker, media field, image dropzone, repeatable field, publish button, request-review form, preview page (incl. print), onboarding form, demo mode, routing smoke.
 
 **Commands:**
 
 ```bash
-npm test            # run all 375 tests once (vitest run)
+npm test            # run all 514 tests once (vitest run)
 npm run test:watch  # watch mode (vitest)
 npm run typecheck   # vue-tsc type-check
 ```
@@ -361,21 +434,18 @@ npm run typecheck   # vue-tsc type-check
 
 ## Security
 
-### Security headers &amp; CSP (`public/_headers`)
+### Security headers &amp; CSP — two sets
 
-Netlify's `_headers` file applies a hardened header set to every response:
+Two hardened header sets are maintained, each applied to every response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` denying camera/mic/geolocation/etc., `Strict-Transport-Security: max-age=31536000; includeSubDomains`, plus a CSP with `object-src/base-uri/frame-ancestors 'none'` and `form-action 'self'`):
 
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-- `Content-Security-Policy` — tight `connect-src` limiting outbound requests to `'self'`, `https://v2.hub.icjia-api.cloud`, and `https://api.mailgun.net`; `script-src 'self'` (no `'unsafe-inline'`); `object-src 'none'`; `frame-ancestors 'none'`.
+- **Production** (`public/_headers`) — tight `connect-src` limiting outbound requests to `'self'`, `https://v2.hub.icjia-api.cloud`, and `https://api.mailgun.net`; **`script-src 'self'`** (no `'unsafe-inline'`).
+- **Public demo** (`deploy/headers-demo.txt`, copied over `_headers` by `netlify.toml`) — **`connect-src 'self'` only** (the independent network backstop: the real backend is unreachable from the browser); `script-src 'self' 'unsafe-inline'` is acceptable here because the demo holds no admin JWT or secrets, and is required for the static Nuxt bootstrap. A unit test guards the demo `connect-src` against re-opening to any non-`'self'` host (audit §8 F-2).
 
-**Action required before launch:** verify the CSP on a Netlify deploy-preview — if a Nuxt bootstrap inline script is blocked, add its `sha256` hash to `script-src`. Never add `'unsafe-inline'` to `script-src`. If not hosting on Netlify, port these headers to the host's config or Nuxt `routeRules`.
+**Action required before launch (production set):** verify the CSP on a Netlify deploy-preview — if a Nuxt bootstrap inline script is blocked, add its `sha256` hash to `script-src`. Never add `'unsafe-inline'` to the production `script-src`. If not hosting on Netlify, port these headers to the host's config or Nuxt `routeRules`.
 
 ### Markdown XSS seam
 
-The single `html: false` flag on the markdown-it instance (`app/lib/markdown.ts`) escapes all raw HTML in author-supplied markdown. Only trusted plugin output (footnotes, KaTeX, tables) is emitted as HTML. This is the only point where markdown reaches the DOM as `v-html`.
+The **`html: false`** flag on every `markdown-it` instance (`app/lib/markdown.ts`) escapes all raw HTML in author-supplied markdown; only trusted plugin output (footnotes, KaTeX, tables) is emitted as HTML. `markdown-it-attrs` is restricted to an **`id`/`class`-only allowlist** (no `style`/`on*`/`href`/`src`). All three `v-html` sinks in the app are fed exclusively by this pipeline.
 
 ### URL allowlist (`app/lib/safe-url.ts`)
 
@@ -437,8 +507,14 @@ npm run dev       # start dev server (default: http://localhost:3000)
 
 On the login screen, use `admin` / `admin` to enter the dev bypass (a synthetic session — no Strapi account needed). See `app/lib/dev-auth.ts` for details; this bypass is tree-shaken from production builds.
 
+To run the **public demo** locally (in-memory, demo-login-only, no Strapi):
+
 ```bash
-npm test          # run 375 tests
+NUXT_PUBLIC_DEMO_MODE=true npm run generate   # static demo build → .output/public
+```
+
+```bash
+npm test          # run 514 tests
 npm run typecheck # TypeScript type-check
 npm run build     # production build
 ```
@@ -449,26 +525,32 @@ npm run build     # production build
 
 ```
 app/
-  assets/          # CSS (main.css, prose-preview.css)
+  assets/          # CSS (main.css, prose-preview.css, guided-tour.css)
   components/      # Vue components
     fields/        # ChipsField, DateField, MediaField, RelationList, RepeatableField, SelectField, TextField
-    forms/         # ArticleForm, AppForm, DatasetForm
+    forms/         # ArticleForm, AppForm, DatasetForm, MainFilesField, BodyImagesField
+    tour/          # GuidedTour, GuidedWelcome, GuidedIntro, GuidedOverlay, GuidedTrigger (in-app tour)
     ContentList.vue, MarkdownEditor.vue, MarkdownField.vue, MarkdownPreview.vue
     MediaPicker.vue, ImageDropzone.vue, PublishButton.vue, RequestReviewForm.vue
     PublishedArticlePreview.vue, PublishedAppPreview.vue, PublishedDatasetPreview.vue
-  composables/     # useAuth.ts, useArticles.ts, useApps.ts, useDatasets.ts, useUpload.ts, useStudioProfile.ts
+  composables/     # useAuth, useArticles, useApps, useDatasets, useUpload, useStudioProfile
+    useGuidedTour.ts, guided-tour-config.ts, guided-tour-types.ts   # ported tour runtime + config
   lib/             # pure TypeScript logic (no Vue, unit-testable in Node)
     admin-roles.ts, api.ts, auth.ts, base64-guard.ts, dev-auth.ts, guard.ts
     markdown.ts, rate-limit.ts, repository.ts, safe-url.ts, sanitize-svg.ts, slug.ts
     upload.ts, text-import.ts, review-email.ts, request-review-handler.ts
+    demo.ts, demo-repository.ts, demo-content.ts          # public-demo: flags, in-memory repo, content
+    freeze-public-config.ts                               # deep-freeze runtimeConfig.public (audit F-1)
+    sample-{article,app,dataset,files,figures,images}.ts  # one-click sample / demo fixtures
     editor/        # CodeMirror 6 config (image-insert.ts, studio-editor-state.ts, vendor/)
     forms/         # blank-models + submit logic (article.ts, app.ts, dataset.ts)
     mappers/       # fromStrapi / toWrite converters (article, app, dataset)
+    strapi-rest.ts # Content-Manager envelopes + media helpers (mediaListFromStrapi, mediaIdsForWrite)
     validators/    # field-level validation rules (article.ts, app.ts, dataset.ts, url-scheme.ts)
   middleware/      # auth.global.ts (default-deny route guard)
   pages/           # index.vue, login.vue, manage.vue, onboarding.vue
     create/[type].vue, edit/[type]/[id].vue, preview/[type]/[id].vue
-  plugins/         # api.ts ($api ofetch client with Bearer + 401 interceptor)
+  plugins/         # 00.freeze-config.ts (deep-freeze public config first), api.ts ($api + Bearer + 401)
   repositories/    # articles.ts, apps.ts, datasets.ts, studio-profile.ts (wire lib/repository to Strapi UIDs)
   stores/          # auth.ts (Pinia auth store with cookie persistence)
   types/           # TypeScript interfaces (admin.ts, content.ts, …)
@@ -478,12 +560,16 @@ server/
     request-review.post.ts   # Nitro/Netlify Function: JWT-verified, rate-limited Mailgun relay
 
 public/
-  _headers         # Netlify security headers + CSP
-  images/          # static image assets
+  _headers         # Netlify PRODUCTION security headers + CSP
+  files/demo/      # bundled static demo PDFs (Main Files)
+  images/          # static image assets (icjia-logo.png, images/demo/ splash + figures)
+
+deploy/
+  headers-demo.txt # PUBLIC DEMO header set (connect-src 'self'); netlify.toml copies it over _headers
 
 tests/
-  unit/            # 46 test files — pure app/lib/ logic
-  nuxt/            # 20 test files — Nuxt component tests (mountSuspended)
+  unit/            # 54 test files — pure app/lib/ logic
+  nuxt/            # 24 test files — Nuxt component tests (mountSuspended)
   fixtures/        # shared test data
 
 docs/

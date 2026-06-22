@@ -6,7 +6,9 @@ import { isDemoMode } from '~/lib/demo'
 
 definePageMeta({ public: true, layout: false })
 
-const { login } = useAuth()
+import type { DemoRole } from '~/lib/dev-auth'
+
+const { login, loginAsDemo } = useAuth()
 const logoSrc = '/images/icjia-logo.png'
 const toast = useToast()
 
@@ -42,10 +44,25 @@ function signInAsDevAdmin() {
   return onSubmit()
 }
 
+/** Demo only: step into the chosen role (Author = drafts/preview only; Editor = also publishes) so
+ *  managers can compare the two experiences. Mints the synthetic session directly, then routes to
+ *  the dashboard — the same place the form login lands. */
+async function enterDemoAs(role: DemoRole) {
+  loading.value = true
+  try {
+    loginAsDemo(role)
+    await navigateTo('/')
+  } catch {
+    toast.add({ title: 'Demo sign-in failed', description: 'Please try again.', color: 'error' })
+  } finally {
+    loading.value = false
+  }
+}
+
 /** Demo only: the email/password form is illustrative. Never attempt a (rejected) real login —
- *  point the user to the demo entry instead. */
+ *  point the user to the demo entries instead. */
 function onDemoSignIn() {
-  toast.add({ title: 'Demonstration', description: "This sign-in form is illustrative — click 'Enter the demo' to continue.", color: 'info' })
+  toast.add({ title: 'Demonstration', description: "This sign-in form is illustrative — choose 'Enter as Author' or 'Enter as Editor' to continue.", color: 'info' })
 }
 </script>
 
@@ -78,10 +95,19 @@ function onDemoSignIn() {
         <div class="rounded-md border border-amber-300 bg-amber-50 p-2.5 dark:border-amber-800/60 dark:bg-amber-950/40">
           <p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
             <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0 mt-px" />
-            <span><strong>Demo</strong> — the sign-in above shows how the live, secure username/password login looks; it isn't active here. Click <strong>Enter the demo</strong> to continue.</span>
+            <span><strong>Demo</strong> — the sign-in above shows how the live, secure username/password login looks; it isn't active here. Choose a role below to continue.</span>
           </p>
         </div>
-        <UButton block size="lg" color="warning" :loading="loading" icon="i-lucide-flask-conical" label="Enter the demo" @click="signInAsDevAdmin" />
+        <!-- Two demo entries so managers can compare the roles: an Author drafts & previews but cannot
+             publish; an Editor also publishes to the Hub. The choice sets the session role codes, which
+             drive canPublish everywhere (toolbar, dashboard, navbar badge). -->
+        <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <UButton block size="lg" color="neutral" variant="subtle" :loading="loading" icon="i-lucide-pencil-line" label="Enter as Author" @click="enterDemoAs('author')" />
+            <UButton block size="lg" color="warning" :loading="loading" icon="i-lucide-globe" label="Enter as Editor" @click="enterDemoAs('editor')" />
+          </div>
+          <p class="text-center text-xs text-muted">Authors draft &amp; preview; editors also publish.</p>
+        </div>
       </div>
 
       <!-- Normal build: the real Strapi email/password form (unchanged). -->

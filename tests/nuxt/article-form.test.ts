@@ -94,11 +94,16 @@ describe('ArticleForm sticky toolbar (title + live preview + manager publish gat
   // The toolbar's PublishButton renders the capitalised label "Publish" (a draft) — the bottom
   // "Preview as published" uses lowercase "published", so a capital-P `toContain('Publish')`
   // discriminates the toolbar control cleanly.
-  it('hides Publish/Unpublish for a non-manager even on a saved article (Live preview still shows)', async () => {
+  it('SHOWS a Publish control for a non-manager on a saved article — but DIMMED/disabled (so a manager sees the difference)', async () => {
     canPublish.value = false
     const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved() } })
     expect(wrapper.text()).toContain('Live preview')
-    expect(wrapper.text()).not.toContain('Publish')
+    // The control is now rendered for authors too (no longer hidden) …
+    expect(wrapper.text()).toContain('Publish')
+    // … but it is the dimmed/disabled variant (PublishButton self-handles the author state).
+    const publishBtn = wrapper.findAll('button').find((b) => b.text().includes('Publish'))!
+    expect(publishBtn.attributes('disabled')).toBeDefined()
+    expect(publishBtn.classes()).toContain('opacity-50')
   })
 
   it('shows Publish for a manager on a SAVED article (edit mode, has documentId)', async () => {

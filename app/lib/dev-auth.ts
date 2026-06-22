@@ -16,12 +16,22 @@
  * The build will fail loudly on the dangling import until every call site is gone.
  */
 import type { AdminUser } from '~/types/admin'
+import { AUTHOR_ROLE_CODE } from '~/lib/admin-roles'
 
 export const DEV_ADMIN_IDENTIFIER = 'admin'
 export const DEV_ADMIN_PASSWORD = 'admin'
 
 /** Sentinel JWT for the synthetic dev session. Strapi will never issue or accept this. */
 export const DEV_ADMIN_TOKEN = 'dev-admin-session-not-a-real-jwt'
+
+/**
+ * The two demo identities a manager can step into. Both mint the SAME sentinel token (so demo-session
+ * detection, the in-memory repo, and cookie persistence behave identically) and differ ONLY in their
+ * Strapi role codes, which is what drives `canPublish`:
+ *   - editor → strapi-editor  ⇒ canPublish === true  (publishes to the Hub)
+ *   - author → strapi-author  ⇒ canPublish === false (drafts & previews only)
+ */
+export type DemoRole = 'editor' | 'author'
 
 /** Whether the submitted credentials match the fixed dev admin. Gate calls with `import.meta.dev`. */
 export function matchesDevAdmin(identifier: string, password: string): boolean {
@@ -33,17 +43,24 @@ export function isDevAdminToken(token: string | null): boolean {
   return token === DEV_ADMIN_TOKEN
 }
 
-/** Build the synthetic ADMIN session minted by the dev bypass (super-admin = can publish). */
-export function makeDevAdminSession(): { jwt: string; user: AdminUser } {
+/**
+ * Build the synthetic demo session for the chosen role. Defaults to 'editor' so existing callers
+ * (and tests) keep the publisher session they had. The role codes are the only difference — that is
+ * what makes `useAuth().canPublish` reflect the choice for the whole session.
+ */
+export function makeDevAdminSession(role: DemoRole = 'editor'): { jwt: string; user: AdminUser } {
+  const isEditor = role === 'editor'
   const user: AdminUser = {
     id: 0,
     username: DEV_ADMIN_IDENTIFIER,
-    email: 'dev-admin@localhost',
+    email: isEditor ? 'dev-editor@localhost' : 'dev-author@localhost',
     firstname: 'Dev',
-    lastname: 'Admin',
+    lastname: isEditor ? 'Editor' : 'Author',
     isActive: true,
     blocked: false,
-    roles: [{ id: 0, name: 'Super Admin', code: 'strapi-super-admin' }],
+    roles: isEditor
+      ? [{ id: 0, name: 'Editor', code: 'strapi-editor' }]
+      : [{ id: 0, name: 'Author', code: AUTHOR_ROLE_CODE }],
   }
   return { jwt: DEV_ADMIN_TOKEN, user }
 }

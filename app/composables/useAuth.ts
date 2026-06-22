@@ -1,7 +1,7 @@
 import { loginRequest, fetchMe } from '~/lib/auth'
 import { resolveHasProfile } from '~/lib/profile-gate'
 // DEV-ONLY in normal builds; ALSO the only login path in the public demo build (see isDemoMode).
-import { matchesDevAdmin, isDevAdminToken, makeDevAdminSession } from '~/lib/dev-auth'
+import { matchesDevAdmin, isDevAdminToken, makeDevAdminSession, type DemoRole } from '~/lib/dev-auth'
 import { isDemoMode } from '~/lib/demo'
 
 /** Best-effort HTTP status from a thrown fetch error (ofetch FetchError carries both shapes). */
@@ -51,6 +51,23 @@ export function useAuth() {
     return me
   }
 
+  /**
+   * Demo-only: step into a synthetic session AS the chosen role so managers can compare what an
+   * Author (canPublish false — drafts & previews) vs an Editor (canPublish true — also publishes)
+   * sees. Same synthetic-token path as the demo form login; only the role codes differ. Available in
+   * local dev AND the public demo build; a no-op (throws) anywhere else so a normal prod build is
+   * unchanged.
+   */
+  function loginAsDemo(role: DemoRole) {
+    if (!import.meta.dev && !isDemoMode()) {
+      throw new Error('Demo sign-in is unavailable in this build.')
+    }
+    const session = makeDevAdminSession(role)
+    store.setSession(session)
+    console.warn(`[demo-auth] Signed in as demo ${role} — NOT a real Strapi session.`)
+    return session.user
+  }
+
   async function logout() {
     store.clearSession()
     await navigateTo('/login')
@@ -82,6 +99,7 @@ export function useAuth() {
 
   return {
     login,
+    loginAsDemo,
     logout,
     init,
     isLoggedIn: computed(() => store.isLoggedIn),

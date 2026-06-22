@@ -22,9 +22,10 @@ const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
 const emit = defineEmits<{ published: [entity: Article] }>()
 const repo = useArticles()
 const toast = useToast()
-// Manager-only gate for the toolbar's Publish/Unpublish control. PublishButton is ALSO
-// default-deny internally; this just decides whether to render it / the "save first" hint.
-const { canPublish } = useAuth()
+// The toolbar's Publish/Unpublish control (PublishButton) is self-gating: it renders an ACTIVE
+// toggle for an editor and a DIMMED "editors only" control for an author. The form only decides
+// whether the article is saved yet (documentId) — an unsaved draft shows the "save first" hint
+// instead. So no canPublish check is needed here.
 
 const model = reactive<Article>(props.initial ? { ...props.initial } : blankArticle())
 const errors = ref<FieldError[]>([])
@@ -89,20 +90,20 @@ defineExpose({ submit, setField, onPublished, errors, model })
         >
           {{ model.title || 'Untitled article' }}
         </p>
-        <!-- RIGHT: Live preview (always) + Publish/Unpublish (managers, saved article only). -->
+        <!-- RIGHT: Live preview (always) + Publish/Unpublish on a SAVED article. The control shows for
+             everyone now — PublishButton itself dims it + explains "editors only" for an author, so a
+             manager can see the difference; only the save-first hint is gated to unsaved drafts. -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
           <UButton size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
-          <template v-if="canPublish">
-            <PublishButton
-              v-if="mode === 'edit' && model.documentId"
-              type="article"
-              size="sm"
-              :document-id="model.documentId"
-              :published="model.publishedAt != null"
-              @published="onPublished($event as Article)"
-            />
-            <span v-else class="hidden text-xs text-muted sm:inline">Save the draft first to publish</span>
-          </template>
+          <PublishButton
+            v-if="mode === 'edit' && model.documentId"
+            type="article"
+            size="sm"
+            :document-id="model.documentId"
+            :published="model.publishedAt != null"
+            @published="onPublished($event as Article)"
+          />
+          <span v-else class="hidden text-xs text-muted sm:inline">Save the draft first to publish</span>
         </div>
       </div>
     </div>

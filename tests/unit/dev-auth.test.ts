@@ -45,16 +45,28 @@ describe('isDevAdminToken', () => {
 })
 
 describe('makeDevAdminSession', () => {
-  it('carries the sentinel token and a super-admin role code', () => {
+  it('defaults to the EDITOR (publisher) session — carries the sentinel token and a publisher role code', () => {
     const session = makeDevAdminSession()
     expect(session.jwt).toBe(DEV_ADMIN_TOKEN)
-    expect(session.user.roles.map((r) => r.code)).toContain('strapi-super-admin')
+    expect(session.user.roles.map((r) => r.code)).toContain('strapi-editor')
   })
-  it('grants a logged-in publisher session through the real auth store', () => {
+  it('the AUTHOR session carries the same sentinel token but the author role code (not a publisher)', () => {
+    const session = makeDevAdminSession('author')
+    expect(session.jwt).toBe(DEV_ADMIN_TOKEN) // same token ⇒ still a demo session (in-memory repo, persistence)
+    expect(session.user.roles.map((r) => r.code)).toEqual(['strapi-author'])
+  })
+  it('grants a logged-in PUBLISHER session for the editor role through the real auth store', () => {
     setActivePinia(createPinia())
     const store = useAuthStore()
-    store.setSession(makeDevAdminSession())
+    store.setSession(makeDevAdminSession('editor'))
     expect(store.isLoggedIn).toBe(true)
     expect(store.canPublish).toBe(true)
+  })
+  it('grants a logged-in NON-publisher session for the author role through the real auth store', () => {
+    setActivePinia(createPinia())
+    const store = useAuthStore()
+    store.setSession(makeDevAdminSession('author'))
+    expect(store.isLoggedIn).toBe(true)
+    expect(store.canPublish).toBe(false)
   })
 })

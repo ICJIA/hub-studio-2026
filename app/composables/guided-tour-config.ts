@@ -122,7 +122,7 @@ export function buildGuidedTourSteps(opts: {
       target: '[data-tour="role-badge"]',
       title: 'Your role',
       content:
-        'This badge shows whether you are signed in as an Author (drafts & previews) or a Publisher/Editor (also publishes). Your role decides which controls you see.',
+        'This chip shows whether you are signed in as an Author (drafts & previews) or an Editor (also publishes). Click it any time for a plain-language summary of what your role can do.',
       icon: 'i-lucide-id-card',
     },
     {

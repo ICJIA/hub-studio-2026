@@ -14,7 +14,7 @@ The core Studio is built and working in development (pre-launch). Highlights sin
 _Added_
 
 - **Guided onboarding tour** — a first‑run, skippable walkthrough on the dashboard. Two intro slides ("What is the ICJIA Research Hub 2.0?" and "Why Markdown?") then role‑aware spotlight steps (Create, your content list, the role badge, the light/dark toggle, the demo banner, and — **editors only** — the Publish queue). Auto‑starts once per browser (versioned `localStorage` key), dismisses on Esc / backdrop / Skip, and replays anytime from **Tour** in the top nav. Built from the [ICJIA `nuxt-guided-tour`](https://github.com/ICJIA/nuxt-guided-tour) runtime **ported into the app as plain code** under a renamed `useGuidedTour` composable — deliberately not the npm module, so it can never collide with Nuxt UI's own `useTour`. Tour icons are bundled lucide (no runtime Iconify fetch under the demo CSP).
-- **Demo role comparison** — enter the demo as **Author** or **Editor**: an author drafts & previews but the Publish/Unpublish control is **dimmed** with an "editors only" popup; an editor publishes. The navbar badge reflects the role.
+- **Demo role comparison** — enter the demo as **Author** or **Editor**: an author drafts & previews while the Publish/Unpublish control is **hidden entirely** (it never renders for them); an editor also publishes. A single clickable **role chip** in the navbar shows your role and explains it.
 - **Multiple Main Files** — drop one or more **PDFs** (max 3, configurable in `studio.config.ts`), each listed by filename; the published preview shows a distinct **download button per file** under the Table of Contents. Main‑file type defaults to **PDF**.
 - **Live Publish/Unpublish in the demo** — toggling updates the article lists and the publish queue live for the session (shared in‑memory store; resets on reload).
 - **Sticky article toolbar** under the main nav — article title (truncating) + **Live preview** + color‑coded **Publish/Unpublish** (soft‑blue preview, green publish, amber unpublish), visible while scrolling.
@@ -24,6 +24,7 @@ _Added_
 
 _Changed_
 
+- **Role UX — one clickable chip + publish hidden from authors.** The navbar now shows a single, keyboard‑accessible **role chip** — **Editor** (blue) or **Author** (neutral) — replacing the "Dev Editor" name + separate "Publisher" badge; clicking it opens a plain‑language permissions popover written for non‑technical R&A staff. Publish/Unpublish is now **hidden entirely** for authors everywhere (default‑deny — the control simply doesn't render), reverting the earlier dimmed‑with‑"editors only" approach. User‑facing terminology is **"Editor"** consistently (no more "Publisher"); the publishing superadmin still reads as "Editor". The label + permissions text live in a pure, unit‑tested helper (`roleLabel` / `rolePermissions` in `lib/admin-roles`). Internal `canPublish` and role codes are unchanged.
 - **Splash image** uses Strapi's `large_` format and renders **edge‑to‑edge** (full‑bleed) above the article body, with the body text/TOC kept inset & readable.
 - **`studio.config.ts`** — central, non‑secret config (app name, Strapi URL, demo mode, `maxMainFiles`) surfaced via `runtimeConfig.public`.
 - Varied demo article spread — distinct titles, a realistic figure distribution (none / one / 2–3), Markdown tables, and top/bottom/no captions.

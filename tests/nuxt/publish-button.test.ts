@@ -21,46 +21,29 @@ mockNuxtImport('useArticles', () => () => ({
   publish: publishMock, unpublish: unpublishMock,
 }))
 
-// Spy on the toast so we can assert the author sees the "editors only" explainer on click.
 const toastAdd = vi.fn()
 mockNuxtImport('useToast', () => () => ({ add: toastAdd }))
 
 import PublishButton from '~/components/PublishButton.vue'
 
-describe('PublishButton (canPublish-aware: dimmed for authors, active for editors)', () => {
+describe('PublishButton (canPublish-aware: hidden for authors, active for editors)', () => {
   beforeEach(() => { publishMock.mockClear(); unpublishMock.mockClear(); toastAdd.mockClear() })
 
-  it('for a NON-publisher (author) the control is rendered but DISABLED (dimmed), not hidden', async () => {
+  it('for a NON-publisher (author) the control renders NOTHING — default-deny', async () => {
     canPublish.value = false
     const wrapper = await mountSuspended(PublishButton, { props: { type: 'article', documentId: 'a1' } })
-    // Still shows the "Publish" affordance (so a manager sees the difference) …
-    expect(wrapper.text()).toMatch(/Publish/i)
-    // … but the button itself is disabled/dimmed.
-    const btn = wrapper.find('button')
-    expect(btn.attributes('disabled')).toBeDefined()
-    expect(btn.attributes('aria-disabled')).toBe('true')
-    expect(btn.classes()).toContain('opacity-50')
+    // No publish affordance at all: no "Publish"/"Unpublish" text and no button.
+    expect(wrapper.text()).not.toMatch(/Publish/i)
+    expect(wrapper.find('button').exists()).toBe(false)
   })
 
-  it('an author clicking the control shows the "must be an editor" message and does NOT call repo.publish', async () => {
+  it('a non-publisher never reaches repo.publish/unpublish (nothing rendered to click)', async () => {
     canPublish.value = false
     const wrapper = await mountSuspended(PublishButton, { props: { type: 'article', documentId: 'a1' } })
-    // The clickable wrapper (role=button) carries the click — a native disabled button swallows it.
-    await wrapper.get('[role="button"]').trigger('click')
     await new Promise((r) => setTimeout(r, 0))
     expect(publishMock).not.toHaveBeenCalled()
     expect(unpublishMock).not.toHaveBeenCalled()
-    expect(toastAdd).toHaveBeenCalled()
-    const msg = JSON.stringify(toastAdd.mock.calls)
-    expect(msg).toMatch(/must be an editor to publish/i)
-  })
-
-  it('the exposed onClick also no-ops repo.publish for an author', async () => {
-    canPublish.value = false
-    const wrapper = await mountSuspended(PublishButton, { props: { type: 'article', documentId: 'a1' } })
-    wrapper.vm.$.exposed!.onClick()
-    await new Promise((r) => setTimeout(r, 0))
-    expect(publishMock).not.toHaveBeenCalled()
+    // The confirm dialog is closed and unreachable.
     expect(wrapper.vm.$.exposed!.open.value).toBe(false)
   })
 
@@ -68,7 +51,8 @@ describe('PublishButton (canPublish-aware: dimmed for authors, active for editor
     canPublish.value = true
     const wrapper = await mountSuspended(PublishButton, { props: { type: 'article', documentId: 'a1' } })
     expect(wrapper.text()).toMatch(/Publish/i)
-    // Active button: not disabled.
+    // Active button: rendered and not disabled.
+    expect(wrapper.find('button').exists()).toBe(true)
     expect(wrapper.find('button').attributes('disabled')).toBeUndefined()
 
     await wrapper.vm.$.exposed!.confirmPublish()

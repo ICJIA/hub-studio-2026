@@ -83,9 +83,9 @@ const showDevSamples = import.meta.dev
         </div>
       </template>
       <ContentList :key="`${listType}-${refreshKey}`" :type="listType">
-        <!-- Publish/Unpublish toggle: ACTIVE for an editor, DIMMED ("editors only") for an author —
-             PublishButton self-handles the role. Publish a draft, Unpublish a published entry; for
-             the demo session both update the list live. -->
+        <!-- Publish/Unpublish toggle: PublishButton is default-deny — the live toggle for an editor,
+             NOTHING for an author. Publish a draft, Unpublish a published entry; for the demo session
+             both update the list live. -->
         <template #row-actions="{ documentId, published }">
           <PublishButton :type="listType" :document-id="documentId" :published="published" @published="onPublished" />
         </template>

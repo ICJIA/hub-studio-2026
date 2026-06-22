@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { APP_NAME } from '~/lib/constants'
 import { isDemoSession } from '~/lib/demo'
+import { roleLabel, rolePermissions } from '~/lib/admin-roles'
 import GuidedTour from '~/components/tour/GuidedTour.vue'
 import GuidedTrigger from '~/components/tour/GuidedTrigger.vue'
 
 const auth = useAuthStore()
 const { logout } = useAuth()
 const demo = isDemoSession()
+
+// Single navbar role chip. We show ONE plain-language label — "Editor" (canPublish) or "Author" —
+// from the pure helper (no "Dev Editor" name, no "Superadmin"). Clicking it opens a popover that
+// explains the role to non-technical R&A staff. Both label + summary come from lib/admin-roles so
+// the chip and its unit tests share one source of truth.
+const roleChipLabel = computed(() => roleLabel(auth.canPublish))
+const roleChipSummary = computed(() => rolePermissions(auth.canPublish))
 // The demo banner is dismissable, but its dismissed state is intentionally NOT persisted — it
 // returns each session (a plain ref resets on reload). Light/dark IS persisted (colorMode storageKey).
 const showBanner = ref(true)
@@ -66,8 +74,26 @@ function launchTour() {
             @click="launchTour"
           />
           <template v-if="auth.isLoggedIn">
-            <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
-            <UBadge data-tour="role-badge" :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
+            <!-- Single clickable role chip → permissions popover. The chip is a real <button>
+                 (UButton with pop/popover trigger), so it's keyboard-accessible. Editor = primary
+                 (blue), Author = neutral, for an at-a-glance distinction. -->
+            <UPopover>
+              <UButton
+                data-tour="role-badge"
+                :label="roleChipLabel"
+                :color="auth.canPublish ? 'primary' : 'neutral'"
+                :variant="auth.canPublish ? 'solid' : 'subtle'"
+                size="sm"
+                icon="i-lucide-shield-check"
+                :aria-label="`Your role: ${roleChipLabel}. What can this role do?`"
+              />
+              <template #content>
+                <div class="max-w-xs p-3 text-sm">
+                  <p class="font-semibold text-highlighted">{{ roleChipLabel }}</p>
+                  <p class="mt-1 leading-relaxed text-muted">{{ roleChipSummary }}</p>
+                </div>
+              </template>
+            </UPopover>
             <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
           </template>
           <!-- Theme toggle is always the last button -->

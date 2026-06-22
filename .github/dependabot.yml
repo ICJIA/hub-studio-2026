@@ -11,8 +11,9 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-    # Group routine non-major bumps into a single PR to cut noise; majors stay individual —
-    # EXCEPT the Pinia family, which must move together (the `pinia` group below).
+    # Group routine non-major bumps into a single PR to cut noise; majors stay individual — EXCEPT the
+    # Pinia family and the vue-router/vue-tsc pair, which must each move together (the `pinia` and
+    # `vue-tooling` groups below).
     groups:
       # Pinia family must upgrade together: @pinia/nuxt's peer requires a matching pinia MAJOR, so
       # bumping one without the others breaks `npm install` (the @pinia/nuxt-0.11 vs pinia-2 ERESOLVE
@@ -24,6 +25,19 @@ updates:
           - "pinia"
           - "@pinia/*"
           - "pinia-plugin-*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
+      # vue-router + vue-tsc are version-coupled: vue-tsc's @vue/language-core resolves vue-router's
+      # `volar/sfc-route-blocks` subpath, which exists only in the MATCHING vue-router major (vue-tsc 3
+      # needs vue-router 5). Bumping one without the other breaks typecheck (the volar plugin fails to
+      # load — exactly the warning the 5/3 bump cleared). Group ALL update types so they stay in
+      # lockstep. Listed before minor-and-patch so the pair lands here, not there.
+      vue-tooling:
+        patterns:
+          - "vue-router"
+          - "vue-tsc"
         update-types:
           - "major"
           - "minor"

@@ -125,8 +125,8 @@ function onDemoSignIn() {
 
       <!-- No self-signup: accounts are vetted & provisioned by Research & Analysis in Strapi.
            Shown in EVERY build (incl. the demo) so it's clear there are no live signups. -->
-      <p class="text-center text-xs text-muted leading-relaxed">
-        New user and need a Hub Studio sign-in? Please contact <span class="font-medium text-toned">Research &amp; Analysis</span>.
+      <p class="text-center text-sm text-highlighted leading-relaxed">
+        Need a Hub Studio sign-in? Please contact <span class="font-semibold">Research &amp; Analysis</span>.
         There are no live signups — each new account is vetted &amp; provisioned by R&amp;A.
       </p>
     </div>

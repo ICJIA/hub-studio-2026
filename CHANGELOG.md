@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No unreleased changes yet._
+
+## [0.1.0] - 2026-06-22
+
 The core Studio is built and working in development (pre-launch). Highlights since the design phase.
 
 ### Public demo & authoring polish — 2026‑06‑20 → 2026‑06‑22 (newest first)
@@ -88,4 +92,5 @@ _Build / dependencies_
 - Pre-launch: remaining work is Strapi/email configuration (Research & Analysis), a deploy-preview CSP check, and removing the dev bypass — not new construction.
 - Backend (Strapi 5) is managed separately and must not be modified without coordination.
 
-[Unreleased]: https://github.com/icjia/hub-studio-2026
+[Unreleased]: https://github.com/icjia/hub-studio-2026/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/icjia/hub-studio-2026/releases/tag/v0.1.0

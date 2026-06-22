@@ -7,8 +7,8 @@ export function blankArticle(): Article {
     documentId: '', title: '', slug: '', date: null, external: false,
     categories: [], tags: [], citation: null, funding: null, publishedAt: null,
     type: null, hideFromBanner: false, authors: [], abstract: null, markdown: '',
-    splash: null, thumbnail: null, images: [], mainfiletype: null,
-    mainfile: null, extrafile: null, doi: null, apps: [], datasets: [],
+    splash: null, thumbnail: null, images: [], mainfiletype: 'PDF',
+    mainfiles: [], extrafile: null, doi: null, apps: [], datasets: [],
   }
 }
 

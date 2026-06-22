@@ -40,7 +40,7 @@ export default defineNuxtConfig({
         'lucide:x', 'lucide:search', 'lucide:loader-circle', 'lucide:minus', 'lucide:plus',
         'lucide:arrow-left', 'lucide:arrow-right', 'lucide:moon', 'lucide:sun',
         'lucide:circle-check', 'lucide:info', 'lucide:triangle-alert', 'lucide:circle-alert',
-        'lucide:ellipsis', 'lucide:external-link',
+        'lucide:ellipsis', 'lucide:external-link', 'lucide:file-text', 'lucide:download',
       ],
       sizeLimitKb: 512,
     },
@@ -58,6 +58,9 @@ export default defineNuxtConfig({
       // Demo mode: a fully self-contained public demo (demo login only, in-memory, no writes,
       // no secrets). false ⇒ normal behavior is 100% unchanged. Baked at build for the SPA.
       demoMode: studioConfig.demoMode,
+      // Max number of "Main Files" (PDF attachments) per article. Single source of truth lives
+      // in studio.config.ts; surfaced here so MainFilesField reads it from runtimeConfig.public.
+      maxMainFiles: studioConfig.maxMainFiles,
       // The deployed Studio origin the review email links to (absolute /preview/... URL).
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
     },

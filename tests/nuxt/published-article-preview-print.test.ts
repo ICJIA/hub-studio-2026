@@ -84,3 +84,49 @@ describe('PublishedArticlePreview – printArticle()', () => {
     expect(printStub).toHaveBeenCalledOnce()
   })
 })
+
+describe('PublishedArticlePreview – Downloads (Main Files under the TOC)', () => {
+  function pdf(name: string, url: string): NonNullable<Article['mainfiles']>[number] {
+    return { id: 1, url, name, alternativeText: null, caption: null, mime: 'application/pdf' }
+  }
+
+  it('renders one distinct download button per main file, labelled by filename, linking to its url with download', async () => {
+    const withFiles: Partial<Article> = {
+      ...article,
+      mainfiles: [
+        pdf('report.pdf', '/files/demo/report.pdf'),
+        pdf('appendix.pdf', '/files/demo/appendix.pdf'),
+      ],
+    }
+    const wrapper = await mountSuspended(PublishedArticlePreview, { props: { article: withFiles } })
+    expect(wrapper.find('[data-test="published-downloads"]').exists()).toBe(true)
+    const links = wrapper.findAll('.published-download-link')
+    expect(links).toHaveLength(2)
+    expect(links[0]!.attributes('href')).toBe('/files/demo/report.pdf')
+    expect(links[0]!.attributes('download')).toBe('report.pdf')
+    expect(links[0]!.text()).toContain('report.pdf')
+    expect(links[1]!.attributes('href')).toBe('/files/demo/appendix.pdf')
+    expect(links[1]!.text()).toContain('appendix.pdf')
+  })
+
+  it('renders NOTHING (no Downloads section) when there are no main files', async () => {
+    const wrapper = await mountSuspended(PublishedArticlePreview, { props: { article: { ...article, mainfiles: [] } } })
+    expect(wrapper.find('[data-test="published-downloads"]').exists()).toBe(false)
+    expect(wrapper.findAll('.published-download-link')).toHaveLength(0)
+  })
+
+  it('a single main file yields exactly one download button', async () => {
+    const wrapper = await mountSuspended(PublishedArticlePreview, {
+      props: { article: { ...article, mainfiles: [pdf('only.pdf', '/files/demo/only.pdf')] } },
+    })
+    expect(wrapper.findAll('.published-download-link')).toHaveLength(1)
+  })
+
+  it('passes the file url through the href allowlist (no javascript:/data:)', async () => {
+    const wrapper = await mountSuspended(PublishedArticlePreview, {
+      props: { article: { ...article, mainfiles: [pdf('evil.pdf', 'javascript:alert(1)')] } },
+    })
+    const link = wrapper.find('.published-download-link')
+    expect(link.attributes('href')).toBe('#') // safeHref collapses the hostile scheme
+  })
+})

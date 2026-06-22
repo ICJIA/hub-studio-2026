@@ -15,6 +15,11 @@ describe('blank model factories', () => {
     expect(a.authors).toEqual([])
     expect(a.splash).toBeNull()
   })
+  it('blankArticle defaults the main file type to PDF and main files to an empty array', () => {
+    const a = blankArticle()
+    expect(a.mainfiletype).toBe('PDF')
+    expect(a.mainfiles).toEqual([])
+  })
   it('blank models only fail validation on their genuinely-required fields', () => {
     // article/dataset require title+slug+date; app requires title+slug only.
     expect(validateArticle(blankArticle()).map((e) => e.field).sort()).toEqual(['date', 'slug', 'title'])

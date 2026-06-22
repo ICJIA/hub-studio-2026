@@ -8,7 +8,7 @@ const baseArticle = (over: Partial<Article> = {}): Article => ({
   documentId: '', title: 'T', slug: 't', date: '2020-01-01', external: false,
   type: null, hideFromBanner: false, categories: [], tags: [], authors: [],
   abstract: null, markdown: '', splash: null, thumbnail: null, images: [],
-  mainfiletype: null, mainfile: null, extrafile: null, doi: null,
+  mainfiletype: null, mainfiles: [], extrafile: null, doi: null,
   citation: null, funding: null, apps: [], datasets: [], publishedAt: null, ...over,
 })
 

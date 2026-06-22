@@ -8,8 +8,10 @@ describe('field options', () => {
   it('keeps the v1 category list', () => {
     expect(CATEGORY_OPTIONS).toEqual(['corrections', 'courts', 'crimes', 'law enforcement', 'victims', 'other'])
   })
-  it('keeps the v1 mainfiletype, timeperiod, and unit lists', () => {
-    expect(MAINFILETYPE_OPTIONS).toEqual(['full report', 'pdf version'])
+  it('keeps the v1 mainfiletype (with PDF first as the default), timeperiod, and unit lists', () => {
+    // PDF is first so it is the default selected value for new articles (blank-models seeds 'PDF').
+    expect(MAINFILETYPE_OPTIONS).toEqual(['PDF', 'full report', 'pdf version'])
+    expect(MAINFILETYPE_OPTIONS[0]).toBe('PDF')
     expect(TIMEPERIOD_TYPE_OPTIONS).toEqual(['calendar', 'fiscal-Federal', 'fiscal-Illinois', 'other'])
     expect(UNIT_OPTIONS).toEqual(['national', 'state', 'county', 'municipal', 'other'])
   })

@@ -128,7 +128,7 @@ defineExpose({ submit, setField, onPublished, errors, model })
           <MediaField v-model="model.splash" label="Splash image" />
           <BodyImagesField @insert="bodyField?.insertMarkdown($event)" />
           <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
-          <MediaField v-model="model.mainfile" label="Main file" kind="file" />
+          <MainFilesField v-model="model.mainfiles" />
           <RelationList label="Linked datasets" :items="model.datasets" />
           <RelationList label="Linked apps" :items="model.apps" />
         </div>

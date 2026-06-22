@@ -145,6 +145,22 @@
   border-left-color: #1565c0;
   font-weight: 600;
 }
+/* Downloads: a distinct, bordered/soft download button per Main File (PDF), stacked under the TOC. */
+.published-downloads { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.published-downloads-heading {
+  font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px; text-transform: uppercase;
+  letter-spacing: 0.05em; color: rgba(0, 0, 0, 0.6); border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5rem; margin: 0 0 0.25rem;
+}
+.published-download-link {
+  display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
+  font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 500; color: #1565c0;
+  background: #f1f6fc; border: 1px solid #cfe0f5; border-radius: 4px; padding: 0.5rem 0.7rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.published-download-link:hover { background: #e3eefb; border-color: #1565c0; color: #0d47a1; }
+.published-download-icon { flex: 0 0 auto; font-size: 16px; }
+.published-download-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
 /* Splash hero: full-bleed (flush to the article's edges, no border/radius), capped height
    so a very tall image can't dominate. The body below stays inset via .published-layout. */
 .published-article .published-splash { display: block; width: 100%; max-height: 360px; object-fit: cover; border: 0; border-radius: 0; margin: 0 0 2rem; }
@@ -201,7 +217,7 @@
   html.dark { color-scheme: light; }
   body { background: #fff !important; }
   /* Hide non-article chrome (harmless in the print iframe; helps a direct Ctrl+P). */
-  header, nav.published-toc, .published-toc, .published-print-btn { display: none !important; }
+  header, nav.published-toc, .published-toc, .published-downloads, .published-print-btn { display: none !important; }
   /* Single column — drop the TOC grid. */
   .published-layout { display: block !important; max-width: none !important; margin: 0 !important; }
   .published-content { max-width: none !important; margin: 0 !important; }

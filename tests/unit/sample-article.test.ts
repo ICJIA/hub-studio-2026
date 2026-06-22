@@ -66,15 +66,26 @@ describe('buildSampleArticle', () => {
     expect(article.images).toEqual([])
   })
 
-  it('splash & thumbnail are display-only demo images (id 0, local bundled url, no base64); mainfile/extrafile null', () => {
+  it('splash & thumbnail are display-only demo images (id 0, local bundled url, no base64); extrafile null', () => {
     const article = buildSampleArticle()
     expect(article.splash).not.toBeNull()
     expect(article.splash!.id).toBe(0)
     expect(article.splash!.url).toMatch(/^\/images\/demo\//)
     expect(containsBase64(article.splash!.url)).toBe(false)
     expect(article.thumbnail).not.toBeNull()
-    expect(article.mainfile).toBeNull()
     expect(article.extrafile).toBeNull()
+  })
+
+  it('mainfiles are display-only PDF refs (id 0, bundled /files/demo/*.pdf, no base64)', () => {
+    const article = buildSampleArticle()
+    expect(Array.isArray(article.mainfiles)).toBe(true)
+    expect(article.mainfiles.length).toBeGreaterThan(0)
+    for (const f of article.mainfiles) {
+      expect(f.id).toBe(0)
+      expect(f.url).toMatch(/^\/files\/demo\/.*\.pdf$/)
+      expect(f.mime).toBe('application/pdf')
+      expect(containsBase64(f.url)).toBe(false)
+    }
   })
 
   it('markdown embeds inline FIGURES (bundled chart/table SVGs under /figures/, never base64)', () => {

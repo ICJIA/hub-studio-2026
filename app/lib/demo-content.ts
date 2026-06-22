@@ -7,6 +7,7 @@ import { blankArticle, blankApp, blankDataset } from '~/lib/forms/blank-models'
 import { slugify } from '~/lib/slug'
 import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 import { sampleFigureUrl } from '~/lib/sample-figures'
+import { sampleMainFileRef } from '~/lib/sample-files'
 
 // ── Shared pools ──────────────────────────────────────────────────────────────
 
@@ -389,6 +390,20 @@ function publishedAt(i: number): string {
 // ~60% published: every 5th item (i % 5 === 0) is draft
 function isPublished(i: number): boolean { return i % 5 !== 0 }
 
+/**
+ * Deterministic per-article "Main Files" (PDF attachments) so the demo shows all of 0 / 1 / many.
+ * Distribution by index mod 10: 0 files for i%10===0 (a FEW, ~10%); 2-3 files for i%10===1|2
+ * (a FEW, ~20% — alternating 2 and 3); exactly 1 file for the rest (MANY, ~70%). Refs are
+ * display-only (id 0) → shown in the preview, dropped on Save by mediaIdsForWrite.
+ */
+function mainFilesFor(i: number): import('~/types/content').MediaRef[] {
+  const m = i % 10
+  if (m === 0) return []
+  if (m === 1) return [sampleMainFileRef(i), sampleMainFileRef(i + 1)]
+  if (m === 2) return [sampleMainFileRef(i), sampleMainFileRef(i + 1), sampleMainFileRef(i + 2)]
+  return [sampleMainFileRef(i)]
+}
+
 // ── Article factory ───────────────────────────────────────────────────────────
 
 function makeArticle(i: number): Article {
@@ -430,7 +445,8 @@ function makeArticle(i: number): Article {
       height: 400,
       mime: 'image/jpeg',
     },
-    mainfiletype: pick(['full report', 'pdf version'] as const, i),
+    mainfiletype: pick(['PDF', 'full report', 'pdf version'] as const, i),
+    mainfiles: mainFilesFor(i),
     doi: `10.13140/RG.${2000 + i}.${String(i).padStart(5, '0')}`,
     citation: `Ipsum, L. (${year}). ${title}. Sample Organization.`,
     funding: 'This is sample content for demonstration only and is not associated with any real funding source or organization.',

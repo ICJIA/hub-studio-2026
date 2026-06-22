@@ -48,6 +48,18 @@ export function mediaIdForWrite(ref: MediaRef | null | undefined): number | null
   return ref && ref.id > 0 ? ref.id : null
 }
 
+/** Flatten an inline-populated MULTIPLE media array to MediaRef[] (mirrors mediaFromStrapi). */
+export function mediaListFromStrapi(list: (StrapiMedia | null | undefined)[] | null | undefined): MediaRef[] {
+  if (!list) return []
+  return list.map((m) => mediaFromStrapi(m)).filter((m): m is MediaRef => m !== null)
+}
+
+/** Reduce a MediaRef[] to the numeric upload ids written to a MULTIPLE media field. Demo/placeholder
+ *  refs (id <= 0) are dropped — no bogus media id reaches Strapi (mirrors mediaIdForWrite). */
+export function mediaIdsForWrite(refs: MediaRef[] | null | undefined): number[] {
+  return (refs ?? []).filter((r) => r && r.id > 0).map((r) => r.id)
+}
+
 /**
  * Shape of one item from the Content-Manager relations endpoint. It has `documentId`
  * and `title` but NO `slug`; extra fields (publishedAt/updatedAt/status) are allowed and ignored.

@@ -54,7 +54,9 @@ export interface Article extends BaseContent {
   thumbnail: MediaRef | null
   images: ImageRef[]
   mainfiletype: string | null
-  mainfile: MediaRef | null
+  /** Zero-or-more downloadable attachments (PDFs). Strapi must expose `mainfile` as a MULTIPLE
+   *  media field for this to round-trip server-side. */
+  mainfiles: MediaRef[]
   extrafile: MediaRef | null
   doi: string | null
   apps: RelationRef[]
@@ -92,7 +94,7 @@ export interface ArticleWrite {
   categories: string[]; tags: string[]; authors: Author[]
   abstract: string | null; markdown: string
   splash: number | null; thumbnail: number | null; images: ImageRef[]
-  mainfiletype: string | null; mainfile: number | null; extrafile: number | null
+  mainfiletype: string | null; mainfiles: number[]; extrafile: number | null
   doi: string | null; citation: string | null; funding: string | null
 }
 export interface AppWrite {

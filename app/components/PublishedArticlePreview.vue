@@ -45,6 +45,14 @@ const splashUrl = computed(() => {
 })
 const hasTags = computed(() => Boolean(props.article.categories?.length || props.article.tags?.length))
 
+/** Downloadable Main Files (PDFs) for the "Downloads" section under the TOC. Each carries a
+ *  safe href (no data:/javascript:) and a display filename; empty list ⇒ section renders nothing. */
+const downloads = computed(() =>
+  (props.article.mainfiles ?? [])
+    .filter((f) => f && f.url)
+    .map((f) => ({ href: safeHref(f.url), name: f.name?.trim() || f.url })),
+)
+
 function printArticle() {
   if (!import.meta.client) return
   if (!rootEl.value) {
@@ -279,6 +287,23 @@ defineExpose({ printArticle, rootEl })
           </li>
         </ul>
       </nav>
+
+      <!-- Downloads: a distinct download button per Main File (PDF), directly under the TOC.
+           Renders nothing when the article carries no main files. -->
+      <section v-if="downloads.length" class="published-downloads" aria-label="Downloads" data-test="published-downloads">
+        <p class="published-downloads-heading">Downloads</p>
+        <a
+          v-for="(d, i) in downloads"
+          :key="`dl-${i}`"
+          :href="d.href"
+          :download="d.name"
+          class="published-download-link"
+          :data-test="`published-download-${i}`"
+        >
+          <UIcon name="i-lucide-download" class="published-download-icon" />
+          <span class="published-download-name">{{ d.name }}</span>
+        </a>
+      </section>
 
       <div class="published-content">
         <div v-if="hasTags" class="published-tags">

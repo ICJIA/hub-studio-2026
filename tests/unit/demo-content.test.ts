@@ -75,6 +75,38 @@ describe('DEMO_ARTICLES — figure distribution', () => {
   })
 })
 
+describe('DEMO_ARTICLES — main files (PDF attachments) distribution', () => {
+  const mfCounts = DEMO_ARTICLES.map((a) => a.mainfiles.length)
+  const zero = mfCounts.filter((c) => c === 0).length
+  const one = mfCounts.filter((c) => c === 1).length
+  const many = mfCounts.filter((c) => c >= 2).length
+
+  it('shows ALL of the 0 / 1 / many states across the demo set', () => {
+    expect(zero).toBeGreaterThan(0)
+    expect(one).toBeGreaterThan(0)
+    expect(many).toBeGreaterThan(0)
+  })
+
+  it('MANY articles carry exactly one main file (the common case)', () => {
+    expect(one / DEMO_ARTICLES.length).toBeGreaterThan(0.5)
+  })
+
+  it('no article exceeds three main files (the configured max)', () => {
+    expect(Math.max(...mfCounts)).toBeLessThanOrEqual(3)
+  })
+
+  it('every main file is a display-only PDF ref (id 0, bundled /files/demo/*.pdf, no base64)', () => {
+    for (const a of DEMO_ARTICLES) {
+      for (const f of a.mainfiles) {
+        expect(f.id).toBe(0)
+        expect(f.url).toMatch(/^\/files\/demo\/.*\.pdf$/)
+        expect(f.mime).toBe('application/pdf')
+        expect(containsBase64(f.url)).toBe(false)
+      }
+    }
+  })
+})
+
 describe('DEMO_ARTICLES — caption positions', () => {
   // Caption BELOW: image line immediately followed by a *Figure N.* line.
   const belowRe = /!\[[^\]]*\]\(\/images\/demo\/figures\/[^)]+\)\n\n\*Figure \d+\./

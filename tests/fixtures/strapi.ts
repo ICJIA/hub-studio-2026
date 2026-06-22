@@ -16,7 +16,10 @@ export const rawArticle = {
   publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
   splash: { id: 10, documentId: 'splashdoc', name: 'splash.png', alternativeText: 'Splash alt', caption: null, url: '/uploads/splash_abc.png', width: 1200, height: 630, mime: 'image/png' },
   thumbnail: null,
-  mainfile: { id: 11, documentId: 'mfdoc', name: 'report.pdf', alternativeText: null, caption: null, url: '/uploads/report_abc.pdf', mime: 'application/pdf' },
+  mainfile: [
+    { id: 11, documentId: 'mfdoc', name: 'report.pdf', alternativeText: null, caption: null, url: '/uploads/report_abc.pdf', mime: 'application/pdf' },
+    { id: 12, documentId: 'mfdoc2', name: 'appendix.pdf', alternativeText: null, caption: null, url: '/uploads/appendix_abc.pdf', mime: 'application/pdf' },
+  ],
   extrafile: null,
   apps: { count: 0 },
   datasets: { count: 1 },

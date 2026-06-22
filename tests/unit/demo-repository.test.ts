@@ -24,7 +24,7 @@ function makeItem(i: number, published: boolean): Article & { updatedAt: string 
     thumbnail: null,
     images: [],
     mainfiletype: null,
-    mainfile: null,
+    mainfiles: [],
     extrafile: null,
     doi: null,
     apps: [],

@@ -5,7 +5,8 @@ export const CATEGORY_OPTIONS = [
   'corrections', 'courts', 'crimes', 'law enforcement', 'victims', 'other',
 ] as const
 
-export const MAINFILETYPE_OPTIONS = ['full report', 'pdf version'] as const
+// PDF first so it is the default selected value for new articles (blank-models seeds 'PDF').
+export const MAINFILETYPE_OPTIONS = ['PDF', 'full report', 'pdf version'] as const
 
 export const TIMEPERIOD_TYPE_OPTIONS = [
   'calendar', 'fiscal-Federal', 'fiscal-Illinois', 'other',

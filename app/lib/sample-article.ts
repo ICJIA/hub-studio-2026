@@ -15,6 +15,7 @@ import { MAINFILETYPE_OPTIONS } from '~/lib/field-options'
 import { slugify } from '~/lib/slug'
 import { sampleImageUrl, sampleSplashUrl } from '~/lib/sample-images'
 import { sampleFigureUrl } from '~/lib/sample-figures'
+import { sampleMainFileRef } from '~/lib/sample-files'
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
@@ -619,7 +620,8 @@ export function buildSampleArticle(): Article {
     thumbnail: demoImage(600, 400, `${t.title} — thumbnail`),
     images: [],
     mainfiletype: pick(MAINFILETYPE_OPTIONS),
-    mainfile: null,
+    // Display-only demo PDFs (id 0 → shown as Downloads in the preview, dropped on Save by mediaIdsForWrite).
+    mainfiles: [sampleMainFileRef(0), sampleMainFileRef(1)],
     extrafile: null,
     doi: `10.13140/RG.${Math.floor(Math.random() * 9000 + 1000)}.${Math.floor(Math.random() * 1_000_000).toString(36)}`,
     citation: `Ipsum, L. (2025). ${t.title}. Sample Organization.`,

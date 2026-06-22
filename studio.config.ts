@@ -10,4 +10,8 @@ export default {
   // DEMO MODE: a fully self-contained public demo — demo login only, in-memory content,
   // no real auth, no Strapi writes, no secrets. Set NUXT_PUBLIC_DEMO_MODE=true on the deploy.
   demoMode,
+  // Max number of "Main Files" (PDF attachments) an article may carry. The SINGLE editable
+  // source of truth — surfaced via runtimeConfig.public so MainFilesField (and any future
+  // consumer) reads one value. Bump here to change the cap everywhere.
+  maxMainFiles: 3,
 }

@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 
 mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mockResolvedValue([]), remove: vi.fn() }))
 
-const findOneMock = vi.fn().mockResolvedValue({ documentId: 'a1', title: 'Existing', markdown: '', categories: [], tags: [], authors: [], images: [], apps: [], datasets: [], splash: null, thumbnail: null, mainfile: null, extrafile: null, type: null, mainfiletype: null, abstract: null, doi: null, citation: null, funding: null, date: '2020-01-01', slug: 'existing', external: false, hideFromBanner: false, publishedAt: null })
+const findOneMock = vi.fn().mockResolvedValue({ documentId: 'a1', title: 'Existing', markdown: '', categories: [], tags: [], authors: [], images: [], apps: [], datasets: [], splash: null, thumbnail: null, mainfiles: [], extrafile: null, type: null, mainfiletype: null, abstract: null, doi: null, citation: null, funding: null, date: '2020-01-01', slug: 'existing', external: false, hideFromBanner: false, publishedAt: null })
 mockNuxtImport('useArticles', () => () => ({ list: vi.fn().mockResolvedValue([]), listPage: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 }), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn(), publish: vi.fn() }))
 
 const appFindOneMock = vi.fn().mockResolvedValue({ documentId: 'app1', title: 'Existing App', date: '2020-01-01', slug: 'existing-app', categories: [], tags: [], contributors: [], image: null, description: '', url: '', datasets: [], articles: [], publishedAt: null })

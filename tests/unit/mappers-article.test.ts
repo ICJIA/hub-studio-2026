@@ -17,6 +17,12 @@ describe('articleFromStrapi', () => {
     expect(a.splash).toEqual({ id: 10, url: '/uploads/splash_abc.png', name: 'splash.png', alternativeText: 'Splash alt', caption: null, width: 1200, height: 630, mime: 'image/png' })
     expect(a.thumbnail).toBeNull()
   })
+  it('flattens the MULTIPLE mainfile media array to mainfiles: MediaRef[]', () => {
+    expect(a.mainfiles).toHaveLength(2)
+    expect(a.mainfiles.map((f) => f.id)).toEqual([11, 12])
+    expect(a.mainfiles.map((f) => f.name)).toEqual(['report.pdf', 'appendix.pdf'])
+    expect(a.mainfiles[0]!.url).toBe('/uploads/report_abc.pdf')
+  })
   it('takes relations from the relations argument ({documentId,title}, no slug); ignores the entity {count}', () => {
     expect(a.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data' }])
     expect(a.apps).toEqual([]) // not supplied → defaults to []
@@ -36,5 +42,19 @@ describe('articleToWrite', () => {
     expect(w).not.toHaveProperty('datasets')
     expect(w).not.toHaveProperty('documentId')
     expect(w).not.toHaveProperty('publishedAt')
+  })
+  it('round-trips mainfiles to an array of numeric ids (mainfiles: number[])', () => {
+    const w = articleToWrite(articleFromStrapi(rawArticle as never))
+    expect(w.mainfiles).toEqual([11, 12])
+  })
+  it('drops display-only (id <= 0) main files from the write payload', () => {
+    const w = articleToWrite({
+      ...articleFromStrapi(rawArticle as never),
+      mainfiles: [
+        { id: 0, url: '/files/demo/sample-report-01.pdf', name: 'sample-report-01.pdf' },
+        { id: 11, url: '/uploads/report_abc.pdf', name: 'report.pdf' },
+      ],
+    })
+    expect(w.mainfiles).toEqual([11])
   })
 })

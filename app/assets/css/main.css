@@ -52,6 +52,20 @@
   --ui-border-accented: var(--ui-color-neutral-700);
 }
 
+/* Brighter PRIMARY in dark mode — WCAG AA fix.
+   The :root rule above pins --ui-primary to blue-600 (tuned so WHITE text on a SOLID primary button
+   clears AA in light mode). Color-mode toggles dark by adding `.dark` to <html>, so on the dark cards
+   that same blue-600 is used for blue-on-dark text — the dashboard Create + Open queue (soft/subtle
+   primary) buttons and the Edit / Preview / title row links — where it measures only ~3.1–3.5:1 and
+   FAILS AA. blue-400 lifts that text to ~7:1 on the slate-900 card and ~6:1 on the subtle/soft tint.
+   `:root.dark` (specificity 0,2,0) is used DELIBERATELY so it outranks the unlayered `:root`
+   (0,1,0) on the <html> element — a plain `.dark` ties on specificity and loses the cascade there.
+   Dark-only: light mode (and the inverted text on solid-primary buttons) is unchanged. */
+:root.dark,
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+}
+
 /* The page canvas — a soft slate (light) / near-black (dark) so cards lift off it. */
 body { background-color: var(--ui-color-neutral-50); }
 .dark body { background-color: var(--ui-color-neutral-950); }

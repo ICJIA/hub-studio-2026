@@ -26,10 +26,14 @@ const showDevSamples = import.meta.dev
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <UCard>
         <template #header><h2 class="font-medium">Create</h2></template>
+        <!-- Primary CTAs use the SOLID variant for the highest, mode-independent contrast: the
+             subtle variant's blue-on-faint-tint text fell below WCAG AA (~4:1) in BOTH light and
+             dark, whereas solid is white-on-blue-600 (5.2:1) in light and dark-text-on-blue-400
+             (7:1) in dark. -->
         <div class="flex flex-col gap-2">
-          <UButton to="/create/article" variant="subtle" label="New article" />
-          <UButton to="/create/app" variant="subtle" label="New app" />
-          <UButton to="/create/dataset" variant="subtle" label="New dataset" />
+          <UButton to="/create/article" label="New article" />
+          <UButton to="/create/app" label="New app" />
+          <UButton to="/create/dataset" label="New dataset" />
         </div>
       </UCard>
 
@@ -58,7 +62,8 @@ const showDevSamples = import.meta.dev
       <UCard v-if="canPublish">
         <template #header><h2 class="font-medium">Publish queue</h2></template>
         <p class="text-sm text-muted mb-2">Review submitted drafts.</p>
-        <UButton to="/manage" variant="subtle" label="Open queue" />
+        <!-- Solid (not subtle) so the CTA text clears WCAG AA in both light and dark — see Create above. -->
+        <UButton to="/manage" label="Open queue" />
       </UCard>
     </div>
 

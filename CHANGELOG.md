@@ -29,6 +29,7 @@ _Changed_
 
 _Fixed_
 
+- **Dark‑mode contrast → WCAG 2.1 AA.** The dim blue‑on‑dark controls now meet AA: the dashboard **New article / New app / New dataset** and **Open queue** buttons switched from the low‑contrast `subtle` primary variant to **solid** (white‑on‑blue in light, dark‑on‑blue in dark; ~5–7:1, passes both modes — was ~4:1), and **`--ui-primary` is brightened to blue‑400 in dark mode** (`:root.dark`) so all blue‑on‑dark text/links — the **Edit / Preview** row actions and article‑title links — clear AA (was ~3.4:1, now ~6.8:1). Verified with contrastcap (dashboard 201/201, login 14/14). Light mode unchanged (primary stays blue‑600).
 - Login note switched to high‑contrast text (WCAG AA; was low‑contrast gray). Demo article‑title year ranges always render ascending. Netlify deploy targets `dist/` (Nuxt's static output), fixing the publish‑dir error.
 
 _Security_

@@ -17,8 +17,14 @@ import { validateArticle, type FieldError } from '~/lib/validators/article'
 import { CATEGORY_OPTIONS, ARTICLE_TYPE_OPTIONS, MAINFILETYPE_OPTIONS } from '~/lib/field-options'
 
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
+// Emitted when the toolbar's Publish/Unpublish toggles the article — lets the parent edit page
+// keep its own published state (entry.publishedAt) in sync with the form.
+const emit = defineEmits<{ published: [entity: Article] }>()
 const repo = useArticles()
 const toast = useToast()
+// Manager-only gate for the toolbar's Publish/Unpublish control. PublishButton is ALSO
+// default-deny internally; this just decides whether to render it / the "save first" hint.
+const { canPublish } = useAuth()
 
 const model = reactive<Article>(props.initial ? { ...props.initial } : blankArticle())
 const errors = ref<FieldError[]>([])
@@ -55,13 +61,48 @@ async function submit() {
   }
 }
 
-defineExpose({ submit, setField, errors, model })
+/** Toolbar Publish/Unpublish succeeded: reflect the new published state locally (so the toolbar
+ *  toggles live) and forward to the parent edit page. */
+function onPublished(entity: Article) {
+  model.publishedAt = entity.publishedAt
+  emit('published', entity)
+}
+
+defineExpose({ submit, setField, onPublished, errors, model })
 </script>
 
 <template>
   <UForm :state="model" class="space-y-6" @submit.prevent="submit">
-    <div class="flex justify-end">
-      <UButton variant="outline" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+    <!--
+      Sticky secondary toolbar — pinned directly under the main app nav (which is `sticky top-0
+      h-16`), so this sits at `top-16` and stays visible while the author scrolls a long article.
+      The form renders inside the layout `<main class="max-w-6xl mx-auto px-4 sm:px-6">`, so the BAR
+      breaks out to full content width (-mx-4 sm:-mx-6) and re-pads its inner row (px-4 sm:px-6).
+    -->
+    <div class="sticky top-16 z-10 -mx-4 sm:-mx-6 border-b border-default bg-default/85 backdrop-blur-md">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
+        <!-- LEFT: live title (updates as the author types the Title field below). -->
+        <p
+          class="min-w-0 flex-1 truncate text-sm font-medium"
+          :class="model.title ? 'text-highlighted' : 'text-muted italic'"
+        >
+          {{ model.title || 'Untitled article' }}
+        </p>
+        <!-- RIGHT: Live preview (always) + Publish/Unpublish (managers, saved article only). -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <UButton size="sm" variant="ghost" color="neutral" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
+          <template v-if="canPublish">
+            <PublishButton
+              v-if="mode === 'edit' && model.documentId"
+              type="article"
+              :document-id="model.documentId"
+              :published="model.publishedAt != null"
+              @published="onPublished($event as Article)"
+            />
+            <span v-else class="hidden text-xs text-muted sm:inline">Save the draft first to publish</span>
+          </template>
+        </div>
+      </div>
     </div>
 
     <TextField v-model="model.title" label="Title" />

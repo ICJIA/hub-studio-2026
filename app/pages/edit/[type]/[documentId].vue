@@ -29,16 +29,25 @@ onMounted(async () => {
     <p v-if="!isKnownType" class="text-muted">Unknown content type.</p>
     <p v-else-if="loading" class="text-muted">Loading…</p>
     <template v-else-if="entry">
-      <ArticleForm v-if="type === 'article'" mode="edit" :initial="entry as Article" />
+      <!-- Article: Publish/Unpublish lives in ArticleForm's sticky toolbar; keep entry.publishedAt
+           in sync via its @published so the indicator below stays correct. -->
+      <ArticleForm
+        v-if="type === 'article'"
+        mode="edit"
+        :initial="entry as Article"
+        @published="entry.publishedAt = ($event as Article).publishedAt"
+      />
       <AppForm v-else-if="type === 'app'" mode="edit" :initial="entry as App" />
       <DatasetForm v-else-if="type === 'dataset'" mode="edit" :initial="entry as Dataset" />
       <div class="mt-6 border-t border-default pt-4 space-y-3">
         <div class="flex items-center gap-3">
+          <!-- App/Dataset still expose Publish here (only ArticleForm has the toolbar). -->
           <PublishButton
-            :type="(type as 'article' | 'app' | 'dataset')"
+            v-if="type !== 'article'"
+            :type="(type as 'app' | 'dataset')"
             :document-id="documentId"
             :published="entry.publishedAt != null"
-            @published="entry.publishedAt = ($event as Article | App | Dataset).publishedAt"
+            @published="entry.publishedAt = ($event as App | Dataset).publishedAt"
           />
           <span v-if="entry.publishedAt" class="text-sm text-muted">Published.</span>
         </div>

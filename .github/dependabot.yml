@@ -11,8 +11,23 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-    # Group routine non-major bumps into a single PR to cut noise; majors stay individual.
+    # Group routine non-major bumps into a single PR to cut noise; majors stay individual —
+    # EXCEPT the Pinia family, which must move together (the `pinia` group below).
     groups:
+      # Pinia family must upgrade together: @pinia/nuxt's peer requires a matching pinia MAJOR, so
+      # bumping one without the others breaks `npm install` (the @pinia/nuxt-0.11 vs pinia-2 ERESOLVE
+      # that failed a deploy). Grouping ALL update types — including major — keeps pinia, @pinia/nuxt,
+      # and pinia-plugin-persistedstate in one install-consistent PR. Listed first so the family lands
+      # here rather than in minor-and-patch.
+      pinia:
+        patterns:
+          - "pinia"
+          - "@pinia/*"
+          - "pinia-plugin-*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
       minor-and-patch:
         update-types:
           - "minor"

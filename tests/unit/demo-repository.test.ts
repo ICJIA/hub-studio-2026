@@ -71,6 +71,51 @@ describe('makeDemoRepository', () => {
     expect(result.items.every((i) => i.publishedAt == null)).toBe(true)
   })
 
+  it('listPage filters by type (only matching items; across all pages)', async () => {
+    // Build a small mixed-type seed: 4 'researchReport', 3 'annualReport', the rest 'article'.
+    const typed = Array.from({ length: 10 }, (_, i) => {
+      const item = makeItem(i, true)
+      item.type = i < 4 ? 'researchReport' : i < 7 ? 'annualReport' : 'article'
+      return item
+    })
+    const repo = makeDemoRepository(typed, 'k-type')
+    const research = await repo.listPage({ type: 'researchReport', page: 1, pageSize: 25 })
+    expect(research.total).toBe(4)
+    expect(research.items.every((i) => i.type === 'researchReport')).toBe(true)
+    const annual = await repo.listPage({ type: 'annualReport', page: 1, pageSize: 25 })
+    expect(annual.total).toBe(3)
+    expect(annual.items.every((i) => i.type === 'annualReport')).toBe(true)
+  })
+
+  it('listPage with no type (or "all") returns every item, regardless of type', async () => {
+    const typed = Array.from({ length: 6 }, (_, i) => {
+      const item = makeItem(i, true)
+      item.type = i % 2 === 0 ? 'researchReport' : 'article'
+      return item
+    })
+    const repo = makeDemoRepository(typed, 'k-type-all')
+    const all = await repo.listPage({ page: 1, pageSize: 25 })
+    expect(all.total).toBe(6)
+    // An unknown type yields nothing (proves the equality is exact, not a prefix/loose match).
+    const none = await repo.listPage({ type: 'noSuchType', page: 1, pageSize: 25 })
+    expect(none.total).toBe(0)
+  })
+
+  it('type filter spans all pages, then re-paginates (filter applied before slicing)', async () => {
+    // 60 items, every one 'researchReport' except 5 scattered 'annualReport' (across page boundaries).
+    const typed = Array.from({ length: 60 }, (_, i) => {
+      const item = makeItem(i, true)
+      item.type = i % 12 === 0 ? 'annualReport' : 'researchReport' // i = 0,12,24,36,48 → 5 items
+      return item
+    })
+    const repo = makeDemoRepository(typed, 'k-type-pages')
+    const annual = await repo.listPage({ type: 'annualReport', page: 1, pageSize: 25 })
+    // All 5 matches found across the whole set (not just the first loaded page of 25).
+    expect(annual.total).toBe(5)
+    expect(annual.pageCount).toBe(1)
+    expect(annual.items.length).toBe(5)
+  })
+
   it('list() returns the first page of items', async () => {
     const repo = makeDemoRepository([...seed], 'k-list')
     const items = await repo.list({ page: 1, pageSize: 10 })

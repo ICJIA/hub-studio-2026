@@ -112,9 +112,9 @@ export function buildGuidedTourSteps(opts: {
     {
       id: 'drafts',
       target: '[data-tour="drafts"]',
-      title: 'Your content list',
+      title: 'The content list',
       content:
-        'Everything you have created shows up in this list. Switch between articles, apps, and datasets, and open any item to keep editing or to preview it.',
+        'Browse all articles — published and drafts together — from everyone, not just your own. Switch between articles, apps, and datasets, filter articles by type, and open any item to keep editing or to preview it.',
       icon: 'i-lucide-files',
     },
     {

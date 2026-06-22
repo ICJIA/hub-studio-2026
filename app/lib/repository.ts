@@ -18,6 +18,12 @@ export interface ListOptions {
   page?: number
   pageSize?: number
   sort?: string
+  /**
+   * Filter by the article `type` enum (e.g. 'researchReport'). Applied across ALL items, then
+   * paginated — selecting a type re-pages from 1. Undefined → all types (the "All types" option).
+   * Maps to a Strapi `filters[type][$eq]` on the real repo and an in-memory equality on the demo repo.
+   */
+  type?: string
   /** Content-Manager filters, e.g. { authorEmail: { $eq: 'a@x.gov' } }. Backward-compatible: existing callers omit it. */
   filters?: Record<string, unknown>
 }
@@ -67,6 +73,16 @@ export function assertWritesAllowed(): void {
   if (isDemoMode()) throw new Error('Demo mode: writes are disabled')
 }
 
+/**
+ * Merge the optional `type` filter into the Content-Manager `filters` object as `filters[type][$eq]`
+ * — the same query shape Strapi uses for `status`/publicationState. Undefined `type` leaves the
+ * caller's `filters` untouched (so the "All types" case sends no type filter at all).
+ */
+function buildFilters(opts: ListOptions): Record<string, unknown> | undefined {
+  if (!opts.type) return opts.filters
+  return { ...opts.filters, type: { $eq: opts.type } }
+}
+
 export function createRepository<TRaw, TDomain, TWrite>(
   cfg: RepositoryConfig<TRaw, TDomain, TWrite>,
 ): Repository<TDomain> {
@@ -80,7 +96,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
           page: opts.page,
           pageSize: opts.pageSize,
           sort: opts.sort,
-          filters: opts.filters,
+          filters: buildFilters(opts),
         },
       })
       return unwrapList(res).map((raw) => cfg.fromStrapi(raw))
@@ -93,7 +109,7 @@ export function createRepository<TRaw, TDomain, TWrite>(
           page: opts.page,
           pageSize: opts.pageSize,
           sort: opts.sort,
-          filters: opts.filters,
+          filters: buildFilters(opts),
         },
       })
       const items = res.results.map((raw) => cfg.fromStrapi(raw))

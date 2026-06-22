@@ -4,12 +4,12 @@ import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { PagedResult } from '~/lib/repository'
 
 const DRAFT_ITEMS = [
-  { documentId: 'a1', title: 'First Draft', date: '2024-03-15', publishedAt: null, authors: [{ title: 'Alice Smith, MA' }], updatedAt: '2026-01-02T10:00:00.000Z' },
-  { documentId: 'a2', title: 'Second Draft', date: '2024-01-10', publishedAt: null, authors: [{ title: 'Bob Jones, PhD' }, { title: 'Carol White, MA' }], updatedAt: '2026-01-01T10:00:00.000Z' },
+  { documentId: 'a1', title: 'First Draft', date: '2024-03-15', publishedAt: null, type: 'researchReport', authors: [{ title: 'Alice Smith, MA' }], updatedAt: '2026-01-02T10:00:00.000Z' },
+  { documentId: 'a2', title: 'Second Draft', date: '2024-01-10', publishedAt: null, type: 'annualReport', authors: [{ title: 'Bob Jones, PhD' }, { title: 'Carol White, MA' }], updatedAt: '2026-01-01T10:00:00.000Z' },
 ]
 
 const PUBLISHED_ITEM = {
-  documentId: 'a3', title: 'Published Article', date: '2023-11-01', publishedAt: '2024-01-01T12:00:00.000Z', authors: [{ title: 'Dan Green, JD' }], updatedAt: '2026-01-03T10:00:00.000Z'
+  documentId: 'a3', title: 'Published Article', date: '2023-11-01', publishedAt: '2024-01-01T12:00:00.000Z', type: 'article', authors: [{ title: 'Dan Green, JD' }], updatedAt: '2026-01-03T10:00:00.000Z'
 }
 
 function makePagedResult<T>(items: T[], total?: number): PagedResult<T> {
@@ -22,6 +22,19 @@ const listMock = vi.fn().mockResolvedValue(DRAFT_ITEMS)
 mockNuxtImport('useArticles', () => () => ({
   list: listMock,
   listPage: listPageMock,
+  findOne: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
+  publish: vi.fn(),
+}))
+
+// Apps repo: used by the "non-article list has no Type filter" test. Returns an empty page so the
+// component renders its empty state (no Strapi $api needed in the test env).
+const appsListPageMock = vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 })
+mockNuxtImport('useApps', () => () => ({
+  list: vi.fn().mockResolvedValue([]),
+  listPage: appsListPageMock,
   findOne: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
@@ -104,5 +117,50 @@ describe('ContentList', () => {
     const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.text()).toContain('+1 more')
+  })
+
+  // ── Article TYPE: chip + filter dropdown ────────────────────────────────────
+
+  it('renders a humanized Type chip for each article', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article', status: 'draft' } })
+    await new Promise((r) => setTimeout(r, 0))
+    // Stored enums 'researchReport' / 'annualReport' shown as sentence case.
+    expect(wrapper.text()).toContain('Research report')
+    expect(wrapper.text()).toContain('Annual report')
+  })
+
+  it('shows the Type filter dropdown with "All types" for articles', async () => {
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('#content-list-type-filter').exists()).toBe(true)
+    expect(wrapper.text()).toContain('All types')
+  })
+
+  it('passes type=undefined to listPage on first load (All types)', async () => {
+    listPageMock.mockClear()
+    await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }))
+  })
+
+  it('selecting a type re-queries listPage with that type and refetches', async () => {
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    listPageMock.mockClear()
+
+    // Drive the v-model the way the USelect would: emit update:modelValue from the select component.
+    const select = wrapper.findComponent({ name: 'USelect' })
+    select.vm.$emit('update:modelValue', 'researchReport')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'researchReport', page: 1 }))
+  })
+
+  it('does NOT render the Type filter for non-article lists (apps)', async () => {
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'app' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('#content-list-type-filter').exists()).toBe(false)
   })
 })

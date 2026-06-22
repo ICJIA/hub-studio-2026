@@ -38,6 +38,12 @@ export function makeDemoRepository<T extends {
     }
     // undefined status → return ALL
 
+    // Type filter (article `type` enum). Applied across ALL items here, before paging, so selecting
+    // a type re-pages from 1 over the whole filtered set. Undefined/"All types" → no type filter.
+    if (opts.type) {
+      items = items.filter((item) => (item as Record<string, unknown>).type === opts.type)
+    }
+
     // Sort
     const sortStr = opts.sort ?? 'updatedAt:desc'
     const [field, dir] = sortStr.split(':') as [string, string]

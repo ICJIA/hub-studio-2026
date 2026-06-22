@@ -28,9 +28,12 @@ const TOPIC_STEMS = [
   'Excepteur Sint Occaecat',
 ] as const
 
+// Cover ALL 14 ARTICLE_TYPE_OPTIONS values (deterministically, by modular index) so the content
+// list's Type filter has matching content for every option — selecting any type yields results.
 const ARTICLE_TYPES = [
-  'researchReport', 'researchBulletin', 'article', 'evaluation',
-  'annualReport', 'researchAtAGlance', 'programEvaluationSummary', 'update',
+  'annualReport', 'article', 'dataset', 'evaluation', 'general', 'newsletter',
+  'process_evaluation', 'programEvaluationSummary', 'researchAtAGlance',
+  'researchBulletin', 'researchReport', 'strategicPlan', 'toolkit', 'update',
 ] as const
 
 const CATEGORIES_POOL = [

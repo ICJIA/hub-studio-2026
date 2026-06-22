@@ -9,6 +9,21 @@ const headers = readFileSync(
   'utf8',
 )
 
+// Audit §7 (D-2/D-3/D-8): the PUBLIC DEMO header set (copied over _headers by netlify.toml at
+// build) is the demo's authoritative, JS-independent backstop. Its `connect-src 'self'` makes the
+// real Strapi/Mailgun/Iconify hosts unreachable from the browser EVEN IF every JS guard is
+// bypassed — so a regression here (any non-'self' connect-src entry) would silently re-open the
+// demo's network surface. Guard it in CI alongside the production set.
+const demoHeaders = readFileSync(
+  fileURLToPath(new URL('../../deploy/headers-demo.txt', import.meta.url)),
+  'utf8',
+)
+/** Extract the bare connect-src value from a `_headers`-style CSP line. */
+function connectSrcOf(text: string): string {
+  const cspLine = text.split('\n').find((l) => l.includes('Content-Security-Policy:')) ?? ''
+  return (/connect-src([^;]*)/.exec(cspLine)?.[1] ?? '').trim()
+}
+
 describe('public/_headers (security headers — audit H-1)', () => {
   it('locks connect-src to self + the Strapi admin host + Mailgun', () => {
     expect(headers).toContain('connect-src')
@@ -38,5 +53,29 @@ describe('public/_headers (security headers — audit H-1)', () => {
     const cspLine = headers.split('\n').find((l) => l.includes('Content-Security-Policy:')) ?? ''
     const scriptSrc = /script-src([^;]*)/.exec(cspLine)?.[1] ?? ''
     expect(scriptSrc).not.toContain('unsafe-inline')
+  })
+})
+
+describe('deploy/headers-demo.txt (public-demo backstop — audit §7 D-2/D-3/D-8)', () => {
+  it("locks connect-src to EXACTLY 'self' — no Strapi/Mailgun/Iconify host (the network backstop)", () => {
+    const connectSrc = connectSrcOf(demoHeaders)
+    expect(connectSrc).toBe("'self'")
+    // Explicit negatives: a regression that re-adds any of these would silently re-open the demo.
+    expect(connectSrc).not.toContain('http')
+    expect(demoHeaders).not.toContain('v2.hub.icjia-api.cloud')
+    expect(demoHeaders).not.toContain('api.iconify.design')
+    expect(demoHeaders).not.toContain('api.mailgun.net')
+  })
+
+  it('ships the full hardening set (nosniff, XFO, Referrer-Policy, Permissions-Policy, HSTS, CSP)', () => {
+    expect(demoHeaders).toMatch(/X-Content-Type-Options:\s*nosniff/)
+    expect(demoHeaders).toMatch(/X-Frame-Options:\s*DENY/)
+    expect(demoHeaders).toMatch(/Referrer-Policy:\s*strict-origin-when-cross-origin/)
+    expect(demoHeaders).toMatch(/Permissions-Policy:\s*camera=\(\)/)
+    expect(demoHeaders).toMatch(/Strict-Transport-Security:\s*max-age=31536000; includeSubDomains/)
+    expect(demoHeaders).toContain('Content-Security-Policy:')
+    expect(demoHeaders).toMatch(/object-src\s+'none'/)
+    expect(demoHeaders).toMatch(/base-uri\s+'none'/)
+    expect(demoHeaders).toMatch(/frame-ancestors\s+'none'/)
   })
 })

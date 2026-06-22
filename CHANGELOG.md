@@ -40,6 +40,7 @@ _Security_
 
 _Build / dependencies_
 
+- **Refreshed the stack to current within majors** — manifest floors raised to match the resolved tree: **Nuxt 4.4.8**, **Vue 3.5.38**, **@nuxt/ui 4.9.0**, **Vitest 4.1.9**, **@vue/test-utils 2.4.11**, **happy‑dom 20.10.6** (Pinia 3 / @pinia/nuxt / persistedstate, vue‑router 5, TypeScript 6, vue‑tsc 3, the CodeMirror/Lezer + markdown‑it families, dompurify, and @vscode/markdown‑it‑katex were already at latest). `markdown-it-attrs` **stays pinned at 4.5.0** (v5 breaks Vite interop). Dropped the deprecated **@types/dompurify** stub (dompurify ships its own types). 507 tests + typecheck (0 errors) + demo `generate` green; dashboard and an edit page render with no error boundary.
 - Public **demo deploy** on Netlify (`NUXT_PUBLIC_DEMO_MODE`) — fully self‑contained, demo‑login‑only, no secrets, no Strapi writes.
 - Bumped **vue‑router 4→5, TypeScript 5→6, vue‑tsc 2→3** (vue‑router 5 is what Nuxt 4 expects; the bump also cleared a recurring Volar warning).
 - Dependabot **groups** so coupled packages move together: the Pinia family, and vue‑router + vue‑tsc.

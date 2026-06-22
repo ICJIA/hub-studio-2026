@@ -42,7 +42,7 @@
   "devDependencies": {
     "@iconify-json/lucide": "1.2.114",
     "@nuxt/test-utils": "^4.0.3",
-    "@types/dompurify": "^3.0.5",
+    "@types/dompurify": "^3.2.0",
     "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-footnote": "^3.0.4",
     "@vue/test-utils": "^2.4.6",

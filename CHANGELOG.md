@@ -7,7 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-The core Studio is built and working in development (pre-launch). Highlights since the design phase:
+The core Studio is built and working in development (pre-launch). Highlights since the design phase.
+
+### Public demo & authoring polish — 2026‑06‑20 → 2026‑06‑22 (newest first)
+
+_Added_
+
+- **Demo role comparison** — enter the demo as **Author** or **Editor**: an author drafts & previews but the Publish/Unpublish control is **dimmed** with an "editors only" popup; an editor publishes. The navbar badge reflects the role.
+- **Multiple Main Files** — drop one or more **PDFs** (max 3, configurable in `studio.config.ts`), each listed by filename; the published preview shows a distinct **download button per file** under the Table of Contents. Main‑file type defaults to **PDF**.
+- **Live Publish/Unpublish in the demo** — toggling updates the article lists and the publish queue live for the session (shared in‑memory store; resets on reload).
+- **Sticky article toolbar** under the main nav — article title (truncating) + **Live preview** + color‑coded **Publish/Unpublish** (soft‑blue preview, green publish, amber unpublish), visible while scrolling.
+- **Inline research figures** — synthetic chart/table SVGs in every demo article (≥1 each); a sidebar body‑image insert panel (alt required, caption optional, position above/below/none, align center/left); **Add Author** (max 10).
+- **Markdown extras** — `markdown-it-attrs` (class/id allowlist), centered images & tables, and figure captions (above/below, center/left).
+- **Demo login & onboarding** — a dismissable session demo banner; a "new user → contact **Research & Analysis**" note (no live signups) shown in every build; an illustrative (non‑functional) sign‑in form on the demo login.
+
+_Changed_
+
+- **Splash image** uses Strapi's `large_` format and renders **edge‑to‑edge** (full‑bleed) above the article body, with the body text/TOC kept inset & readable.
+- **`studio.config.ts`** — central, non‑secret config (app name, Strapi URL, demo mode, `maxMainFiles`) surfaced via `runtimeConfig.public`.
+- Varied demo article spread — distinct titles, a realistic figure distribution (none / one / 2–3), Markdown tables, and top/bottom/no captions.
+
+_Fixed_
+
+- Login note switched to high‑contrast text (WCAG AA; was low‑contrast gray). Demo article‑title year ranges always render ascending. Netlify deploy targets `dist/` (Nuxt's static output), fixing the publish‑dir error.
+
+_Security_
+
+- **Red/blue team audit of demo mode + public deploy** (findings D‑1…D‑10, all remediated): blanked the dev Strapi URL in the demo, in‑memory‑only with a hard write‑block, bundled icons (no runtime fetch under a tight CSP), an `isDemoData` read‑guard, and a Permissions‑Policy header. Audit log ordered newest‑first.
+
+_Build / dependencies_
+
+- Public **demo deploy** on Netlify (`NUXT_PUBLIC_DEMO_MODE`) — fully self‑contained, demo‑login‑only, no secrets, no Strapi writes.
+- Bumped **vue‑router 4→5, TypeScript 5→6, vue‑tsc 2→3** (vue‑router 5 is what Nuxt 4 expects; the bump also cleared a recurring Volar warning).
+- Dependabot **groups** so coupled packages move together: the Pinia family, and vue‑router + vue‑tsc.
+
+---
 
 ### Added
 

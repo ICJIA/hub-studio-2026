@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watch } from '#imports'
 import { APP_NAME } from '~/lib/constants'
 import { isDemoSession } from '~/lib/demo'
 
@@ -15,44 +14,6 @@ const colorMode = useColorMode()
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
-
-// Guided onboarding tour (nuxt-guided-tour). ONE instance lives here in the layout so it survives
-// route changes and a single TourTrigger in the nav can replay it. Auto-start (first-run-once via
-// the module's versioned localStorage key) and the spotlight steps only make sense on the dashboard
-// (that's where the target elements are), so we gate auto-start + replay to the `/` route.
-const route = useRoute()
-const studioTour = useStudioTour()
-
-function onDashboard() {
-  return route.path === '/'
-}
-
-onMounted(() => {
-  // First-run auto-start: only on the dashboard, only if logged in (the tour spotlights the
-  // signed-in dashboard chrome). The module itself ensures it fires at most once (localStorage).
-  if (onDashboard() && auth.isLoggedIn) studioTour.maybeAutoStart()
-})
-
-// Replay entry point used by the editor toolbar's TourTrigger: it navigates to `/?tour=1`. When we
-// land on the dashboard with that flag, launch the tour, then strip the query so a reload won't
-// replay it.
-watch(
-  () => [route.path, route.query.tour] as const,
-  ([path, flag]) => {
-    if (path === '/' && flag != null) {
-      studioTour.launch()
-      navigateTo('/', { replace: true })
-    }
-  },
-  { immediate: true },
-)
-
-// Nav re-launch button: replay only makes sense where the tour runs (the dashboard). Clicking it
-// from the dashboard launches immediately; the editor-toolbar trigger routes here via `/?tour=1`.
-function relaunchFromNav() {
-  if (onDashboard()) studioTour.launch()
-  else navigateTo('/?tour=1')
-}
 </script>
 
 <template>
@@ -60,7 +21,6 @@ function relaunchFromNav() {
     <!-- Demo mode banner -->
     <div
       v-if="demo && showBanner"
-      data-tour="demo-banner"
       class="relative w-full bg-amber-100 border-b border-amber-300 text-amber-900 text-xs text-center py-2 pl-4 pr-10"
       role="status"
     >
@@ -85,21 +45,11 @@ function relaunchFromNav() {
         <div class="flex items-center gap-2 sm:gap-3">
           <template v-if="auth.isLoggedIn">
             <span class="hidden sm:inline text-sm text-muted">{{ auth.displayName }}</span>
-            <UBadge data-tour="role-badge" :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
-            <!-- Re-launch the guided tour. Visible to both authors and editors (the tour runs on the
-                 dashboard where this nav is shown); replays even after it's been seen/skipped. -->
-            <TourTrigger
-              icon-only
-              icon="i-lucide-circle-help"
-              tooltip="Take the guided tour"
-              label="Take the guided tour"
-              @click="relaunchFromNav"
-            />
+            <UBadge :label="auth.canPublish ? 'Publisher' : 'Author'" :color="auth.canPublish ? 'primary' : 'neutral'" variant="subtle" />
             <UButton size="sm" variant="ghost" color="neutral" label="Log out" @click="logout" />
           </template>
           <!-- Theme toggle is always the last button -->
           <UButton
-            data-tour="theme-toggle"
             size="sm" variant="ghost" color="neutral"
             :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
             :aria-label="`Switch to ${colorMode.value === 'dark' ? 'light' : 'dark'} mode`"
@@ -112,35 +62,5 @@ function relaunchFromNav() {
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <slot />
     </main>
-
-    <!-- Guided tour driver (nuxt-guided-tour). Welcome → optional intro slides → spotlight overlay.
-         All three are skippable: Esc / backdrop / Skip on the welcome & intro, and Esc / Skip on the
-         overlay, each marking the tour seen so a reload won't re-trigger first-run. -->
-    <TourWelcome
-      :is-visible="studioTour.showWelcome.value"
-      title="Welcome to the Research Hub Studio"
-      description="This is the staff tool for the ICJIA Research Hub. Want a 60-second tour of the dashboard?"
-      subdescription="You can replay it anytime from the help button in the top bar."
-      start-label="Start the tour"
-      skip-label="No thanks, I'll explore"
-      @start-tour="studioTour.startFromWelcome"
-      @skip-tour="studioTour.skipFromWelcome"
-    />
-
-    <TourIntro
-      :is-visible="studioTour.showIntro.value"
-      :slides="studioTour.introSlides"
-      @next="studioTour.completeIntro"
-      @skip="studioTour.skipIntro"
-    />
-
-    <TourOverlay
-      :is-active="studioTour.tour.isActive.value"
-      :current-step="studioTour.tour.currentStep.value"
-      :progress="studioTour.tour.progress.value"
-      @next="studioTour.tour.next"
-      @previous="studioTour.tour.previous"
-      @cancel="studioTour.tour.cancel"
-    />
   </div>
 </template>

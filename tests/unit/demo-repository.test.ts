@@ -36,9 +36,12 @@ function makeItem(i: number, published: boolean): Article & { updatedAt: string 
 // 30 items: indices 0–19 published, 20–29 draft
 const seed = Array.from({ length: 30 }, (_, i) => makeItem(i, i < 20))
 
+// The store is a MODULE-LEVEL singleton keyed by the second arg, so each test below uses its OWN
+// unique key to stay isolated; the shared-store / isolation tests deliberately reuse / vary the key.
+
 describe('makeDemoRepository', () => {
   it('listPage returns correct total and pageCount', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-total')
     const result = await repo.listPage({ page: 1, pageSize: 10 })
     expect(result.total).toBe(30)
     expect(result.pageCount).toBe(3)
@@ -48,45 +51,45 @@ describe('makeDemoRepository', () => {
   })
 
   it('listPage returns correct slice for page 2', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-page2')
     const p2 = await repo.listPage({ page: 2, pageSize: 10 })
     expect(p2.items.length).toBe(10)
     expect(p2.page).toBe(2)
   })
 
   it('listPage filters published items only', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-published')
     const result = await repo.listPage({ status: 'published', page: 1, pageSize: 25 })
     expect(result.total).toBe(20)
     expect(result.items.every((i) => i.publishedAt != null)).toBe(true)
   })
 
   it('listPage filters draft items only', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-draft')
     const result = await repo.listPage({ status: 'draft', page: 1, pageSize: 25 })
     expect(result.total).toBe(10)
     expect(result.items.every((i) => i.publishedAt == null)).toBe(true)
   })
 
   it('list() returns the first page of items', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-list')
     const items = await repo.list({ page: 1, pageSize: 10 })
     expect(items.length).toBe(10)
   })
 
   it('findOne returns the correct item', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-findone')
     const item = await repo.findOne('test-5')
     expect(item.documentId).toBe('test-5')
   })
 
   it('findOne throws for unknown documentId', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-findmiss')
     await expect(repo.findOne('nope')).rejects.toThrow()
   })
 
   it('create adds an item in-memory without touching network', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-create')
     const newItem = makeItem(99, false)
     const created = await repo.create(newItem)
     expect(created.documentId).toMatch(/^demo-new-/)
@@ -95,7 +98,7 @@ describe('makeDemoRepository', () => {
   })
 
   it('update replaces the item in-memory', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-update')
     const item = await repo.findOne('test-3')
     const updated = await repo.update('test-3', { ...item, title: 'Updated Title' })
     expect(updated.title).toBe('Updated Title')
@@ -104,23 +107,67 @@ describe('makeDemoRepository', () => {
   })
 
   it('publish sets publishedAt', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-publish')
     const result = await repo.publish('test-22') // was draft
     expect(result.publishedAt).not.toBeNull()
   })
 
+  it('unpublish clears publishedAt (published → draft)', async () => {
+    const repo = makeDemoRepository([...seed], 'k-unpublish')
+    const before = await repo.findOne('test-0') // was published
+    expect(before.publishedAt).not.toBeNull()
+    const result = await repo.unpublish('test-0')
+    expect(result.publishedAt).toBeNull()
+    const refetched = await repo.findOne('test-0')
+    expect(refetched.publishedAt).toBeNull()
+  })
+
   it('remove deletes the item', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-remove')
     await repo.remove('test-0')
     await expect(repo.findOne('test-0')).rejects.toThrow()
   })
 
   it('sorts by updatedAt desc by default', async () => {
-    const repo = makeDemoRepository([...seed])
+    const repo = makeDemoRepository([...seed], 'k-sort')
     const result = await repo.listPage({ page: 1, pageSize: 30 })
     const dates = result.items.map((i) => (i as { updatedAt?: string }).updatedAt ?? '')
     for (let j = 0; j < dates.length - 1; j++) {
       expect(dates[j]! >= dates[j + 1]!).toBe(true)
     }
+  })
+
+  // ── Shared session store (the bug fix) ────────────────────────────────────
+
+  it('two repos with the SAME key share one session store (a publish via one is visible via the other)', async () => {
+    const a = makeDemoRepository([...seed], 'k-shared')
+    const b = makeDemoRepository([...seed], 'k-shared')
+    expect((await b.findOne('test-25')).publishedAt).toBeNull() // draft to start
+    await a.publish('test-25')
+    // The mutation through `a` is visible through `b` because they share one store.
+    expect((await b.findOne('test-25')).publishedAt).not.toBeNull()
+  })
+
+  it("a status:'published' list excludes a freshly unpublished item and includes a freshly published one", async () => {
+    const repo = makeDemoRepository([...seed], 'k-toggle')
+    await repo.unpublish('test-0') // was published → now draft
+    await repo.publish('test-29')  // was draft → now published
+    const pub = await repo.listPage({ status: 'published', page: 1, pageSize: 100 })
+    const ids = pub.items.map((i) => i.documentId)
+    expect(ids).not.toContain('test-0')
+    expect(ids).toContain('test-29')
+    // And the draft list mirrors the inverse.
+    const drafts = await repo.listPage({ status: 'draft', page: 1, pageSize: 100 })
+    const draftIds = drafts.items.map((i) => i.documentId)
+    expect(draftIds).toContain('test-0')
+    expect(draftIds).not.toContain('test-29')
+  })
+
+  it('different keys keep their stores isolated', async () => {
+    const articles = makeDemoRepository([...seed], 'k-iso-articles')
+    const apps = makeDemoRepository([...seed], 'k-iso-apps')
+    await articles.publish('test-25')
+    // The other store (different key) is unaffected.
+    expect((await apps.findOne('test-25')).publishedAt).toBeNull()
   })
 })

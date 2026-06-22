@@ -9,7 +9,7 @@ import type { App } from '~/types/content'
  *  (audit D-4: gate on isDemoData so a swapped token can't force a real Strapi read); real repo otherwise. */
 export function useApps() {
   if (isDemoData()) {
-    return makeDemoRepository<App>(DEMO_APPS as App[])
+    return makeDemoRepository<App>(DEMO_APPS as App[], 'apps')
   }
   const { $api } = useNuxtApp()
   return createAppsRepository($api)

@@ -83,12 +83,13 @@ describe('demo mode ON (NUXT_PUBLIC_DEMO_MODE=true)', () => {
     expect(isDemoSession()).toBe(true)
   })
 
-  it('repository create()/update()/remove()/publish() THROW before any $api call (hard write-block)', async () => {
+  it('repository create()/update()/remove()/publish()/unpublish() THROW before any $api call (hard write-block)', async () => {
     const { api, repo } = makeRepoWithSpy()
     await expect(repo.create({ documentId: '', title: 'x' })).rejects.toThrow(/demo mode: writes are disabled/i)
     await expect(repo.update('a', { documentId: 'a', title: 'x' })).rejects.toThrow(/demo mode: writes are disabled/i)
     await expect(repo.remove('a')).rejects.toThrow(/demo mode: writes are disabled/i)
     await expect(repo.publish('a')).rejects.toThrow(/demo mode: writes are disabled/i)
+    await expect(repo.unpublish('a')).rejects.toThrow(/demo mode: writes are disabled/i)
     expect(api).not.toHaveBeenCalled() // CRITICAL: no write ever reached Strapi
   })
 

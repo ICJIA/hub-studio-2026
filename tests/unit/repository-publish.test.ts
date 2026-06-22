@@ -32,3 +32,23 @@ describe('createRepository.publish (Content-Manager publish action)', () => {
     expect(out.publishedAt).toBe('2026-06-20T12:00:00.000Z')
   })
 })
+
+describe('createRepository.unpublish (Content-Manager unpublish action)', () => {
+  it('POSTs the unpublish action for the documentId and returns the now-draft entity', async () => {
+    // The unpublish action returns the entry in a {data} envelope (like publish), now with publishedAt cleared.
+    const api = vi.fn().mockResolvedValue({
+      data: { documentId: 'a1', title: 'Crime In Illinois', publishedAt: null },
+    }) as unknown as $Fetch
+
+    const out = await makeRepo(api).unpublish('a1')
+
+    // Endpoint + method: POST /content-manager/collection-types/{uid}/{documentId}/actions/unpublish
+    expect(api).toHaveBeenCalledWith(
+      `${BASE}/a1/actions/unpublish`,
+      expect.objectContaining({ method: 'POST' }),
+    )
+    // Returns the mapped, now-draft domain entity.
+    expect(out.documentId).toBe('a1')
+    expect(out.publishedAt).toBeNull()
+  })
+})

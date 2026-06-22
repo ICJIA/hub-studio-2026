@@ -9,7 +9,7 @@ import type { Dataset } from '~/types/content'
  *  (audit D-4: gate on isDemoData so a swapped token can't force a real Strapi read); real repo otherwise. */
 export function useDatasets() {
   if (isDemoData()) {
-    return makeDemoRepository<Dataset>(DEMO_DATASETS as Dataset[])
+    return makeDemoRepository<Dataset>(DEMO_DATASETS as Dataset[], 'datasets')
   }
   const { $api } = useNuxtApp()
   return createDatasetsRepository($api)

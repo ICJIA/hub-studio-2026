@@ -1,19 +1,31 @@
 // app/lib/demo-repository.ts
-// In-memory Repository<T> for the dev demo session. Clones its seed array and
-// NEVER calls $api — every operation is synchronous memory mutation wrapped in
-// a resolved Promise so it satisfies the async Repository<T> interface.
-// Resets on page reload (nothing is persisted — "saving disabled" contract).
+// In-memory Repository<T> for the dev/demo session. Backed by a MODULE-LEVEL store keyed by
+// content type, so every makeDemoRepository(seed, key) call in a session shares ONE store: a
+// publish/unpublish/create/update/remove persists for the WHOLE session (the lists update live).
+// A full page reload re-imports this module → the `stores` Map is recreated → state resets to the
+// seed ("saving disabled" contract — nothing is persisted to cookie/localStorage). NEVER calls
+// $api and NEVER mutates the imported DEMO_* seed arrays.
 import type { Repository, ListOptions, PagedResult } from '~/lib/repository'
 
 let _counter = 0
+
+// Session-scoped shared stores, keyed by content type ('articles' | 'apps' | 'datasets').
+// Module-level ⇒ shared across every composable call in the session, and reset on a full reload
+// (module re-import). Each value is a deep clone of the seed (so the seed is never mutated).
+const stores = new Map<string, unknown[]>()
 
 export function makeDemoRepository<T extends {
   documentId: string
   updatedAt?: string | null
   publishedAt?: string | null
-}>(seed: T[]): Repository<T> {
-  // Deep clone so the original seed is never mutated (each composable call gets a fresh store)
-  const store: T[] = seed.map((item) => ({ ...item }))
+}>(seed: T[], key: string): Repository<T> {
+  // First call for this key: deep-clone the seed into the shared map (NEVER mutate the seed).
+  // Subsequent calls for the same key reuse the SAME array reference, so mutations made through
+  // one composable instance are visible to every other instance for the rest of the session.
+  if (!stores.has(key)) {
+    stores.set(key, structuredClone(seed))
+  }
+  const store = stores.get(key) as T[]
 
   function applyFilter(opts: ListOptions = {}): T[] {
     let items = [...store]
@@ -86,6 +98,14 @@ export function makeDemoRepository<T extends {
       if (idx === -1) throw new Error(`Demo: item not found: ${documentId}`)
       const now = new Date().toISOString()
       store[idx] = { ...store[idx]!, publishedAt: now, updatedAt: now }
+      return { ...store[idx]! }
+    },
+
+    async unpublish(documentId) {
+      const idx = store.findIndex((i) => i.documentId === documentId)
+      if (idx === -1) throw new Error(`Demo: item not found: ${documentId}`)
+      const now = new Date().toISOString()
+      store[idx] = { ...store[idx]!, publishedAt: null, updatedAt: now }
       return { ...store[idx]! }
     },
 

@@ -44,6 +44,8 @@ export interface Repository<TDomain> {
   remove(documentId: string): Promise<void>
   /** Publish a draft via the Content-Manager publish action; returns the now-published entity. */
   publish(documentId: string): Promise<TDomain>
+  /** Unpublish an entry via the Content-Manager unpublish action; returns the now-draft entity. */
+  unpublish(documentId: string): Promise<TDomain>
 }
 
 export interface RepositoryConfig<TRaw, TDomain, TWrite> {
@@ -154,6 +156,17 @@ export function createRepository<TRaw, TDomain, TWrite>(
       // ({data} envelope, like update). Strapi ALSO enforces the publisher role server-side
       // (an author's JWT → 403) — the Studio's canPublish UI gate is defense-in-depth.
       const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}/actions/publish`, {
+        method: 'POST',
+      })
+      return cfg.fromStrapi(unwrapOne(res))
+    },
+
+    async unpublish(documentId) {
+      assertWritesAllowed() // demo build: no Strapi writes (throws before any $api call)
+      // Content-Manager unpublish action (mirror of publish): POST .../actions/unpublish. Clears
+      // publishedAt and returns the entry ({data} envelope, like update). Strapi ALSO enforces the
+      // publisher role server-side (an author's JWT → 403); the canPublish UI gate is defense-in-depth.
+      const res = await cfg.api<StrapiSingleResponse<TRaw>>(`${base}/${documentId}/actions/unpublish`, {
         method: 'POST',
       })
       return cfg.fromStrapi(unwrapOne(res))

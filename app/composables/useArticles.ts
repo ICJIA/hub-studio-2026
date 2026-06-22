@@ -9,7 +9,7 @@ import type { Article } from '~/types/content'
  *  (audit D-4: gate on isDemoData so a swapped token can't force a real Strapi read); real repo otherwise. */
 export function useArticles() {
   if (isDemoData()) {
-    return makeDemoRepository<Article>(DEMO_ARTICLES as Article[])
+    return makeDemoRepository<Article>(DEMO_ARTICLES as Article[], 'articles')
   }
   const { $api } = useNuxtApp()
   return createArticlesRepository($api)

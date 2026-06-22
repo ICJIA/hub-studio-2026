@@ -10,6 +10,8 @@ import { ref } from '#imports'
 
 const { user, canPublish } = useAuth()
 const listType = ref<'article' | 'app' | 'dataset'>('article')
+const refreshKey = ref(0) // bump to refetch the list after a publish/unpublish toggle
+function onPublished() { refreshKey.value++ }
 // DEV/DEMO ONLY — the sample-content shortcuts are tree-shaken from production builds.
 const showDevSamples = import.meta.dev
 </script>
@@ -75,7 +77,13 @@ const showDevSamples = import.meta.dev
           />
         </div>
       </template>
-      <ContentList :key="listType" :type="listType" />
+      <ContentList :key="`${listType}-${refreshKey}`" :type="listType">
+        <!-- canPublish-gated toggle (PublishButton renders nothing for non-publishers): Publish a
+             draft, Unpublish a published entry. For the demo session both update the list live. -->
+        <template #row-actions="{ documentId, published }">
+          <PublishButton :type="listType" :document-id="documentId" :published="published" @published="onPublished" />
+        </template>
+      </ContentList>
     </UCard>
   </div>
 </template>

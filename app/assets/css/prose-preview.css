@@ -101,14 +101,18 @@
 .prose-preview .footnotes ol { padding-left: 1.5rem; }
 
 /* ---------- Article chrome (the published page around the body) ---------- */
-/* No horizontal padding here so .published-splash (width:100%) reaches the article's
-   left/right edges (full-bleed). The readable inset for text/TOC is carried by
-   .published-layout below — never edge-to-edge for the body. */
+/* App/Dataset previews keep the 1080px reading-width cap on .published-article itself. */
 .published-article { max-width: 1080px; margin: 0 auto; color: rgba(0, 0, 0, 0.87); }
+/* The ARTICLE preview (the one whose body is a .published-layout) instead lets .published-article
+   FILL its container (modal / page column), so .published-splash (width:100%) is truly edge-to-edge.
+   The 1080px cap moves onto .published-layout below (centered) — only the splash is full-bleed; the
+   body (TOC + text) stays inset & readable. */
+.published-article:has(> .published-layout) { max-width: none; margin: 0; }
 
 /* Two-column layout: a sticky Table of Contents + the article content (stacks on small screens).
-   Carries the horizontal inset so the body (TOC + text) stays readable while the splash is flush. */
-.published-layout { display: grid; gap: 2.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
+   max-width + auto margins carry the reading-width cap (moved off .published-article) so the body
+   (TOC + text) stays centered & readable while the splash above is full-bleed/edge-to-edge. */
+.published-layout { display: grid; gap: 2.5rem; padding-left: 1.5rem; padding-right: 1.5rem; max-width: 1080px; margin-left: auto; margin-right: auto; }
 @media (min-width: 1024px) {
   .published-layout { grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
 }
@@ -199,7 +203,7 @@
   /* Hide non-article chrome (harmless in the print iframe; helps a direct Ctrl+P). */
   header, nav.published-toc, .published-toc, .published-print-btn { display: none !important; }
   /* Single column — drop the TOC grid. */
-  .published-layout { display: block !important; }
+  .published-layout { display: block !important; max-width: none !important; margin: 0 !important; }
   .published-content { max-width: none !important; margin: 0 !important; }
   /* Print drops the screen body inset (single column, full page width). */
   .published-layout, .published-article > .published-content { padding-left: 0; padding-right: 0; }

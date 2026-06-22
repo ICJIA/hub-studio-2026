@@ -101,14 +101,23 @@
 .prose-preview .footnotes ol { padding-left: 1.5rem; }
 
 /* ---------- Article chrome (the published page around the body) ---------- */
+/* No horizontal padding here so .published-splash (width:100%) reaches the article's
+   left/right edges (full-bleed). The readable inset for text/TOC is carried by
+   .published-layout below — never edge-to-edge for the body. */
 .published-article { max-width: 1080px; margin: 0 auto; color: rgba(0, 0, 0, 0.87); }
 
-/* Two-column layout: a sticky Table of Contents + the article content (stacks on small screens). */
-.published-layout { display: grid; gap: 2.5rem; }
+/* Two-column layout: a sticky Table of Contents + the article content (stacks on small screens).
+   Carries the horizontal inset so the body (TOC + text) stays readable while the splash is flush. */
+.published-layout { display: grid; gap: 2.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
 @media (min-width: 1024px) {
   .published-layout { grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
 }
 .published-content { min-width: 0; max-width: 820px; }
+/* App / Dataset previews put .published-content as a DIRECT child of .published-article
+   (no .published-layout grid), so carry the body inset here too — keeps their text inset
+   while the splash stays full-bleed. The Article's .published-content is nested inside
+   .published-layout (a grandchild), so it gets its inset from .published-layout instead. */
+.published-article > .published-content { padding-left: 1.5rem; padding-right: 1.5rem; }
 .published-toc { font-family: 'Oswald', sans-serif; }
 @media (min-width: 1024px) {
   .published-toc { position: sticky; top: var(--published-toc-top, 1rem); align-self: start; max-height: calc(100vh - var(--published-toc-top, 1rem) - 1rem); overflow-y: auto; }
@@ -132,7 +141,9 @@
   border-left-color: #1565c0;
   font-weight: 600;
 }
-.published-article .published-splash { width: 100%; height: auto; border-radius: 4px; margin-bottom: 2rem; display: block; }
+/* Splash hero: full-bleed (flush to the article's edges, no border/radius), capped height
+   so a very tall image can't dominate. The body below stays inset via .published-layout. */
+.published-article .published-splash { display: block; width: 100%; max-height: 360px; object-fit: cover; border: 0; border-radius: 0; margin: 0 0 2rem; }
 .published-article .published-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
 .published-article .published-category {
   font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 15px;
@@ -190,8 +201,12 @@
   /* Single column — drop the TOC grid. */
   .published-layout { display: block !important; }
   .published-content { max-width: none !important; margin: 0 !important; }
+  /* Print drops the screen body inset (single column, full page width). */
+  .published-layout, .published-article > .published-content { padding-left: 0; padding-right: 0; }
   .published-article { color: #000 !important; }
-  .published-splash { max-height: 8cm; object-fit: cover; }
+  /* Match the base rule's specificity (.published-article .published-splash) so this print
+     cap actually wins over the screen max-height: 360px. */
+  .published-article .published-splash { max-height: 8cm; object-fit: cover; }
   /* Keep headings with their content; don't split atomic blocks across pages. */
   .published-article h1, .published-article h2, .published-article h3, .published-article h4 { break-after: avoid; page-break-after: avoid; }
   .published-article img, .published-abstract, .published-endmatter, .prose-preview blockquote, .prose-preview pre, .prose-preview figure, .prose-preview img, .prose-preview table { break-inside: avoid; page-break-inside: avoid; }

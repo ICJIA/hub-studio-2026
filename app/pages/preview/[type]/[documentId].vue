@@ -52,9 +52,14 @@ async function copyShareLink() {
         <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-link" label="Copy share link" @click="copyShareLink" />
       </div>
 
-      <PublishedArticlePreview v-if="asArticle" :article="asArticle" />
-      <PublishedAppPreview v-else-if="asApp" :app="asApp" />
-      <PublishedDatasetPreview v-else-if="asDataset" :dataset="asDataset" />
+      <!-- -mx-4 sm:-mx-6 cancels the layout <main>'s horizontal padding so the article (and its
+           full-bleed splash) reaches the max-w-6xl container's edges. The body inset is carried
+           by .published-layout / .published-content in prose-preview.css, so text stays readable. -->
+      <div class="-mx-4 sm:-mx-6">
+        <PublishedArticlePreview v-if="asArticle" :article="asArticle" />
+        <PublishedAppPreview v-else-if="asApp" :app="asApp" />
+        <PublishedDatasetPreview v-else-if="asDataset" :dataset="asDataset" />
+      </div>
     </template>
     <p v-else class="text-muted">Not found.</p>
   </div>

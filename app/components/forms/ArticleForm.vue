@@ -108,7 +108,9 @@ defineExpose({ submit, setField, errors, model })
             <span class="text-sm font-medium text-gray-700">Published preview</span>
             <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
           </div>
-          <div class="overflow-y-auto p-6">
+          <!-- py-6 (not p-6): no horizontal padding so the full-bleed splash reaches the modal's
+               left/right edges; the body inset is carried by .published-layout in prose-preview.css. -->
+          <div class="overflow-y-auto py-6">
             <PublishedArticlePreview :article="model" />
           </div>
         </div>

@@ -327,8 +327,11 @@ defineExpose({
 
     <div class="grid gap-3" :class="showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
       <div ref="host" data-test="cm-host" :class="compact ? 'cm-host cm-host--compact' : 'cm-host'" class="border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
-      <div v-if="showPreview" :class="compact ? 'markdown-preview-pane markdown-preview-pane--compact' : 'markdown-preview-pane'" class="rounded border border-default bg-elevated/30 p-4 overflow-auto">
-        <div class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Preview</div>
+      <!-- The preview shows the PUBLISHED look, which is always on a white page — so this pane is
+           white in BOTH light and dark mode (otherwise the near-black published prose is invisible
+           on a dark surface). Fixed gray label so it's readable on the white pane in dark mode. -->
+      <div v-if="showPreview" :class="compact ? 'markdown-preview-pane markdown-preview-pane--compact' : 'markdown-preview-pane'" class="rounded border border-default bg-white p-4 overflow-auto">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Preview</div>
         <MarkdownPreview :source="modelValue" :inline="compact" />
       </div>
     </div>

@@ -15,6 +15,9 @@
   font-size: 20px;
   line-height: 1.5;
   color: rgba(0, 0, 0, 0.87);
+  /* The published article is always on white — keep this surface white so the near-black prose
+     stays legible wherever it renders (inline split-pane, modal, /preview), incl. dark mode. */
+  background: #fff;
 }
 .prose-preview h1, .prose-preview h2, .prose-preview h3,
 .prose-preview h4, .prose-preview h5, .prose-preview h6 {
@@ -102,7 +105,9 @@
 
 /* ---------- Article chrome (the published page around the body) ---------- */
 /* App/Dataset previews keep the 1080px reading-width cap on .published-article itself. */
-.published-article { max-width: 1080px; margin: 0 auto; color: rgba(0, 0, 0, 0.87); }
+/* White surface for the whole published view (title/tags/abstract + body) so it stays legible on
+   the standalone /preview route in dark mode — the published article is always rendered on white. */
+.published-article { max-width: 1080px; margin: 0 auto; color: rgba(0, 0, 0, 0.87); background: #fff; }
 /* The ARTICLE preview (the one whose body is a .published-layout) instead lets .published-article
    FILL its container (modal / page column), so .published-splash (width:100%) is truly edge-to-edge.
    The 1080px cap moves onto .published-layout below (centered) — only the splash is full-bleed; the

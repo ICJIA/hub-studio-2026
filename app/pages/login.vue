@@ -13,9 +13,10 @@ const toast = useToast()
 const state = reactive({ identifier: '', password: '' })
 const loading = ref(false)
 
-// Public demo build: hide the real Strapi email/password form entirely and offer ONLY the
-// demo sign-in. Baked at build (NUXT_PUBLIC_DEMO_MODE) — false in a normal build, so the real
-// form renders exactly as today.
+// Public demo build: show the real-looking email/password form for ILLUSTRATION (so managers see
+// how the live login looks), but it is NOT functional here — onDemoSignIn just nudges to the demo
+// entry; it never calls login(). Baked at build (NUXT_PUBLIC_DEMO_MODE) — false in a normal build,
+// where the same form is the real Strapi sign-in.
 const demoMode = isDemoMode()
 
 // Dev fixed-admin footer shortcut. `import.meta.dev` is false in production builds, so this
@@ -40,6 +41,12 @@ function signInAsDevAdmin() {
   state.password = DEV_ADMIN_PASSWORD
   return onSubmit()
 }
+
+/** Demo only: the email/password form is illustrative. Never attempt a (rejected) real login —
+ *  point the user to the demo entry instead. */
+function onDemoSignIn() {
+  toast.add({ title: 'Demonstration', description: "This sign-in form is illustrative — click 'Enter the demo' to continue.", color: 'info' })
+}
 </script>
 
 <template>
@@ -56,22 +63,25 @@ function signInAsDevAdmin() {
         </div>
       </template>
 
-      <!-- Public demo build: ONLY the demo sign-in (the real Strapi form is not rendered at all). -->
-      <div v-if="demoMode" class="space-y-3">
-        <div class="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/60 dark:bg-amber-950/40">
-          <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-            <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0" />
-            Demonstration
-          </p>
-          <p class="mt-1 text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
-            This is a public, self-contained demonstration of the Hub Studio. Because it is running in
-            <strong>demo mode</strong>, there is <strong>no secure, authenticated login</strong> — anyone may
-            enter, all content is sample data held only in your browser, and nothing is ever saved to the
-            server. In the live (non-demo) Studio, sign-in is a <strong>secure username&nbsp;/&nbsp;password
-            login</strong> through ICJIA's Strapi staff accounts.
+      <!-- Public demo build: show the real-looking sign-in form (illustrative ONLY — not active),
+           then a short demo notice and the actual demo-entry button. -->
+      <div v-if="demoMode" class="space-y-4">
+        <UForm :state="state" class="space-y-4" @submit="onDemoSignIn">
+          <UFormField label="Email" name="identifier">
+            <UInput v-model="state.identifier" type="email" autocomplete="username" class="w-full" />
+          </UFormField>
+          <UFormField label="Password" name="password">
+            <UInput v-model="state.password" type="password" autocomplete="current-password" class="w-full" />
+          </UFormField>
+          <UButton type="submit" block label="Sign in" />
+        </UForm>
+        <div class="rounded-md border border-amber-300 bg-amber-50 p-2.5 dark:border-amber-800/60 dark:bg-amber-950/40">
+          <p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-800/90 dark:text-amber-200/80">
+            <UIcon name="i-lucide-flask-conical" class="size-4 shrink-0 mt-px" />
+            <span><strong>Demo</strong> — the sign-in above shows how the live, secure username/password login looks; it isn't active here. Click <strong>Enter the demo</strong> to continue.</span>
           </p>
         </div>
-        <UButton block size="lg" :loading="loading" icon="i-lucide-flask-conical" label="Enter the demo" @click="signInAsDevAdmin" />
+        <UButton block size="lg" color="warning" :loading="loading" icon="i-lucide-flask-conical" label="Enter the demo" @click="signInAsDevAdmin" />
       </div>
 
       <!-- Normal build: the real Strapi email/password form (unchanged). -->

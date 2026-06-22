@@ -13,7 +13,7 @@ import type { Article, App, Dataset } from '~/types/content'
 
 type Entity = Article | App | Dataset
 
-const props = defineProps<{ type: 'article' | 'app' | 'dataset'; documentId: string; published?: boolean }>()
+const props = defineProps<{ type: 'article' | 'app' | 'dataset'; documentId: string; published?: boolean; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' }>()
 const emit = defineEmits<{ published: [entity: Entity] }>()
 
 const { canPublish } = useAuth()
@@ -28,7 +28,8 @@ const error = ref<string | null>(null)
 const isPublished = computed(() => props.published === true)
 const label = computed(() => (isPublished.value ? 'Unpublish' : 'Publish'))
 const icon = computed(() => (isPublished.value ? 'i-lucide-archive' : 'i-lucide-globe'))
-const color = computed(() => (isPublished.value ? 'neutral' : 'primary'))
+// Color-coded for at-a-glance state: Publish = success (go live), Unpublish = warning (take down).
+const color = computed(() => (isPublished.value ? 'warning' : 'success'))
 const title = computed(() => (isPublished.value ? 'Unpublish this entry?' : 'Publish this entry?'))
 
 /** Publish a draft: call the repo's CM publish action, emit the result, surface success/error. */
@@ -83,6 +84,8 @@ defineExpose({ confirmPublish, confirmUnpublish, open })
       :loading="busy"
       :color="color"
       :icon="icon"
+      :size="props.size"
+      variant="solid"
       @click="open = true"
     />
 

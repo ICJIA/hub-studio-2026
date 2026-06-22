@@ -79,22 +79,24 @@ defineExpose({ submit, setField, onPublished, errors, model })
       The form renders inside the layout `<main class="max-w-6xl mx-auto px-4 sm:px-6">`, so the BAR
       breaks out to full content width (-mx-4 sm:-mx-6) and re-pads its inner row (px-4 sm:px-6).
     -->
-    <div class="sticky top-16 z-10 -mx-4 sm:-mx-6 border-b border-default bg-default/85 backdrop-blur-md">
+    <div class="sticky top-16 z-10 -mx-4 sm:-mx-6 border-b border-default bg-default/85 backdrop-blur-md shadow-sm">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
         <!-- LEFT: live title (updates as the author types the Title field below). -->
         <p
           class="min-w-0 flex-1 truncate text-sm font-medium"
           :class="model.title ? 'text-highlighted' : 'text-muted italic'"
+          :title="model.title || 'Untitled article'"
         >
           {{ model.title || 'Untitled article' }}
         </p>
         <!-- RIGHT: Live preview (always) + Publish/Unpublish (managers, saved article only). -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-          <UButton size="sm" variant="ghost" color="neutral" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
+          <UButton size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
           <template v-if="canPublish">
             <PublishButton
               v-if="mode === 'edit' && model.documentId"
               type="article"
+              size="sm"
               :document-id="model.documentId"
               :published="model.publishedAt != null"
               @published="onPublished($event as Article)"
@@ -139,7 +141,7 @@ defineExpose({ submit, setField, onPublished, errors, model })
 
     <div class="flex items-center gap-3">
       <UButton type="submit" :loading="saving" label="Save draft" />
-      <UButton variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+      <UButton variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
     </div>
 
     <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">

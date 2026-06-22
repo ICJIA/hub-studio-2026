@@ -273,6 +273,10 @@ defineExpose({ printArticle, rootEl })
     <img v-if="splashUrl" :src="splashUrl" :alt="article.splash?.alternativeText ?? ''" class="published-splash">
 
     <div class="published-layout">
+      <!-- LEFT COLUMN — one grid cell holding the sticky TOC AND the per-file downloads, stacked.
+           They MUST share a single wrapper: otherwise each is its own grid item and the downloads
+           land in the article column (column 2), shoving the body into column 1. -->
+      <aside class="published-aside">
       <!-- Sticky table of contents, built from the body's h2 section headings. -->
       <nav v-if="rendered.toc.length" class="published-toc" aria-label="Table of contents">
         <p class="published-toc-heading">Table of Contents</p>
@@ -304,6 +308,7 @@ defineExpose({ printArticle, rootEl })
           <span class="published-download-name">{{ d.name }}</span>
         </a>
       </section>
+      </aside>
 
       <div class="published-content">
         <div v-if="hasTags" class="published-tags">

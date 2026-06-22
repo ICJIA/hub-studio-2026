@@ -124,7 +124,8 @@
 .published-article > .published-content { padding-left: 1.5rem; padding-right: 1.5rem; }
 .published-toc { font-family: 'Oswald', sans-serif; }
 @media (min-width: 1024px) {
-  .published-toc { position: sticky; top: var(--published-toc-top, 1rem); align-self: start; max-height: calc(100vh - var(--published-toc-top, 1rem) - 1rem); overflow-y: auto; }
+  /* Stick the WHOLE left column (TOC + downloads) together, not just the TOC. */
+  .published-aside { position: sticky; top: var(--published-toc-top, 1rem); align-self: start; max-height: calc(100vh - var(--published-toc-top, 1rem) - 1rem); overflow-y: auto; }
 }
 .published-toc-heading {
   font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
@@ -217,7 +218,7 @@
   html.dark { color-scheme: light; }
   body { background: #fff !important; }
   /* Hide non-article chrome (harmless in the print iframe; helps a direct Ctrl+P). */
-  header, nav.published-toc, .published-toc, .published-downloads, .published-print-btn { display: none !important; }
+  header, nav.published-toc, .published-toc, .published-aside, .published-downloads, .published-print-btn { display: none !important; }
   /* Single column — drop the TOC grid. */
   .published-layout { display: block !important; max-width: none !important; margin: 0 !important; }
   .published-content { max-width: none !important; margin: 0 !important; }

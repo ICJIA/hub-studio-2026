@@ -94,6 +94,16 @@ defineExpose({ submit, setField, onPublished, errors, model })
              everyone now — PublishButton itself dims it + explains "editors only" for an author, so a
              manager can see the difference; only the save-first hint is gated to unsaved drafts. -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <!-- Re-launch the guided onboarding tour. The tour spotlights the DASHBOARD, so this routes
+               to /?tour=1; the default layout sees the flag and replays it there (works for authors
+               and editors, even after the tour's been seen). -->
+          <TourTrigger
+            icon-only
+            icon="i-lucide-circle-help"
+            tooltip="Take the guided tour"
+            label="Take the guided tour"
+            @click="navigateTo('/?tour=1')"
+          />
           <UButton size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
           <PublishButton
             v-if="mode === 'edit' && model.documentId"

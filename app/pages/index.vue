@@ -24,7 +24,7 @@ const showDevSamples = import.meta.dev
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <UCard>
+      <UCard data-tour="create">
         <template #header><h2 class="font-medium">Create</h2></template>
         <div class="flex flex-col gap-2">
           <UButton to="/create/article" variant="subtle" label="New article" />
@@ -55,14 +55,14 @@ const showDevSamples = import.meta.dev
         </div>
       </div>
 
-      <UCard v-if="canPublish">
+      <UCard v-if="canPublish" data-tour="publish-queue">
         <template #header><h2 class="font-medium">Publish queue</h2></template>
         <p class="text-sm text-muted mb-2">Review submitted drafts.</p>
         <UButton to="/manage" variant="subtle" label="Open queue" />
       </UCard>
     </div>
 
-    <UCard>
+    <UCard data-tour="drafts">
       <template #header>
         <div class="flex items-center justify-between">
           <h2 class="font-medium">Articles</h2>

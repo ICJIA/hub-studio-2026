@@ -29,17 +29,22 @@ import CreatePage from '~/pages/create/[type].vue'
 import EditPage from '~/pages/edit/[type]/[documentId].vue'
 import ManagePage from '~/pages/manage.vue'
 
+// ArticleForm's toolbar now renders the guided-tour <TourTrigger> (a <UTooltip> needing a
+// TooltipProvider from <UApp>, absent in these bare page mounts). Stub it — onboarding chrome,
+// unrelated to the routing assertions.
+const stubTrigger = { global: { stubs: { TourTrigger: true } } }
+
 describe('routing glue', () => {
   it('/create/:type renders a create form (Save draft button)', async () => {
     routeRef.params.type = 'article'
-    const wrapper = await mountSuspended(CreatePage)
+    const wrapper = await mountSuspended(CreatePage, stubTrigger)
     expect(wrapper.text()).toContain('Save draft')
   })
 
   it('/edit/:type/:documentId loads the entry then renders the edit form', async () => {
     routeRef.params.type = 'article'
     routeRef.params.documentId = 'a1'
-    const wrapper = await mountSuspended(EditPage)
+    const wrapper = await mountSuspended(EditPage, stubTrigger)
     await new Promise((r) => setTimeout(r, 0))
     expect(findOneMock).toHaveBeenCalledWith('a1', expect.anything())
     expect(wrapper.text()).toContain('Save draft')
@@ -63,7 +68,7 @@ describe('routing glue', () => {
   // Step 3: app and dataset type-dispatch branches on the create page
   it('/create/app mounts the AppForm (heading + Save draft)', async () => {
     routeRef.params.type = 'app'
-    const wrapper = await mountSuspended(CreatePage)
+    const wrapper = await mountSuspended(CreatePage, stubTrigger)
     // The page heading is "New app" and AppForm renders Save draft
     expect(wrapper.text()).toContain('New app')
     expect(wrapper.text()).toContain('Save draft')
@@ -71,7 +76,7 @@ describe('routing glue', () => {
 
   it('/create/dataset mounts the DatasetForm (heading + Time period)', async () => {
     routeRef.params.type = 'dataset'
-    const wrapper = await mountSuspended(CreatePage)
+    const wrapper = await mountSuspended(CreatePage, stubTrigger)
     // The page heading is "New dataset" and DatasetForm has a direct UFormField label
     expect(wrapper.text()).toContain('New dataset')
     // DatasetForm uses <UFormField label="Time period"> directly in template (not via a stub child)

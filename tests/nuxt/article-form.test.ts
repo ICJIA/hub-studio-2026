@@ -21,18 +21,23 @@ mockNuxtImport('useAuth', () => () => ({
 
 import ArticleForm from '~/components/forms/ArticleForm.vue'
 
+// The toolbar now includes the guided-tour <TourTrigger>, whose internal <UTooltip> requires a
+// TooltipProvider (normally supplied by <UApp>). These tests mount the bare form without <UApp>,
+// so stub TourTrigger — it's onboarding chrome, irrelevant to the save-gate/publish assertions.
+const stubTrigger = { global: { stubs: { TourTrigger: true } } }
+
 describe('ArticleForm (save-gate + repo wiring)', () => {
   beforeEach(() => { createMock.mockClear(); updateMock.mockClear() })
 
   it('blocks create when the model is invalid (no title) — repo.create NOT called', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     await wrapper.vm.$.exposed!.submit() // blank model: missing title/slug/date
     expect(createMock).not.toHaveBeenCalled()
     expect(wrapper.vm.$.exposed!.errors.value.length).toBeGreaterThan(0)
   })
 
   it('blocks create when markdown contains base64 — the zero-base64 save-gate', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')
     wrapper.vm.$.exposed!.setField('date', '2020-01-01')
     wrapper.vm.$.exposed!.setField('markdown', '![x](data:image/png;base64,AAAA)')
@@ -42,7 +47,7 @@ describe('ArticleForm (save-gate + repo wiring)', () => {
   })
 
   it('blocks create when images contain base64 — the zero-base64 save-gate for images', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')
     wrapper.vm.$.exposed!.setField('date', '2020-01-01')
     wrapper.vm.$.exposed!.setField('images', [{ title: 'Fig 1', src: 'data:image/png;base64,AAAA', alt: 'x' }])
@@ -52,7 +57,7 @@ describe('ArticleForm (save-gate + repo wiring)', () => {
   })
 
   it('on a clean create, slugifies the title and calls repo.create once', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')
     wrapper.vm.$.exposed!.setField('date', '2020-01-01')
     await wrapper.vm.$.exposed!.submit()
@@ -63,7 +68,7 @@ describe('ArticleForm (save-gate + repo wiring)', () => {
   })
 
   it('renders the full field set (not just the Markdown body)', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     const text = wrapper.text()
     for (const label of ['Title', 'Date', 'Categories', 'Tags', 'Authors', 'Abstract', 'Splash image', 'Body']) {
       expect(text).toContain(label)
@@ -82,7 +87,7 @@ describe('ArticleForm sticky toolbar (title + live preview + manager publish gat
   } as unknown as Article)
 
   it('shows the live title (and "Untitled article" when empty), plus a Live preview button', async () => {
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     expect(wrapper.text()).toContain('Untitled article')
     expect(wrapper.text()).toContain('Live preview')
 
@@ -96,7 +101,7 @@ describe('ArticleForm sticky toolbar (title + live preview + manager publish gat
   // discriminates the toolbar control cleanly.
   it('SHOWS a Publish control for a non-manager on a saved article — but DIMMED/disabled (so a manager sees the difference)', async () => {
     canPublish.value = false
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved() } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved() }, ...stubTrigger })
     expect(wrapper.text()).toContain('Live preview')
     // The control is now rendered for authors too (no longer hidden) …
     expect(wrapper.text()).toContain('Publish')
@@ -108,13 +113,13 @@ describe('ArticleForm sticky toolbar (title + live preview + manager publish gat
 
   it('shows Publish for a manager on a SAVED article (edit mode, has documentId)', async () => {
     canPublish.value = true
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved() } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved() }, ...stubTrigger })
     expect(wrapper.text()).toContain('Publish')
   })
 
   it('does NOT show Publish for a manager on an UNSAVED article (create mode) — shows a save-first hint', async () => {
     canPublish.value = true
-    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, ...stubTrigger })
     // The PublishButton (which would render the capital-P "Publish") is hidden; the hint stands in.
     expect(wrapper.text()).not.toContain('Publish')
     expect(wrapper.text()).toContain('Save the draft first')

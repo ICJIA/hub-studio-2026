@@ -5,7 +5,11 @@ import studioConfig from './studio.config'
 
 export default defineNuxtConfig({
   ssr: false,
-  modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt', '@nuxt/fonts'],
+  // nuxt-guided-tour: the client-side guided onboarding tour (dashboard intro + role-aware UI
+  // steps). It's a client tour — fine under ssr:false — and self-contained: it bundles its own
+  // CSS and an inline :root highlight-color <style> (allowed by our CSP style-src 'unsafe-inline'),
+  // with no external font/CSS/network fetch at runtime. See app/tour.config.ts for the content.
+  modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt', '@nuxt/fonts', 'nuxt-guided-tour'],
   // Flat component names (no directory prefix) so the content forms can reference the shared
   // field components in app/components/fields/ as <TextField>/<DateField>/… rather than
   // <FieldsTextField>/…. Without this, those nested components fail to resolve and render nothing.
@@ -41,6 +45,16 @@ export default defineNuxtConfig({
         'lucide:arrow-left', 'lucide:arrow-right', 'lucide:moon', 'lucide:sun',
         'lucide:circle-check', 'lucide:info', 'lucide:triangle-alert', 'lucide:circle-alert',
         'lucide:ellipsis', 'lucide:external-link', 'lucide:file-text', 'lucide:download',
+        // Guided tour (nuxt-guided-tour): the lucide icons referenced by app/tour.config.ts steps
+        // & intro slides. Listed explicitly because the icon names live in a .ts config the source
+        // `scan` does not see (file-text/moon/info are already covered above).
+        'lucide:library', 'lucide:plus', 'lucide:badge-check', 'lucide:send', 'lucide:circle-help',
+        // Heroicons HARDCODED inside the module's own components (TourWelcome/TourOverlay/TourTrigger):
+        // play, arrow-left/right, check, question-mark-circle. Bundled so they render offline —
+        // keeps the SPA self-contained (fallbackToApi:false ⇒ a missing icon would otherwise be blank,
+        // never a runtime fetch). Requires the @iconify-json/heroicons devDependency.
+        'heroicons:play', 'heroicons:arrow-left', 'heroicons:arrow-right',
+        'heroicons:check', 'heroicons:question-mark-circle',
       ],
       sizeLimitKb: 512,
     },

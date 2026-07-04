@@ -13,6 +13,7 @@ import type { Article } from '~/types/content'
 import { renderArticleBody, renderInline } from '~/lib/markdown'
 import { safeHref } from '~/lib/safe-url'
 import { pickActiveHeadingId } from '~/lib/toc-scrollspy'
+import { clearAnnotations } from '~/lib/annotations/paint'
 
 const props = defineProps<{ article: Partial<Article> }>()
 
@@ -101,10 +102,14 @@ function printArticle() {
   setTimeout(() => doPrint(), 1200)
 
   // Write the article into the iframe. The dark class is NOT copied — print must be light.
+  // Reviewer-annotation marks are UNWRAPPED from the clone (spec §6): printed output is
+  // always annotation-free; the live DOM keeps its highlights.
+  const printClone = rootEl.value.cloneNode(true) as HTMLElement
+  clearAnnotations(printClone)
   const doc = iwin.document
   doc.open()
   doc.write(
-    `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${safeTitle}</title>\n${styleLinks}\n</head>\n<body>${rootEl.value.outerHTML}</body>\n</html>`,
+    `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${safeTitle}</title>\n${styleLinks}\n</head>\n<body>${printClone.outerHTML}</body>\n</html>`,
   )
   doc.close()
 }

@@ -83,6 +83,46 @@ describe('PublishedArticlePreview – printArticle()', () => {
 
     expect(printStub).toHaveBeenCalledOnce()
   })
+
+  it('print clone contains no annotation marks (highlights never print)', async () => {
+    const wrapper = await mountSuspended(PublishedArticlePreview, { props: { article } })
+
+    // Paint an annotation into the live DOM exactly as the preview page does.
+    const { textContentOf } = await import('~/lib/annotations/anchor')
+    const { paintOffsets } = await import('~/lib/annotations/paint')
+    const body = wrapper.element.querySelector('.prose-preview')!
+    const text = textContentOf(body)
+    const start = text.indexOf('Body text')
+    expect(start).toBeGreaterThan(-1)
+    paintOffsets(body, start, start + 'Body text'.length, 'a1', 'yellow')
+    expect(wrapper.element.querySelectorAll('mark[data-ann-id]')).toHaveLength(1)
+
+    // Fake iframe (same shape as the first test in this file).
+    const docWrite = vi.fn()
+    const mockIwin = {
+      print: vi.fn(), focus: vi.fn(), addEventListener: vi.fn(),
+      document: { open: vi.fn(), write: docWrite, close: vi.fn() },
+    }
+    const mockIframe = {
+      setAttribute: vi.fn(), style: { cssText: '' }, contentWindow: mockIwin, parentNode: null,
+    } as unknown as HTMLIFrameElement
+    const origCreate = document.createElement.bind(document)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(vi.spyOn(document, 'createElement') as any).mockImplementation((tag: string) => {
+      if (tag === 'iframe') return mockIframe
+      return origCreate(tag)
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(vi.spyOn(document.body, 'appendChild') as any).mockReturnValue(mockIframe)
+
+    wrapper.vm.$.exposed!.printArticle()
+
+    const written = docWrite.mock.calls[0]![0] as string
+    expect(written).not.toContain('data-ann-id')     // mark wrapper stripped from the clone
+    expect(written).toContain('Body text here.')     // …but the text survives
+    // The LIVE DOM keeps its highlight — only the print clone is unwrapped.
+    expect(wrapper.element.querySelectorAll('mark[data-ann-id]')).toHaveLength(1)
+  })
 })
 
 describe('PublishedArticlePreview – Downloads (Main Files under the TOC)', () => {

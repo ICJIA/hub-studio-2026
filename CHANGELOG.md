@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Added_
 
 - **Reviewer-annotations design spec** (`docs/superpowers/specs/2026-07-04-reviewer-annotations-design.md`) — approved design for Word-style review on the `/preview` draft page: highlight a passage, attach threaded comments, pick a highlight color, resolve/reopen. Pure overlay (never touches the article markdown or publish pipeline). Anchoring via text-quote selectors; painting via accessible `<mark>` elements; storage behind an `AnnotationStore` seam — `localStorage` for the demo weeks, a Strapi 5 `review-annotation` collection type (drop-in schema included in the spec) for production. Implementation to follow.
+- **Reviewer annotations on the draft preview (Phase 1).** On `/preview/:type/:documentId`, any signed-in user can highlight a passage (4 colors), attach a comment, reply in threads, and resolve/reopen — Word-style review for drafts. Highlights are anchored by quote (survive edits elsewhere; orphaned threads stay listed as "text changed"), painted as accessible `<mark>` elements (keyboard + screen-reader reachable), excluded from print, and stored in versioned `localStorage` (`icjia-studio-annotations-v1:*`) behind an `AnnotationStore` seam — zero network calls, demo posture unchanged. The article markdown is never modified. Phase 2 (Strapi 5 persistence) ships as a drop-in content type under `deploy/strapi/review-annotation/` with an install guide.
 
 ## [0.1.0] - 2026-06-22
 

@@ -1,0 +1,25 @@
+{
+  "kind": "collectionType",
+  "collectionName": "review_annotations",
+  "info": {
+    "singularName": "review-annotation",
+    "pluralName": "review-annotations",
+    "displayName": "Review Annotation",
+    "description": "Studio reviewer highlight + threaded comments on a draft (workflow overlay, not published content)"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "contentType": { "type": "enumeration", "enum": ["article", "app", "dataset"], "required": true },
+    "targetDocumentId": { "type": "string", "required": true },
+    "exact": { "type": "text", "required": true },
+    "prefix": { "type": "string" },
+    "suffix": { "type": "string" },
+    "offsetHint": { "type": "integer" },
+    "color": { "type": "enumeration", "enum": ["yellow", "green", "blue", "pink"], "default": "yellow" },
+    "resolved": { "type": "boolean", "default": false },
+    "authorName": { "type": "string", "required": true },
+    "authorEmail": { "type": "string" },
+    "authorRole": { "type": "string" },
+    "comments": { "type": "json" }
+  }
+}

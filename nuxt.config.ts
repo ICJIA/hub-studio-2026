@@ -15,6 +15,8 @@ export default defineNuxtConfig({
     '~/assets/css/prose-preview.css',
     // Guided onboarding tour — base highlight-ring styles (ported from nuxt-guided-tour).
     '~/assets/css/guided-tour.css',
+    // Reviewer annotations — mark tints + print rules (components style themselves with UI utilities).
+    '~/assets/css/annotations.css',
   ],
   fonts: {
     families: [
@@ -51,6 +53,10 @@ export default defineNuxtConfig({
         // may miss — and fallbackToApi:false means an un-bundled icon would silently not render.
         'lucide:compass', 'lucide:pen-line', 'lucide:eye', 'lucide:users', 'lucide:lightbulb',
         'lucide:play', 'lucide:circle-help', 'lucide:files', 'lucide:id-card', 'lucide:send',
+        // Reviewer-annotation UI (bar/rail/composer). Explicit for the same reason as
+        // the tour icons: string usages the source scan may miss.
+        'lucide:highlighter', 'lucide:message-square-text', 'lucide:reply',
+        'lucide:trash-2', 'lucide:rotate-ccw', 'lucide:panel-right', 'lucide:map-pin-off',
       ],
       sizeLimitKb: 512,
     },

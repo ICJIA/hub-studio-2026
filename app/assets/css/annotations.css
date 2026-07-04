@@ -1,0 +1,46 @@
+/* app/assets/css/annotations.css
+   Reviewer-annotation marks + print rules (spec §6). The PREVIEW SURFACE IS ALWAYS
+   LIGHT (commit b8bd666: published prose renders on white in both themes), so mark
+   tints are tuned once for the dark prose text: all four pastels keep ≥ 4.5:1 with
+   near-black text (#1f2937 on the tints below is ≥ 9:1). Bar/rail chrome uses Nuxt UI
+   utilities in the components and inherits the app theme. */
+
+mark.ann {
+  padding: 0 0.08em;
+  border-radius: 2px;
+  cursor: pointer;
+  color: inherit;
+}
+mark.ann--yellow { background-color: #fde68a; }
+mark.ann--green  { background-color: #bbf7d0; }
+mark.ann--blue   { background-color: #bfdbfe; }
+mark.ann--pink   { background-color: #fbcfe8; }
+
+mark.ann:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 1px;
+}
+mark.ann.ann--active {
+  box-shadow: 0 0 0 2px #1d4ed8;
+}
+mark.ann.ann--resolved {
+  opacity: 0.55;
+  text-decoration: underline dotted;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  mark.ann { transition: box-shadow 120ms ease-in-out; }
+}
+
+/* Print: review chrome never prints; highlight tints are stripped (the article print
+   path also unwraps marks in its iframe clone — this covers direct browser printing). */
+@media print {
+  .ann-bar, .ann-rail, .ann-composer { display: none !important; }
+  mark.ann {
+    background: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+    padding: 0;
+  }
+}

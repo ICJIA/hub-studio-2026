@@ -240,3 +240,24 @@ Generated as part of Phase 1 so the content type can be deployed to
 | 1 (now) | Anchor engine, bar + rail UI, localStorage adapter, Strapi drop-in files, tests | ~4–6 dev-days |
 | 2 (pre-launch) | Strapi adapter (repository/mapper/validator), `filters` passthrough, adapter selection | ~2 dev-days |
 | Later ideas | Read-only threads in the editor, list badges, notification emails, `review-comment` collection if reply concurrency ever bites | not planned |
+
+---
+
+## Addendum A (2026-07-04, approved): annotations in the editor's Live-preview modal
+
+User decision: "do both."
+
+1. **Extract `<AnnotatedPreview>`** (`app/components/annotations/AnnotatedPreview.vue`): the /preview
+   page's annotation orchestration (bar, rail + drawer, composer, capture/resolve/paint lifecycle,
+   storage-event refresh, color persistence, live region) moves into one reusable component with props
+   `{ contentType, documentId }` and a default slot for the `Published*Preview` content. The page
+   becomes a thin consumer. The bar row becomes **sticky** inside the component (fixes the
+   walkthrough finding that the bar scrolled away on /preview).
+2. **Mount in the preview modal** of all three forms (Article/App/Dataset), **edit mode with a saved
+   `documentId` only** — a brand-new unsaved entry has no stable key, so the modal shows the plain
+   preview until first save. Threads are the same localStorage store the /preview page uses.
+   Unsaved edits in the form may orphan quotes — the existing orphan UX handles it.
+3. **"Review view" link** in the modal header (saved entries): opens `/preview/{type}/{documentId}`
+   in a new tab — the shareable reviewer URL.
+
+Out of scope still: the split-pane editor preview; Strapi adapter (Phase 2).

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from 'vitest'
-import { textContentOf, captureAnchor, CONTEXT_LENGTH, MAX_EXACT_LENGTH } from '~/lib/annotations/anchor'
+import { textContentOf, captureAnchor, resolveAnchor, rangeFromOffsets, CONTEXT_LENGTH, MAX_EXACT_LENGTH } from '~/lib/annotations/anchor'
 
 let container: HTMLElement
 
@@ -82,5 +82,52 @@ describe('captureAnchor', () => {
   it('rejects selections longer than MAX_EXACT_LENGTH', () => {
     container.innerHTML = `<p>${'a'.repeat(MAX_EXACT_LENGTH + 10)}</p>`
     expect(captureAnchor(container, rangeAt(0, MAX_EXACT_LENGTH + 5))).toEqual({ ok: false, reason: 'too-long' })
+  })
+})
+
+describe('rangeFromOffsets', () => {
+  it('maps offsets spanning element boundaries back to a Range', () => {
+    const text = textContentOf(container)
+    const start = text.indexOf('brown')
+    const r = rangeFromOffsets(container, start, start + 'brown fox.'.length)
+    expect(r).not.toBeNull()
+    expect(r!.toString()).toBe('brown fox.')
+  })
+  it('returns null for out-of-bounds or empty spans', () => {
+    const len = textContentOf(container).length
+    expect(rangeFromOffsets(container, len, len + 3)).toBeNull()
+    expect(rangeFromOffsets(container, 5, 5)).toBeNull()
+  })
+})
+
+describe('resolveAnchor', () => {
+  it('resolves a unique quote', () => {
+    const text = textContentOf(container)
+    const start = text.indexOf('lazy')
+    const res = resolveAnchor(container, { exact: 'lazy', prefix: 'over the ', suffix: ' dog', offset: start })
+    expect(res).toEqual({ start, end: start + 4 })
+  })
+  it('disambiguates duplicate quotes by prefix/suffix', () => {
+    container.innerHTML = '<p>alpha beta gamma</p><p>delta beta omega</p>'
+    const text = textContentOf(container)
+    const second = text.indexOf('beta', text.indexOf('beta') + 1)
+    const res = resolveAnchor(container, { exact: 'beta', prefix: 'delta ', suffix: ' omega', offset: 0 })
+    expect(res).toEqual({ start: second, end: second + 4 })
+  })
+  it('tie-breaks identical context by nearest stored offset', () => {
+    container.innerHTML = '<p>x beta y</p><p>x beta y</p>'
+    const text = textContentOf(container)
+    const second = text.indexOf('beta', text.indexOf('beta') + 1)
+    const res = resolveAnchor(container, { exact: 'beta', prefix: 'x ', suffix: ' y', offset: second })
+    expect(res!.start).toBe(second)
+  })
+  it('survives edits elsewhere in the document (offset drift)', () => {
+    container.innerHTML = '<p>NEW INTRO PARAGRAPH. The quick brown fox.</p><p>It jumps over the lazy dog.</p>'
+    const text = textContentOf(container)
+    const res = resolveAnchor(container, { exact: 'jumps', prefix: 'It ', suffix: ' over', offset: 23 })
+    expect(res).toEqual({ start: text.indexOf('jumps'), end: text.indexOf('jumps') + 5 })
+  })
+  it('returns null (orphan) when the quote no longer exists', () => {
+    expect(resolveAnchor(container, { exact: 'vanished text', prefix: '', suffix: '', offset: 0 })).toBeNull()
   })
 })

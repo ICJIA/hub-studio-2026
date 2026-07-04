@@ -72,3 +72,65 @@ export function captureAnchor(container: Element, range: Range): CaptureResult {
     },
   }
 }
+
+/** Map a character span over the container text back to a DOM Range.
+ *  Boundary at a node junction lands at the START of the later node. */
+export function rangeFromOffsets(container: Element, start: number, end: number): Range | null {
+  if (end <= start || start < 0) return null
+  const doc = container.ownerDocument
+  if (!doc) return null
+  const range = doc.createRange()
+  let pos = 0
+  let startSet = false
+  for (const node of textNodesOf(container)) {
+    const next = pos + node.data.length
+    if (!startSet && start < next) {
+      range.setStart(node, start - pos)
+      startSet = true
+    }
+    if (startSet && end <= next) {
+      range.setEnd(node, end - pos)
+      return range
+    }
+    pos = next
+  }
+  return null
+}
+
+/** Re-locate a captured anchor in (possibly edited) container text.
+ *  Score every occurrence of `exact` by prefix/suffix agreement, tie-break by
+ *  distance from the stored offset. Returns character offsets, or null → orphan. */
+export function resolveAnchor(
+  container: Element,
+  anchor: AnnotationAnchor,
+): { start: number; end: number } | null {
+  const { exact, prefix, suffix, offset } = anchor
+  if (!exact) return null
+  const text = textContentOf(container)
+
+  const candidates: number[] = []
+  let i = text.indexOf(exact)
+  while (i !== -1) {
+    candidates.push(i)
+    i = text.indexOf(exact, i + 1)
+  }
+  if (candidates.length === 0) return null
+
+  const scored = candidates.map((start) => {
+    const p = text.slice(Math.max(0, start - prefix.length), start)
+    const s = text.slice(start + exact.length, start + exact.length + suffix.length)
+    let score = 0
+    if (prefix) {
+      if (p === prefix) score += 2
+      else if (p && (prefix.endsWith(p) || p.endsWith(prefix.slice(-8)))) score += 1
+    }
+    if (suffix) {
+      if (s === suffix) score += 2
+      else if (s && (suffix.startsWith(s) || s.startsWith(suffix.slice(0, 8)))) score += 1
+    }
+    return { start, score, dist: Math.abs(start - offset) }
+  })
+  scored.sort((a, b) => b.score - a.score || a.dist - b.dist)
+  const winner = scored[0]!
+  return { start: winner.start, end: winner.start + exact.length }
+}

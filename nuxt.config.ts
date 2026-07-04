@@ -92,5 +92,30 @@ export default defineNuxtConfig({
     },
   },
   devtools: { enabled: false },
+  // Pre-bundle heavy CJS/ESM deps so Vite doesn't discover them lazily in dev
+  // ("new dependencies optimized, reloading" full-page reloads on first editor/preview visit).
+  // Dev-only optimization; production builds are unaffected.
+  // https://vite.dev/guide/dep-pre-bundling.html
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@codemirror/autocomplete',
+        '@codemirror/commands',
+        '@codemirror/lang-markdown',
+        '@codemirror/language',
+        '@codemirror/language-data',
+        '@codemirror/search',
+        '@codemirror/state',
+        '@codemirror/view',
+        '@lezer/highlight',
+        '@vscode/markdown-it-katex', // CJS
+        'dompurify',
+        'markdown-it',
+        'markdown-it-attrs', // CJS
+        'markdown-it-footnote',
+        'markdown-it-multimd-table', // CJS
+      ],
+    },
+  },
   compatibilityDate: '2026-06-19',
 })

@@ -149,14 +149,29 @@ defineExpose({ submit, setField, onPublished, errors, model })
     <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">
       <template #content>
         <div class="flex max-h-[88vh] flex-col bg-white">
-          <div class="flex items-center justify-between border-b border-default px-4 py-2">
+          <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
             <span class="text-sm font-medium text-gray-700">Published preview</span>
-            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
+            <div class="flex items-center gap-2">
+              <!-- Saved drafts: jump to the standalone review page (the shareable reviewer URL). -->
+              <UButton
+                v-if="mode === 'edit' && model.documentId"
+                data-test="review-view-link"
+                size="xs" variant="outline" color="neutral" icon="i-lucide-external-link"
+                label="Review view" :to="`/preview/article/${model.documentId}`" target="_blank"
+              />
+              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
+            </div>
           </div>
           <!-- py-6 (not p-6): no horizontal padding so the full-bleed splash reaches the modal's
-               left/right edges; the body inset is carried by .published-layout in prose-preview.css. -->
-          <div class="overflow-y-auto py-6">
-            <PublishedArticlePreview :article="model" />
+               left/right edges; the body inset is carried by .published-layout in prose-preview.css.
+               SAVED drafts get the full annotation overlay (spec Addendum A) — same threads as the
+               /preview page; unsaved create-mode previews stay plain (no documentId to key threads to).
+               --ann-sticky-top: 0px pins the reviewer bar to the top of the modal's scroll area. -->
+          <div class="overflow-y-auto py-6" style="--ann-sticky-top: 0px">
+            <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="article" :document-id="model.documentId">
+              <PublishedArticlePreview :article="model" />
+            </AnnotatedPreview>
+            <PublishedArticlePreview v-else :article="model" />
           </div>
         </div>
       </template>

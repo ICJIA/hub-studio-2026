@@ -135,12 +135,25 @@ defineExpose({ submit, setField, errors, model })
     <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">
       <template #content>
         <div class="flex max-h-[88vh] flex-col bg-white">
-          <div class="flex items-center justify-between border-b border-default px-4 py-2">
+          <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
             <span class="text-sm font-medium text-gray-700">Published preview</span>
-            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
+            <div class="flex items-center gap-2">
+              <!-- Saved drafts: jump to the standalone review page (the shareable reviewer URL). -->
+              <UButton
+                v-if="mode === 'edit' && model.documentId"
+                data-test="review-view-link"
+                size="xs" variant="outline" color="neutral" icon="i-lucide-external-link"
+                label="Review view" :to="`/preview/dataset/${model.documentId}`" target="_blank"
+              />
+              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
+            </div>
           </div>
-          <div class="overflow-y-auto p-6">
-            <PublishedDatasetPreview :dataset="model" />
+          <!-- Saved drafts carry the annotation overlay (spec Addendum A); unsaved stay plain. -->
+          <div class="overflow-y-auto p-6" style="--ann-sticky-top: 0px">
+            <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="dataset" :document-id="model.documentId">
+              <PublishedDatasetPreview :dataset="model" />
+            </AnnotatedPreview>
+            <PublishedDatasetPreview v-else :dataset="model" />
           </div>
         </div>
       </template>

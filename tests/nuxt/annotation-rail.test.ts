@@ -31,7 +31,7 @@ describe('AnnotationRail', () => {
       filter: 'all', activeId: null,
     } })
     const cards = wrapper.findAll('[data-test="ann-card"]')
-    expect(cards.map((c) => c.attributes('id'))).toEqual(['ann-card-early', 'ann-card-late', 'ann-card-lost'])
+    expect(cards.map((c) => c.attributes('data-card-id'))).toEqual(['early', 'late', 'lost'])
     expect(cards[2]!.text()).toContain('text changed')
   })
   it('filters open vs resolved', async () => {
@@ -70,11 +70,11 @@ describe('AnnotationRail', () => {
     await wrapper.find('[data-test="ann-delete"]').trigger('click')
     expect(wrapper.emitted('remove')![0]).toEqual(['a1'])
   })
-  it('scrolls the active card into view when mounted with an activeId', async () => {
+  it('scrolls the active card into view when mounted with an activeId (instance-scoped lookup)', async () => {
     const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {})
-    await mountSuspended(AnnotationRail, {
-      // The scroll handler looks the card up via document.getElementById, so the rail must
-      // actually be IN the document (as at runtime) — VTU mounts detached by default.
+    const wrapper = await mountSuspended(AnnotationRail, {
+      // The rail must actually be IN the document (as at runtime) — VTU mounts detached
+      // by default and the scroll target is resolved after mount.
       attachTo: document.body,
       props: {
         threads: [{ annotation: ann('a1'), orphan: false, start: 1 }],
@@ -83,6 +83,13 @@ describe('AnnotationRail', () => {
     })
     await nextTick()
     expect(scrollSpy).toHaveBeenCalled()
+    // The receiver must be THIS instance's card (scoped lookup, no global ids) — with two
+    // concurrent rails (desktop aside + mobile drawer) a global lookup would always hit the
+    // first copy in the document.
+    const receiver = scrollSpy.mock.contexts[0] as Element
+    expect(wrapper.element.contains(receiver)).toBe(true)
+    expect(receiver.getAttribute('data-card-id')).toBe('a1')
+    wrapper.unmount()
   })
   it('hides delete when not permitted (author session, someone else’s thread)', async () => {
     useAuthStore().setSession(makeDevAdminSession('author'))

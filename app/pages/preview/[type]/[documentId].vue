@@ -19,7 +19,7 @@ import type { AnnotationAnchor, AnnotationColor, AnnotationContentType, RailThre
 import { ANNOTATION_COLORS } from '~/types/annotations'
 import { captureAnchor, resolveAnchor } from '~/lib/annotations/anchor'
 import { paintOffsets, clearAnnotations } from '~/lib/annotations/paint'
-import { ANNOTATIONS_STORAGE_PREFIX } from '~/lib/annotations/store-local'
+import { ANNOTATIONS_STORAGE_PREFIX, annotationsStorageKey } from '~/lib/annotations/store-local'
 
 const route = useRoute()
 const type = route.params.type as 'article' | 'app' | 'dataset'
@@ -116,6 +116,11 @@ function openThread(id: string) {
   activeId.value = id
   railOpen.value = true
   repaint()
+  // repaint() replaced the activated mark with a fresh element — restore keyboard focus
+  // to it so Enter/Space activation doesn't drop focus to <body>.
+  annotationContainer()
+    ?.querySelector<HTMLElement>(`mark[data-ann-id="${CSS.escape(id)}"]`)
+    ?.focus({ preventScroll: true })
 }
 
 /** Click / keyboard activation on painted marks (event delegation on the wrapper). */
@@ -153,6 +158,13 @@ function onMouseUp() {
 
 /** Screen-reader announcements for actions with no visible focus change (spec §6). */
 const announce = ref('')
+/** Blank the live region for a tick first: a consecutive IDENTICAL message would otherwise
+ *  be an identical ref write — no DOM mutation, so screen readers would not re-announce. */
+async function say(msg: string) {
+  announce.value = ''
+  await nextTick()
+  announce.value = msg
+}
 
 async function saveComposer(body: string) {
   if (!composer.value) return
@@ -162,20 +174,20 @@ async function saveComposer(body: string) {
   await nextTick()
   activeId.value = created.id
   repaint()
-  announce.value = 'Comment added'
+  await say('Comment added')
 }
 
 async function onReply(id: string, body: string) { await ann.reply(id, body) }
 async function onResolve(id: string, resolved: boolean) {
   await ann.setResolved(id, resolved)
   repaint()
-  announce.value = resolved ? 'Thread resolved' : 'Thread reopened'
+  await say(resolved ? 'Thread resolved' : 'Thread reopened')
 }
 async function onRemove(id: string) {
   await ann.removeAnnotation(id)
   if (activeId.value === id) activeId.value = null
   repaint()
-  announce.value = 'Thread deleted'
+  await say('Thread deleted')
 }
 
 /** Rail → highlight: scroll the mark into view and flash it active. */
@@ -189,9 +201,10 @@ function jumpToMark(id: string) {
   mark.focus({ preventScroll: true })
 }
 
-/** Another tab wrote annotations for this document → reload + repaint. */
+/** Another tab wrote THIS document's annotations → reload + repaint. Exact-key match:
+ *  events for other documents (or the color preference) are none of our business. */
 async function onStorage(e: StorageEvent) {
-  if (!e.key?.startsWith(ANNOTATIONS_STORAGE_PREFIX)) return
+  if (e.key !== annotationsStorageKey(type, documentId)) return
   await ann.load()
   repaint()
 }

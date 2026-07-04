@@ -24,6 +24,11 @@ const emit = defineEmits<{
 const auth = useAuthStore()
 const me = computed(() => ({ email: auth.user?.email ?? '', canPublish: auth.canPublish }))
 
+/** Root of THIS rail instance. Card lookups are scoped here — never document-global —
+ *  because the preview page mounts two rails at once (desktop aside + mobile drawer):
+ *  global ids would be duplicated and getElementById would always hit the first copy. */
+const rootEl = ref<HTMLElement | null>(null)
+
 const drafts = ref<Record<string, string>>({})
 
 const visible = computed(() => {
@@ -52,7 +57,7 @@ function timeOf(iso: string): string {
 async function scrollToActive(id: string | null) {
   if (!id) return
   await nextTick()
-  const el = document.getElementById(`ann-card-${id}`)
+  const el = rootEl.value?.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(id)}"]`)
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   el?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' })
 }
@@ -60,22 +65,22 @@ async function scrollToActive(id: string | null) {
 // A rail (re)mounted with a non-null activeId scrolls the active card into view on first
 // paint too, not only on later changes. onMounted (not `watch { immediate }`): under a
 // Suspense boundary the pending tree renders into a detached container and only enters the
-// document when the boundary resolves — an immediate watcher's nextTick fires before that,
-// so document.getElementById would miss. onMounted is deferred until the tree is really in
-// the document (and, unlike an immediate watcher, never touches `document` during SSR setup).
+// document when the boundary resolves — an immediate watcher's nextTick fires before the
+// rootEl ref is populated, so the card lookup would miss. onMounted is deferred until the
+// tree is really mounted (and, unlike an immediate watcher, never runs during SSR setup).
 watch(() => props.activeId, scrollToActive)
 onMounted(() => { void scrollToActive(props.activeId) })
 </script>
 
 <template>
-  <section class="ann-rail" aria-label="Review comments">
+  <section ref="rootEl" class="ann-rail" aria-label="Review comments">
     <p v-if="visible.length === 0" class="text-sm text-muted p-3">
       No {{ filter === 'all' ? '' : filter + ' ' }}comments yet. Turn on <strong>Highlight</strong> and select text to add one.
     </p>
     <article
       v-for="t in visible"
       :key="t.annotation.id"
-      :id="`ann-card-${t.annotation.id}`"
+      :data-card-id="t.annotation.id"
       data-test="ann-card"
       class="rounded-lg border p-3 mb-3 bg-white dark:bg-neutral-900"
       :class="t.annotation.id === activeId ? 'border-blue-600 dark:border-blue-400' : 'border-neutral-200 dark:border-neutral-700'"

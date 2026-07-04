@@ -6,6 +6,8 @@ import type { AnnotationAnchor } from '~/types/annotations'
 
 export const MAX_EXACT_LENGTH = 1000
 export const CONTEXT_LENGTH = 32
+// How many chars of prefix-tail/suffix-head still count as partial agreement — tune alongside CONTEXT_LENGTH.
+const PARTIAL_CONTEXT_CHARS = 8
 
 export type CaptureResult =
   | { ok: true; anchor: AnnotationAnchor }
@@ -74,7 +76,8 @@ export function captureAnchor(container: Element, range: Range): CaptureResult {
 }
 
 /** Map a character span over the container text back to a DOM Range.
- *  Boundary at a node junction lands at the START of the later node. */
+ *  At a node junction: a START boundary lands at the start of the later node; an END
+ *  boundary stays at the end of the earlier node (tightest possible range). */
 export function rangeFromOffsets(container: Element, start: number, end: number): Range | null {
   if (end <= start || start < 0) return null
   const doc = container.ownerDocument
@@ -122,11 +125,11 @@ export function resolveAnchor(
     let score = 0
     if (prefix) {
       if (p === prefix) score += 2
-      else if (p && (prefix.endsWith(p) || p.endsWith(prefix.slice(-8)))) score += 1
+      else if (p && (prefix.endsWith(p) || p.endsWith(prefix.slice(-PARTIAL_CONTEXT_CHARS)))) score += 1
     }
     if (suffix) {
       if (s === suffix) score += 2
-      else if (s && (suffix.startsWith(s) || s.startsWith(suffix.slice(0, 8)))) score += 1
+      else if (s && (suffix.startsWith(s) || s.startsWith(suffix.slice(0, PARTIAL_CONTEXT_CHARS)))) score += 1
     }
     return { start, score, dist: Math.abs(start - offset) }
   })

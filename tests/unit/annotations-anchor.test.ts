@@ -130,4 +130,27 @@ describe('resolveAnchor', () => {
   it('returns null (orphan) when the quote no longer exists', () => {
     expect(resolveAnchor(container, { exact: 'vanished text', prefix: '', suffix: '', offset: 0 })).toBeNull()
   })
+  it('awards the +1 partial-overlap tier when only the prefix tail survived an edit, beating the nearest-offset tie-break', () => {
+    // Two occurrences of "wombat". The stored prefix ("OLDSTUFFTAILMARK") simulates a capture
+    // taken before an upstream edit. By resolve time, occurrence A's leading context is
+    // unrelated ("AAAA...A"), while occurrence B's leading context became "NEWSTUFFTAILMARK":
+    // the first 8 chars changed but the last 8 ("TAILMARK") still match the stored prefix's
+    // tail — exercising `p.endsWith(prefix.slice(-PARTIAL_CONTEXT_CHARS))`. Neither candidate's
+    // prefix matches exactly, so this is +1 (partial), not +2 (exact). suffix is '' so it
+    // contributes nothing to either candidate, isolating the prefix partial tier as the sole
+    // decider. offset is pinned to A (distance 0) so a passing test proves the score tier wins;
+    // if the +1 tier regressed, both candidates would tie at score 0 and A would incorrectly
+    // win via the nearest-offset tie-break instead.
+    container.innerHTML = '<p>AAAAAAAAAAAAAAAAwombat here.</p><p>NEWSTUFFTAILMARKwombat there.</p>'
+    const text = textContentOf(container)
+    const indexA = text.indexOf('wombat')
+    const indexB = text.indexOf('wombat', indexA + 1)
+    const res = resolveAnchor(container, {
+      exact: 'wombat',
+      prefix: 'OLDSTUFFTAILMARK',
+      suffix: '',
+      offset: indexA,
+    })
+    expect(res!.start).toBe(indexB)
+  })
 })

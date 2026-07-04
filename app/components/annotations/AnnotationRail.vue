@@ -6,7 +6,7 @@
   bodies are Vue-interpolated text — NEVER v-html.
 -->
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from '#imports'
+import { ref, computed, watch, nextTick, onMounted } from '#imports'
 import type { RailThread } from '~/types/annotations'
 import { canDeleteAnnotation } from '~/lib/annotations/attribution'
 import { useAuthStore } from '~/stores/auth'
@@ -49,13 +49,22 @@ function timeOf(iso: string): string {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString()
 }
 
-watch(() => props.activeId, async (id) => {
+async function scrollToActive(id: string | null) {
   if (!id) return
   await nextTick()
   const el = document.getElementById(`ann-card-${id}`)
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   el?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' })
-})
+}
+
+// A rail (re)mounted with a non-null activeId scrolls the active card into view on first
+// paint too, not only on later changes. onMounted (not `watch { immediate }`): under a
+// Suspense boundary the pending tree renders into a detached container and only enters the
+// document when the boundary resolves — an immediate watcher's nextTick fires before that,
+// so document.getElementById would miss. onMounted is deferred until the tree is really in
+// the document (and, unlike an immediate watcher, never touches `document` during SSR setup).
+watch(() => props.activeId, scrollToActive)
+onMounted(() => { void scrollToActive(props.activeId) })
 </script>
 
 <template>

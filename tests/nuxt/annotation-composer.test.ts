@@ -27,4 +27,11 @@ describe('AnnotationComposer', () => {
     expect(style).toContain('120px')
     expect(style).toContain('240px')
   })
+  it('clamps a huge y position so the popover stays within the viewport bottom edge', async () => {
+    const wrapper = await mountSuspended(AnnotationComposer, { props: { position: { x: 120, y: 5000 }, quote: 'x' } })
+    const style = wrapper.find('.ann-composer').attributes('style') ?? ''
+    const match = /top:\s*(-?[\d.]+)px/.exec(style)
+    expect(match).not.toBeNull()
+    expect(Number(match![1])).toBeLessThan(window.innerHeight)
+  })
 })

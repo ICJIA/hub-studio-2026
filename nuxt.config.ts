@@ -55,7 +55,7 @@ export default defineNuxtConfig({
         'lucide:play', 'lucide:circle-help', 'lucide:files', 'lucide:id-card', 'lucide:send',
         // Reviewer-annotation UI (bar/rail/composer). Explicit for the same reason as
         // the tour icons: string usages the source scan may miss.
-        'lucide:highlighter', 'lucide:message-square-text', 'lucide:reply',
+        'lucide:highlighter', 'lucide:reply',
         'lucide:trash-2', 'lucide:rotate-ccw', 'lucide:panel-right', 'lucide:map-pin-off',
       ],
       sizeLimitKb: 512,

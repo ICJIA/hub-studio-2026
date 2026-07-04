@@ -2,8 +2,9 @@
 <!--
   Floating "Add comment" popover at the text selection (spec §6). The page owns
   positioning (viewport coords from the selection rect) and creation; this component
-  only collects the body. Focus is trapped (textarea ↔ buttons); Esc cancels; the
-  page restores focus after close.
+  only collects the body and emits save/cancel. Focus is trapped here (textarea ↔
+  buttons) and Esc cancels; but CLOSE-focus is the page's job — it stores the pre-open
+  focus target and restores it on cancel, or focuses the newly painted <mark> on save.
 -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from '#imports'
@@ -16,10 +17,12 @@ const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const rootEl = ref<HTMLElement | null>(null)
 const canSave = computed(() => body.value.trim().length > 0)
 
-/** Clamp so the popover never overflows the right viewport edge (320px wide + 16px gutter). */
+/** Clamp so the popover never overflows the viewport: right edge (320px wide + 16px gutter)
+ *  and bottom edge (~220px tall + 16px gutter) alike, each with a 16px floor for tiny viewports. */
 const style = computed(() => {
   const left = import.meta.client ? Math.min(props.position.x, Math.max(16, window.innerWidth - 336)) : props.position.x
-  return { left: `${left}px`, top: `${props.position.y}px` }
+  const top = import.meta.client ? Math.min(props.position.y, Math.max(16, window.innerHeight - 220)) : props.position.y
+  return { left: `${left}px`, top: `${top}px` }
 })
 
 onMounted(() => textareaEl.value?.focus())
@@ -43,7 +46,7 @@ function save() {
 <template>
   <div
     ref="rootEl"
-    class="ann-composer fixed z-50 w-80 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-3 shadow-lg"
+    class="ann-composer fixed z-50 w-80 max-w-[calc(100vw-32px)] rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-3 shadow-lg"
     :style="style"
     role="dialog"
     aria-label="Add review comment"

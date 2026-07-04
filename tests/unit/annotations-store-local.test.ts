@@ -104,4 +104,15 @@ describe('createLocalAnnotationStore', () => {
     expect(await store.list('article', 'doc-1')).toEqual([])
     expect(onPersistFailure).not.toHaveBeenCalled()
   })
+  it('list() returns a copy — the caller mutating the result does not corrupt a later list() (memory-backed store)', async () => {
+    // storage: null forces every read() through the noStorage branch, which (pre-fix)
+    // returned the live `memory` array reference instead of a copy.
+    const store = createLocalAnnotationStore({ storage: null })
+    await store.create(ann('a1'))
+    const first = await store.list('article', 'doc-1')
+    expect(first).toHaveLength(1)
+    first.push(ann('a2')) // caller mutates the array it was handed
+    const second = await store.list('article', 'doc-1')
+    expect(second).toHaveLength(1) // unaffected — read() must not hand back the live array
+  })
 })

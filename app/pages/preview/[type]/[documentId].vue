@@ -19,7 +19,7 @@ import type { AnnotationAnchor, AnnotationColor, AnnotationContentType, RailThre
 import { ANNOTATION_COLORS } from '~/types/annotations'
 import { captureAnchor, resolveAnchor } from '~/lib/annotations/anchor'
 import { paintOffsets, clearAnnotations } from '~/lib/annotations/paint'
-import { ANNOTATIONS_STORAGE_PREFIX, annotationsStorageKey } from '~/lib/annotations/store-local'
+import { annotationsStorageKey } from '~/lib/annotations/store-local'
 
 const route = useRoute()
 const type = route.params.type as 'article' | 'app' | 'dataset'
@@ -50,7 +50,9 @@ async function copyShareLink() {
 
 const ann = useAnnotations(type as AnnotationContentType, documentId)
 
-const COLOR_KEY = `${ANNOTATIONS_STORAGE_PREFIX}:color`
+// A literal, non-prefixed key: keeps this UI preference out of store-local.ts's
+// annotations-prefix scan (locate()'s fallback storage walk matches by prefix).
+const COLOR_KEY = 'icjia-studio-annotations-ui-v1:color'
 function initialColor(): AnnotationColor {
   try {
     const saved = window.localStorage.getItem(COLOR_KEY) as AnnotationColor | null
@@ -65,6 +67,10 @@ const railOpen = ref(true)
 const activeId = ref<string | null>(null)
 /** Pending composer state: anchor captured, waiting for the comment body. */
 const composer = ref<{ anchor: AnnotationAnchor; position: { x: number; y: number } } | null>(null)
+/** document.activeElement at the moment the composer opened — restored on cancel (spec §6
+ *  "traps focus and restores it on close"); cleared (superseded by a focus-the-new-mark hop
+ *  instead) on save. */
+const composerReturnFocus = ref<Element | null>(null)
 /** id → resolved start offset (null = orphan). Drives rail order + orphan flags. */
 const resolvedStarts = ref<Record<string, number | null>>({})
 
@@ -101,6 +107,9 @@ function repaint() {
     const span = resolveAnchor(container, a.anchor)
     starts[a.id] = span ? span.start : null
     if (!span || !visibleUnderFilter(a.resolved)) continue
+    // Overlapping annotations nest marks within this single pass — each paintOffsets() call
+    // wraps its own range independently, so a later annotation's paint wins the overlap
+    // region. Cosmetic only: purely visual, and fully recovered on the next clearAnnotations().
     const marks = paintOffsets(container, span.start, span.end, a.id, a.color)
     for (const m of marks) {
       if (a.resolved) m.classList.add('ann--resolved')
@@ -128,15 +137,9 @@ function onContainerClick(e: MouseEvent) {
   const mark = (e.target as HTMLElement).closest?.('mark[data-ann-id]') as HTMLElement | null
   if (mark?.dataset.annId) openThread(mark.dataset.annId)
 }
-function onContainerKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Enter' && e.key !== ' ') return
-  const mark = (e.target as HTMLElement).closest?.('mark[data-ann-id]') as HTMLElement | null
-  if (mark?.dataset.annId) { e.preventDefault(); openThread(mark.dataset.annId) }
-}
-
-/** Armed-highlighter selection flow → composer. */
-function onMouseUp() {
-  if (!armed.value || composer.value) return
+/** Shared armed-selection → composer capture flow (mouse and keyboard entry points).
+ *  Stores the pre-open focus target so cancelComposer() can restore it on close (spec §6). */
+function tryOpenComposerFromSelection() {
   const sel = window.getSelection()
   if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
   const container = annotationContainer()
@@ -153,7 +156,40 @@ function onMouseUp() {
     return
   }
   const rect = range.getBoundingClientRect()
+  composerReturnFocus.value = document.activeElement
   composer.value = { anchor: res.anchor, position: { x: rect.left, y: rect.bottom + 8 } }
+}
+
+/** Enter/Space activates a painted mark (existing path — checked first, takes precedence).
+ *  Otherwise, with the highlighter armed and a live text selection, Enter alone opens the
+ *  composer: the keyboard-only path to start a comment (WCAG 2.1.1 — selection-to-comment
+ *  isn't mouse-only). */
+function onContainerKeydown(e: KeyboardEvent) {
+  const mark = (e.target as HTMLElement).closest?.('mark[data-ann-id]') as HTMLElement | null
+  if (mark?.dataset.annId) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThread(mark.dataset.annId) }
+    return
+  }
+  if (!armed.value || e.key !== 'Enter' || composer.value) return
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
+  e.preventDefault()
+  tryOpenComposerFromSelection()
+}
+
+/** Armed-highlighter mouse selection flow → composer. */
+function onMouseUp() {
+  if (!armed.value || composer.value) return
+  tryOpenComposerFromSelection()
+}
+
+/** Close the composer and restore focus to wherever it was before opening (spec §6 "traps
+ *  focus and restores it on close") — otherwise Cancel/Escape would drop focus to <body>. */
+function cancelComposer() {
+  composer.value = null
+  const el = composerReturnFocus.value
+  if (el instanceof HTMLElement) el.focus({ preventScroll: true })
+  composerReturnFocus.value = null
 }
 
 /** Screen-reader announcements for actions with no visible focus change (spec §6). */
@@ -173,7 +209,17 @@ async function saveComposer(body: string) {
   window.getSelection()?.removeAllRanges()
   await nextTick()
   activeId.value = created.id
+  if (filter.value === 'resolved') filter.value = 'open' // the new thread must be visible now
+  // If the line above just flipped the filter, `watch(filter, ...)` schedules its OWN
+  // repaint() — awaiting a tick lets that run first, so it can't unwrap/rewrap (and thus
+  // steal focus from) the mark we're about to focus below with OUR repaint().
+  await nextTick()
   repaint()
+  // Meaningful post-close focus: land on the new highlight rather than dropping to <body>.
+  annotationContainer()
+    ?.querySelector<HTMLElement>(`mark[data-ann-id="${CSS.escape(created.id)}"]`)
+    ?.focus({ preventScroll: true })
+  composerReturnFocus.value = null
   await say('Comment added')
 }
 
@@ -286,7 +332,7 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
         :position="composer.position"
         :quote="composer.anchor.exact"
         @save="saveComposer"
-        @cancel="composer = null"
+        @cancel="cancelComposer"
       />
 
       <p class="sr-only" role="status" aria-live="polite">{{ announce }}</p>

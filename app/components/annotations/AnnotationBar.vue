@@ -39,6 +39,7 @@ const SWATCH: Record<AnnotationColor, string> = {
       icon="i-lucide-highlighter"
       :aria-pressed="armed ? 'true' : 'false'"
       :label="armed ? 'Highlighting on' : 'Highlight'"
+      :title="armed ? 'Select text, then press Enter to comment' : 'Turn on highlighting'"
       @click="emit('update:armed', !armed)"
     />
     <div class="flex items-center gap-1" role="group" aria-label="Highlight color">

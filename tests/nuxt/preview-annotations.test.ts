@@ -32,6 +32,34 @@ const seed2: ReviewAnnotation = {
   comments: [{ ...seed.comments[0]!, id: 'c2', body: 'Second note.' }],
 }
 
+/** Build a Range over the first occurrence of `exact` within `container`'s concatenated
+ *  text nodes, and make it the live window selection — mirrors a mouse-drag selection
+ *  (same offset-walk approach as app/lib/annotations/anchor.ts, keyed by substring so
+ *  callers don't need to know the numeric offset in the rendered DOM). */
+function selectExact(container: Element, exact: string): Range {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  const nodes: Text[] = []
+  let full = ''
+  let n: Node | null
+  while ((n = walker.nextNode())) { nodes.push(n as Text); full += (n as Text).data }
+  const start = full.indexOf(exact)
+  if (start === -1) throw new Error(`selectExact: not found in container text: ${exact}`)
+  const end = start + exact.length
+  const range = document.createRange()
+  let pos = 0
+  let startSet = false
+  for (const node of nodes) {
+    const next = pos + node.data.length
+    if (!startSet && start < next) { range.setStart(node, start - pos); startSet = true }
+    if (startSet && end <= next) { range.setEnd(node, end - pos); break }
+    pos = next
+  }
+  const sel = window.getSelection()!
+  sel.removeAllRanges()
+  sel.addRange(range)
+  return range
+}
+
 beforeEach(() => {
   for (let i = window.localStorage.length - 1; i >= 0; i--) {
     const k = window.localStorage.key(i)
@@ -138,5 +166,67 @@ describe('preview page — annotations', () => {
     observer.disconnect()
     expect(status.text()).toBe('Thread resolved')
     expect(mutations).toBeGreaterThan(0)
+  })
+  it('cancel restores focus to the element that had it before the composer opened', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    const opener = document.createElement('button')
+    opener.type = 'button'
+    document.body.appendChild(opener)
+    opener.focus()
+    expect(document.activeElement).toBe(opener)
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'lazy dog')
+    await wrapper.find('.ann-arming').trigger('mouseup')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(true)
+    await wrapper.find('[data-test="ann-cancel"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(false)
+    expect(document.activeElement).toBe(opener)
+    opener.remove()
+    wrapper.unmount()
+  })
+  it('save focuses the newly painted mark, and snaps a Resolved filter back to Open so the new thread is visible', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    await wrapper.find('[data-test="ann-filter"]').trigger('click') // open -> resolved
+    expect(wrapper.find('[data-test="ann-filter"]').text()).toContain('Resolved')
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'lazy dog')
+    await wrapper.find('.ann-arming').trigger('mouseup')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(true)
+    await wrapper.find('textarea').setValue('New note')
+    await wrapper.find('[data-test="ann-save"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    // Item 5 hardening: creating a thread while filtered to Resolved must not hide it.
+    expect(wrapper.find('[data-test="ann-filter"]').text()).toContain('Open')
+    const stored = JSON.parse(window.localStorage.getItem(annotationsStorageKey('article', 'a1')) ?? '[]') as ReviewAnnotation[]
+    const created = stored.find((a) => a.anchor.exact === 'lazy dog')
+    expect(created).toBeTruthy()
+    expect(wrapper.find(`mark[data-ann-id="${created!.id}"]`).exists()).toBe(true)
+    const active = document.activeElement as HTMLElement | null
+    expect(active?.tagName).toBe('MARK')
+    expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
+    wrapper.unmount()
+  })
+  it('keyboard-only: Enter with a live selection (armed, target not on a mark) opens the composer', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'jumps over')
+    await wrapper.find('.ann-arming').trigger('keydown', { key: 'Enter' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(true)
+    expect(wrapper.text()).toContain('jumps over')
+    wrapper.unmount()
   })
 })

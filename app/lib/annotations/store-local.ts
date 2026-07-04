@@ -35,23 +35,26 @@ export function createLocalAnnotationStore(opts: {
     }
   }
 
+  /** Read a key's list. Every return path hands back a shallow copy, never the LIVE
+   *  `memory` array itself (matching locate()'s copy discipline below) — otherwise a
+   *  caller mutating a `list()` result in place would corrupt the store's own state. */
   function read(key: string): ReviewAnnotation[] {
     if (noStorage) {
       reportOnce() // report on first use, not eagerly at construction
-      return memory.get(key) ?? []
+      return [...(memory.get(key) ?? [])]
     }
     let raw: string | null
     try {
       raw = storage!.getItem(key)
     } catch {
       reportOnce()
-      return memory.get(key) ?? []
+      return [...(memory.get(key) ?? [])]
     }
     // Once a persist failure has been reported, a memory entry for this key is session
     // truth that may be newer than (or diverged from) whatever storage still holds —
     // prefer it. Keys never touched this session fall through to storage as usual.
-    if (reported && memory.has(key)) return memory.get(key)!
-    if (!raw) return memory.get(key) ?? []
+    if (reported && memory.has(key)) return [...memory.get(key)!]
+    if (!raw) return [...(memory.get(key) ?? [])]
     try {
       const parsed = JSON.parse(raw)
       return Array.isArray(parsed) ? (parsed as ReviewAnnotation[]) : []

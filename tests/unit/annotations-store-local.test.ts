@@ -65,4 +65,43 @@ describe('createLocalAnnotationStore', () => {
     expect((await store.list('article', 'doc-1')).map((a) => a.id)).toEqual(['a1', 'a2'])
     expect(onPersistFailure).toHaveBeenCalledTimes(1)
   })
+  it('storage: null reports the failure once on first use (not eagerly) and keeps working via memory', async () => {
+    const onPersistFailure = vi.fn()
+    const store = createLocalAnnotationStore({ storage: null, onPersistFailure })
+    expect(onPersistFailure).not.toHaveBeenCalled() // not eager at construction
+    await store.create(ann('a1'))
+    expect(onPersistFailure).toHaveBeenCalledTimes(1)
+    expect(await store.list('article', 'doc-1')).toEqual([ann('a1')])
+    expect(onPersistFailure).toHaveBeenCalledTimes(1) // second op does not re-fire
+  })
+  it('a failed write does not blind reads to pre-existing persisted data under other keys', async () => {
+    const seeded = memoryStorage()
+    const a1 = ann('a1')
+    seeded.setItem(annotationsStorageKey(a1.contentType, a1.documentId), JSON.stringify([a1]))
+    const wrapper = {
+      getItem: (k: string) => seeded.getItem(k),
+      setItem: () => { throw new Error('quota') },
+      removeItem: (k: string) => seeded.removeItem(k),
+      clear: () => seeded.clear(),
+      key: (i: number) => seeded.key(i),
+      get length() { return seeded.length },
+    } as unknown as Storage
+    const onPersistFailure = vi.fn()
+    const store = createLocalAnnotationStore({ storage: wrapper, onPersistFailure })
+    const b1 = { ...ann('b1'), documentId: 'doc-2' }
+    await store.create(b1) // setItem throws -> callback fires once
+    expect(onPersistFailure).toHaveBeenCalledTimes(1)
+    expect(await store.list('article', 'doc-1')).toEqual([a1]) // A never left storage; still readable
+    expect((await store.setResolved('a1', true)).resolved).toBe(true) // locate finds it via storage scan
+    expect(await store.list('article', 'doc-2')).toEqual([b1]) // B still readable from memory
+    expect(onPersistFailure).toHaveBeenCalledTimes(1) // no additional re-fires
+  })
+  it('ignores corrupt JSON without treating it as a persist failure', async () => {
+    const storage = memoryStorage()
+    storage.setItem(annotationsStorageKey('article', 'doc-1'), '{not json')
+    const onPersistFailure = vi.fn()
+    const store = createLocalAnnotationStore({ storage, onPersistFailure })
+    expect(await store.list('article', 'doc-1')).toEqual([])
+    expect(onPersistFailure).not.toHaveBeenCalled()
+  })
 })

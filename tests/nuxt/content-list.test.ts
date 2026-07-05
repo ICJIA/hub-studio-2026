@@ -1,5 +1,5 @@
 // @vitest-environment nuxt
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { PagedResult } from '~/lib/repository'
 
@@ -162,5 +162,65 @@ describe('ContentList', () => {
     const wrapper = await mountSuspended(ContentList, { props: { type: 'app' } })
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.find('#content-list-type-filter').exists()).toBe(false)
+  })
+})
+
+describe('ContentList — card view (visual default) vs list toggle', () => {
+  const VIEW_KEY = 'icjia-studio-content-view-v1'
+  const CARD_ITEM = {
+    documentId: 'c1', title: 'Card Article', date: '2024-05-01', publishedAt: '2024-06-01T00:00:00.000Z',
+    type: 'researchReport', authors: [{ title: 'Ada Author, PhD' }],
+    splash: { url: '/images/gavel.jpg' },
+    abstract: 'Plain **bold** abstract with a [link](https://x.gov) inside.',
+    updatedAt: '2026-01-01T10:00:00.000Z',
+  }
+  beforeEach(() => window.localStorage.removeItem(VIEW_KEY))
+
+  it('defaults to CARDS: splash image, on-image status badge, clean excerpt — and no table', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult([CARD_ITEM]))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="content-cards"]').exists()).toBe(true)
+    expect(wrapper.find('table').exists()).toBe(false)
+    expect(wrapper.find('img').attributes('src')).toBe('/images/gavel.jpg')
+    expect(wrapper.text()).toContain('Plain bold abstract with a link inside.') // markdown stripped
+    expect(wrapper.text()).toContain('Published')
+    const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
+    expect(hrefs).toContain('/edit/article/c1')
+    expect(hrefs).toContain('/preview/article/c1')
+  })
+
+  it('toggles to LIST, persists the choice, and remounts in list mode from storage', async () => {
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="view-list"]').trigger('click')
+    expect(wrapper.find('table').exists()).toBe(true)
+    expect(wrapper.find('[data-test="content-cards"]').exists()).toBe(false)
+    expect(window.localStorage.getItem(VIEW_KEY)).toBe('list')
+    expect(wrapper.find('[data-test="view-list"]').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.find('[data-test="view-cards"]').attributes('aria-pressed')).toBe('false')
+
+    const remount = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(remount.find('table').exists()).toBe(true)
+  })
+
+  it('cards carry the row-actions slot (publish toggle parity with the table)', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult([CARD_ITEM]))
+    const wrapper = await mountSuspended(ContentList, {
+      props: { type: 'article' },
+      slots: { 'row-actions': '<span data-test="slot-probe">SLOT-TOOL</span>' },
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="content-cards"] [data-test="slot-probe"]').exists()).toBe(true)
+  })
+
+  it('cards without an image render the neutral placeholder block', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult([{ ...CARD_ITEM, documentId: 'c2', splash: null }]))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.find('[data-test="card-image-placeholder"]').exists()).toBe(true)
   })
 })

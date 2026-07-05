@@ -1,18 +1,25 @@
 <!-- app/components/ContentList.vue -->
 <!--
-  ContentList: paginated, columnar listing for one content type. Shows ALL items (published + draft)
-  unless a `status` is passed — it is NOT author-scoped.
+  ContentList: paginated listing for one content type, in TWO switchable views. Shows ALL
+  items (published + draft) unless a `status` is passed — it is NOT author-scoped.
   Fetches via repo.listPage({ status, sort, type, page, pageSize }).
-  Columns: Date · Title · Type · Author(s) · Status · Actions.
-  Articles also get a "Type" filter dropdown above the list: it filters across ALL articles through
-  the repo (not just the loaded page) and re-pages from 1; "All types" clears it.
-  The #row-actions slot (used by manage.vue) passes :document-id and :published.
+
+  Views (persisted per browser, icjia-studio-content-view-v1):
+  - CARDS (default — user decision 2026-07-05, "visual-first for new users"): media cards,
+    splash/image left with the STATUS BADGE riding the artwork corner, title + date/type/
+    authors + a plain-text excerpt right, and the same Edit / Preview / row-actions tools.
+  - LIST: the original columnar table (Date · Title · Type · Author(s) · Status · Actions).
+
+  Articles also get a "Type" filter dropdown: it filters across ALL articles through the
+  repo (not just the loaded page) and re-pages from 1; "All types" clears it.
+  The #row-actions slot (used by manage.vue) passes :document-id and :published to BOTH views.
 -->
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from '#imports'
 import type { ContentStatus } from '~/types/content'
 import type { PagedResult } from '~/lib/repository'
 import { ARTICLE_TYPE_OPTIONS, articleTypeLabel } from '~/lib/field-options'
+import { plainExcerpt } from '~/lib/text-excerpt'
 
 const props = withDefaults(defineProps<{
   type: 'article' | 'app' | 'dataset'
@@ -31,6 +38,30 @@ type AnyItem = {
   contributors?: { title: string }[]
   updatedAt?: string | null
   type?: string | null
+  // Card view: articles carry splash + abstract; apps carry image + description.
+  splash?: { url?: string } | null
+  image?: { url?: string } | null
+  abstract?: string | null
+  description?: string | null
+}
+
+// ---- Card ⇄ list view toggle (cards by default; the choice sticks per browser) ----
+const VIEW_STORAGE_KEY = 'icjia-studio-content-view-v1'
+const view = ref<'cards' | 'list'>('cards')
+onMounted(() => {
+  try { if (window.localStorage.getItem(VIEW_STORAGE_KEY) === 'list') view.value = 'list' } catch { /* preference only */ }
+})
+function setView(v: 'cards' | 'list') {
+  view.value = v
+  try { window.localStorage.setItem(VIEW_STORAGE_KEY, v) } catch { /* preference only */ }
+}
+
+function imageUrlOf(item: AnyItem): string | null {
+  const media = props.type === 'article' ? item.splash : props.type === 'app' ? item.image : null
+  return media?.url || null
+}
+function excerptOf(item: AnyItem): string {
+  return plainExcerpt(props.type === 'article' ? item.abstract : item.description, 240)
 }
 
 const result = ref<PagedResult<AnyItem>>({
@@ -100,18 +131,35 @@ function authorLabel(item: AnyItem): string {
 
 <template>
   <div>
-    <!-- Article TYPE filter — filters across ALL articles via the repo, then re-pages from 1.
-         "All types" clears it. Shown for the article list only (apps/datasets have no `type`). -->
-    <div v-if="showTypeFilter" class="mb-3 flex items-center gap-2">
-      <label class="text-sm text-muted" for="content-list-type-filter">Type</label>
-      <USelect
-        id="content-list-type-filter"
-        v-model="selectedType"
-        :items="typeItems"
-        size="sm"
-        class="min-w-[14rem]"
-        aria-label="Filter by article type"
-      />
+    <!-- Header row: the article TYPE filter (articles only) + the card/list view toggle. -->
+    <div class="mb-3 flex items-center gap-2 flex-wrap">
+      <template v-if="showTypeFilter">
+        <label class="text-sm text-muted" for="content-list-type-filter">Type</label>
+        <USelect
+          id="content-list-type-filter"
+          v-model="selectedType"
+          :items="typeItems"
+          size="sm"
+          class="min-w-[14rem]"
+          aria-label="Filter by article type"
+        />
+      </template>
+      <div class="ml-auto flex items-center gap-1" role="group" aria-label="View mode">
+        <UButton
+          data-test="view-cards"
+          size="xs" color="neutral" icon="i-lucide-layout-grid" label="Cards"
+          :variant="view === 'cards' ? 'solid' : 'outline'"
+          :aria-pressed="view === 'cards' ? 'true' : 'false'"
+          title="Card view" @click="setView('cards')"
+        />
+        <UButton
+          data-test="view-list"
+          size="xs" color="neutral" icon="i-lucide-list" label="List"
+          :variant="view === 'list' ? 'solid' : 'outline'"
+          :aria-pressed="view === 'list' ? 'true' : 'false'"
+          title="List view" @click="setView('list')"
+        />
+      </div>
     </div>
 
     <p v-if="loading" class="text-sm text-muted">Loading…</p>
@@ -119,7 +167,59 @@ function authorLabel(item: AnyItem): string {
       <p v-if="result.total === 0" class="text-sm text-muted">
         No {{ status ? `${status} ` : '' }}{{ type }}s{{ activeType ? ` of type "${articleTypeLabel(activeType)}"` : '' }} yet.
       </p>
-      <div v-else class="overflow-x-auto">
+      <div v-else>
+        <!-- CARD VIEW (default): the visual read — splash left with the status riding the
+             artwork, everything a row would tell you (plus an excerpt) on the right. -->
+        <ul v-if="view === 'cards'" data-test="content-cards" class="space-y-4">
+          <li v-for="item in result.items" :key="item.documentId">
+            <article class="flex flex-col sm:flex-row gap-4 rounded-lg border border-default bg-default p-3 sm:p-4 shadow-sm transition-shadow hover:shadow-md hover:border-accented">
+              <div class="relative sm:w-56 shrink-0">
+                <img
+                  v-if="imageUrlOf(item)"
+                  :src="imageUrlOf(item)!"
+                  alt=""
+                  loading="lazy"
+                  class="h-40 sm:h-36 w-full rounded-md object-cover"
+                >
+                <div v-else data-test="card-image-placeholder" class="h-40 sm:h-36 w-full rounded-md bg-muted flex items-center justify-center" aria-hidden="true">
+                  <UIcon name="i-lucide-image" class="size-7 text-dimmed" />
+                </div>
+                <!-- Signature: state rides the artwork — Published/Draft reads at a glance. -->
+                <UBadge
+                  class="absolute left-2 top-2 shadow-sm"
+                  :label="item.publishedAt ? 'Published' : 'Draft'"
+                  :color="item.publishedAt ? 'success' : 'neutral'"
+                  variant="solid"
+                  size="sm"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-base font-semibold leading-snug">
+                  <NuxtLink
+                    :to="`/edit/${type}/${item.documentId}`"
+                    class="text-highlighted hover:text-primary hover:underline line-clamp-2"
+                    :title="item.title || '(untitled)'"
+                  >{{ item.title || '(untitled)' }}</NuxtLink>
+                </h3>
+                <div class="mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-xs text-muted">
+                  <span class="whitespace-nowrap">{{ formatDate(item.date) }}</span>
+                  <UBadge v-if="showTypeFilter && item.type" :label="articleTypeLabel(item.type)" color="neutral" variant="subtle" size="sm" />
+                  <span v-if="authorLabel(item) !== '—'" class="truncate">{{ authorLabel(item) }}</span>
+                </div>
+                <p v-if="excerptOf(item)" class="mt-2 text-sm text-toned line-clamp-3">{{ excerptOf(item) }}</p>
+                <div class="mt-3 flex items-center gap-2 flex-wrap">
+                  <UButton size="xs" variant="soft" color="primary" icon="i-lucide-pencil" label="Edit" :to="`/edit/${type}/${item.documentId}`" />
+                  <!-- Tab-only preview: same per-document named tab the editor uses. -->
+                  <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye" label="Preview" :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" />
+                  <slot name="row-actions" :document-id="item.documentId" :published="item.publishedAt != null" />
+                </div>
+              </div>
+            </article>
+          </li>
+        </ul>
+
+        <!-- LIST VIEW: the original columnar table. -->
+        <div v-else class="overflow-x-auto">
         <table class="w-full text-sm border-collapse">
           <thead>
             <tr class="border-b border-default text-left text-muted">
@@ -173,8 +273,9 @@ function authorLabel(item: AnyItem): string {
             </tr>
           </tbody>
         </table>
+        </div>
 
-        <!-- Pager -->
+        <!-- Pager (shared by both views) -->
         <div class="mt-4 flex items-center gap-3 text-sm text-muted">
           <UButton
             size="xs"

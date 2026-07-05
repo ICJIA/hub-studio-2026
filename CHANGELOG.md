@@ -30,6 +30,10 @@ _Added (later 2026-07-05)_
 - **Word-style comment alignment.** Desktop comment cards now sit level with the passage they annotate — measured from the painted highlight, with overlapping cards pushed down by a pure collision pass (`lib/annotations/rail-layout.ts`) and re-measured on reflows (images, resizes, the rail mounting). Cards glide to new spots; clicking a card/highlight still cross-links the pair. A wider gutter separates the text column from the cards.
 - **Clean view toggle** in the reviewer bar: read the article exactly as published — no highlights painted, no comments panel, review controls collapsed to the one toggle. Pure overlay; stored threads untouched.
 
+_Added (later 2026-07-05)_
+
+- **Card view for content lists — and it's the default.** Every list (dashboard + manage, all three types) now opens as visual media cards: splash/image on the left with the **status badge riding the artwork corner** (Published/Draft at a glance), title + date + type chip + authors and a clean plain-text excerpt (markdown stripped via `lib/text-excerpt.ts`) on the right, plus the same tools as the table — Edit, Preview (named tab), and the publish toggle slot. A **Cards / List** toggle switches to the original columnar table; the choice persists per browser (`icjia-studio-content-view-v1`). Entries without an image get a quiet placeholder block. Measured 0 axe violations in both themes.
+
 _Changed (later 2026-07-05, third pass — architecture simplification)_
 
 - **The preview tab never duplicates the editor.** When the review page was opened *from* the Studio (it has a `window.opener`), the bar shows **Close preview** — closing the tab, since your editor is in the tab you came from. A shared-link visit (no opener — closing would strand the reviewer) keeps the **Back to editor** link, which navigates in place.

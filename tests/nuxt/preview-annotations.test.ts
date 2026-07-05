@@ -231,16 +231,34 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
-  it('bar links back to the editor and the dashboard (the shareable page is not a dead end)', async () => {
+  it('shared-link visit (no window.opener): bar links back to the editor and the dashboard', async () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
     const editor = wrapper.find('[data-test="preview-back-to-editor"]')
     expect(editor.exists()).toBe(true)
     expect(editor.attributes('href')).toBe('/edit/article/a1')
+    expect(wrapper.find('[data-test="preview-close-tab"]').exists()).toBe(false)
     const dash = wrapper.find('[data-test="preview-back-to-dashboard"]')
     expect(dash.exists()).toBe(true)
     expect(dash.attributes('href')).toBe('/')
+  })
+  it('opened FROM the Studio (window.opener set): Close preview closes the tab — never a second editor', async () => {
+    Object.defineProperty(window, 'opener', { value: {}, configurable: true, writable: true })
+    const closeSpy = vi.spyOn(window, 'close').mockImplementation(() => {})
+    try {
+      const wrapper = await mountSuspended(PreviewPage)
+      await new Promise((r) => setTimeout(r, 0))
+      await new Promise((r) => setTimeout(r, 0))
+      expect(wrapper.find('[data-test="preview-back-to-editor"]').exists()).toBe(false)
+      const close = wrapper.find('[data-test="preview-close-tab"]')
+      expect(close.exists()).toBe(true)
+      await close.trigger('click')
+      expect(closeSpy).toHaveBeenCalled()
+    } finally {
+      closeSpy.mockRestore()
+      Object.defineProperty(window, 'opener', { value: null, configurable: true, writable: true })
+    }
   })
   it('Clean view unpaints all highlights and hides the review controls; toggling back repaints', async () => {
     const wrapper = await mountSuspended(PreviewPage)

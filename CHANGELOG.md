@@ -32,6 +32,8 @@ _Added (later 2026-07-05)_
 
 _Changed (later 2026-07-05, third pass — architecture simplification)_
 
+- **The preview tab never duplicates the editor.** When the review page was opened *from* the Studio (it has a `window.opener`), the bar shows **Close preview** — closing the tab, since your editor is in the tab you came from. A shared-link visit (no opener — closing would strand the reviewer) keeps the **Back to editor** link, which navigates in place.
+
 - **Preview is TAB-ONLY: the Live-preview modal is removed entirely** (user decision). Every preview entry point — the editor's **Live preview** / **Preview as published** buttons and the content list's **Preview** action — opens the standalone review page in a **per-document named tab** (`studio-preview-{id}`), so repeated clicks reuse and refresh one preview tab instead of piling up. Unsaved create-mode disables the button ("Save the draft first to preview"); save just saves. One surface = no modal-vs-page confusion, browser-native close/switch, editor-and-preview side-by-side on wide screens; the review page keeps annotations, Clean view, Back to editor, and Copy share link. Removes the UModal blocks from all three forms and the `.preview-modal-light` scope; the whole modal bug class (dark-mode chrome, fullscreen composition, scale-animation measurement) goes with it.
 
 _Changed (later 2026-07-05, second pass)_

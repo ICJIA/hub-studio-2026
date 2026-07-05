@@ -37,6 +37,16 @@ const asArticle = computed(() => (type === 'article' ? (entry.value as Article |
 const asApp = computed(() => (type === 'app' ? (entry.value as App | null) : null))
 const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset | null) : null))
 
+/** Tab-only preview: when this tab was opened FROM the Studio (the editor's Live preview
+ *  or a list's Preview link — named-target anchors keep a window.opener), "back" means
+ *  CLOSE THIS TAB — navigating would turn the preview into a second copy of the editor.
+ *  A shared-link visit has no opener (closing would strand the reviewer), so that case
+ *  keeps a real Back-to-editor link that navigates in place. ssr:false → window is safe. */
+const openedFromStudio = import.meta.client && !!window.opener
+function closePreviewTab() {
+  window.close()
+}
+
 /** Copy this draft's stable preview URL — opens for anyone signed in to the Studio. */
 async function copyShareLink() {
   try {
@@ -64,6 +74,14 @@ async function copyShareLink() {
              give both audiences a way back to the editor and the content list. -->
         <div class="flex items-center gap-2 flex-wrap">
           <UButton
+            v-if="openedFromStudio"
+            data-test="preview-close-tab"
+            size="xs" variant="outline" color="neutral" icon="i-lucide-x"
+            label="Close preview" title="Close this tab — the editor is in the tab you came from"
+            @click="closePreviewTab"
+          />
+          <UButton
+            v-else
             data-test="preview-back-to-editor"
             size="xs" variant="outline" color="neutral" icon="i-lucide-arrow-left"
             label="Back to editor" :to="`/edit/${type}/${documentId}`"

@@ -8,7 +8,7 @@
 import { ANNOTATION_COLORS, type AnnotationColor } from '~/types/annotations'
 
 type Filter = 'open' | 'resolved' | 'all'
-const props = defineProps<{ armed: boolean; color: AnnotationColor; filter: Filter; openCount: number }>()
+const props = defineProps<{ armed: boolean; color: AnnotationColor; filter: Filter; openCount: number; railOpen: boolean }>()
 const emit = defineEmits<{
   'update:armed': [value: boolean]
   'update:color': [value: AnnotationColor]
@@ -68,8 +68,10 @@ const SWATCH: Record<AnnotationColor, string> = {
       size="xs"
       variant="outline"
       color="neutral"
-      icon="i-lucide-panel-right"
-      :label="`Comments (${openCount})`"
+      :icon="railOpen ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
+      :label="`${railOpen ? 'Hide' : 'Show'} comments (${openCount})`"
+      :aria-expanded="railOpen ? 'true' : 'false'"
+      :title="railOpen ? 'Hide the comments panel' : 'Show the comments panel'"
       @click="emit('toggle-rail')"
     />
   </div>

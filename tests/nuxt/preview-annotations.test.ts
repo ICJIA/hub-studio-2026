@@ -216,6 +216,21 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
+  it('arming carries the chosen color on the wrapper (drives the live ::selection tint)', async () => {
+    // The color preference key survives the annotations-prefix cleanup in beforeEach —
+    // clear it explicitly so this test always starts from the yellow default.
+    window.localStorage.removeItem('icjia-studio-annotations-ui-v1:color')
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-arming').exists()).toBe(false) // unarmed: native selection
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    expect(wrapper.find('.ann-arming.ann-arming--yellow').exists()).toBe(true)
+    await wrapper.find('[data-test="ann-color-green"]').trigger('click')
+    expect(wrapper.find('.ann-arming.ann-arming--green').exists()).toBe(true)
+    expect(wrapper.find('.ann-arming--yellow').exists()).toBe(false)
+    wrapper.unmount()
+  })
   it('keyboard-only: Enter with a live selection (armed, target not on a mark) opens the composer', async () => {
     const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
     await new Promise((r) => setTimeout(r, 0))

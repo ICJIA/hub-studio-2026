@@ -22,6 +22,9 @@ const model = reactive<App>(props.initial ? { ...props.initial } : blankApp())
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
 const previewOpen = ref(false)
+/** Live-preview modal size: false = centered max-w-6xl dialog, true = fullscreen (UModal
+ *  fullscreen prop) — the reviewer's escape hatch when annotations feel cramped. */
+const previewExpanded = ref(false)
 
 // contributors share the {title,description} row shape (parseAuthors fits).
 const contributorColumns = [
@@ -92,9 +95,9 @@ defineExpose({ submit, setField, errors, model })
       <UButton variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
     </div>
 
-    <UModal v-model:open="previewOpen" :ui="{ content: 'max-w-6xl' }">
+    <UModal v-model:open="previewOpen" :fullscreen="previewExpanded" :ui="{ content: previewExpanded ? undefined : 'max-w-6xl' }">
       <template #content>
-        <div class="flex max-h-[88vh] flex-col bg-white">
+        <div class="flex flex-col bg-white" :class="previewExpanded ? 'h-full' : 'max-h-[88vh]'">
           <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
             <span class="text-sm font-medium text-gray-700">Published preview</span>
             <div class="flex items-center gap-2">
@@ -103,7 +106,15 @@ defineExpose({ submit, setField, errors, model })
                 v-if="mode === 'edit' && model.documentId"
                 data-test="review-view-link"
                 size="xs" variant="outline" color="neutral" icon="i-lucide-external-link"
-                label="Review view" :to="`/preview/app/${model.documentId}`" target="_blank"
+                label="Live preview view" :to="`/preview/app/${model.documentId}`" target="_blank"
+              />
+              <UButton
+                data-test="preview-expand"
+                size="xs" variant="ghost" color="neutral"
+                :icon="previewExpanded ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
+                :aria-label="previewExpanded ? 'Restore preview size' : 'Expand preview'"
+                :title="previewExpanded ? 'Restore preview size' : 'Expand preview'"
+                @click="previewExpanded = !previewExpanded"
               />
               <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
             </div>

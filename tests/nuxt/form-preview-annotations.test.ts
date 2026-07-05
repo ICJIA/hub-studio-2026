@@ -41,7 +41,7 @@ async function openPreview(wrapper: Awaited<ReturnType<typeof mountSuspended>>) 
 }
 
 describe('editor Live-preview modal — annotations (Addendum A)', () => {
-  it('edit mode with a saved documentId: modal carries the annotation bar and the Review view link', async () => {
+  it('edit mode with a saved documentId: modal carries the annotation bar and the Live preview view link', async () => {
     const wrapper = await mountSuspended(ArticleForm, {
       props: { mode: 'edit', initial: saved },
       attachTo: document.body,
@@ -50,7 +50,8 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     // Modal content teleports to <body>: assert against the document.
     expect(document.querySelector('[data-test="ann-arm"]'), 'annotation bar in modal').toBeTruthy()
     const review = document.querySelector('[data-test="review-view-link"]') as HTMLAnchorElement | null
-    expect(review, 'review view link in modal header').toBeTruthy()
+    expect(review, 'live preview view link in modal header').toBeTruthy()
+    expect(review!.textContent).toContain('Live preview view')
     expect(review!.getAttribute('href')).toBe('/preview/article/art-42')
     expect(review!.getAttribute('target')).toBe('_blank')
     wrapper.unmount()
@@ -77,7 +78,32 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     wrapper.unmount()
   })
 
-  it('create mode (unsaved): plain preview — no annotation bar, no Review view link', async () => {
+  it('Expand toggles the modal to fullscreen (inset-0, no max-w clamp) and back', async () => {
+    const wrapper = await mountSuspended(ArticleForm, {
+      props: { mode: 'edit', initial: saved },
+      attachTo: document.body,
+    })
+    await openPreview(wrapper)
+    const expand = document.querySelector('[data-test="preview-expand"]') as HTMLButtonElement | null
+    expect(expand, 'expand toggle in modal header').toBeTruthy()
+    expect(expand!.getAttribute('aria-label')).toBe('Expand preview')
+    const dialog = () => document.querySelector('[role="dialog"]') as HTMLElement
+    expect(dialog().className).toContain('max-w-6xl')
+
+    expand!.click()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(expand!.getAttribute('aria-label')).toBe('Restore preview size')
+    expect(dialog().className).toContain('inset-0')
+    expect(dialog().className).not.toContain('max-w-6xl')
+
+    expand!.click()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(expand!.getAttribute('aria-label')).toBe('Expand preview')
+    expect(dialog().className).toContain('max-w-6xl')
+    wrapper.unmount()
+  })
+
+  it('create mode (unsaved): plain preview — no annotation bar, no Live preview view link', async () => {
     const wrapper = await mountSuspended(ArticleForm, {
       props: { mode: 'create' },
       attachTo: document.body,

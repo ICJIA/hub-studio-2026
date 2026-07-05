@@ -16,6 +16,21 @@ mark.ann--green  { background-color: #bbf7d0; }
 mark.ann--blue   { background-color: #bfdbfe; }
 mark.ann--pink   { background-color: #fbcfe8; }
 
+/* Armed live-selection tint: while the highlighter is on, the wrapper carries
+   ann-arming--<color>, so the click-drag selection previews the chosen tint instead of
+   the browser's default grey. Same pastels as the marks — the preview surface is always
+   light, so the near-black prose text keeps ≥ 4.5:1 over them. (Chromium renders custom
+   selection backgrounds slightly translucent — the drag reads a touch lighter than the
+   saved mark, a usable pending-vs-committed cue.) Unarmed selection stays native. */
+.ann-arming--yellow .published-content ::selection,
+.ann-arming--yellow .published-content::selection { background-color: #fde68a; }
+.ann-arming--green .published-content ::selection,
+.ann-arming--green .published-content::selection  { background-color: #bbf7d0; }
+.ann-arming--blue .published-content ::selection,
+.ann-arming--blue .published-content::selection   { background-color: #bfdbfe; }
+.ann-arming--pink .published-content ::selection,
+.ann-arming--pink .published-content::selection   { background-color: #fbcfe8; }
+
 mark.ann:focus-visible {
   outline: 2px solid #1d4ed8;
   outline-offset: 1px;

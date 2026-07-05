@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import AnnotationBar from '~/components/annotations/AnnotationBar.vue'
 
-const base = { armed: false, color: 'yellow' as const, filter: 'open' as const, openCount: 3 }
+const base = { armed: false, color: 'yellow' as const, filter: 'open' as const, openCount: 3, railOpen: true }
 
 describe('AnnotationBar', () => {
   it('shows the open-thread count and arms the highlighter', async () => {
@@ -28,5 +28,18 @@ describe('AnnotationBar', () => {
   it('announces armed state accessibly', async () => {
     const wrapper = await mountSuspended(AnnotationBar, { props: { ...base, armed: true } })
     expect(wrapper.find('[data-test="ann-arm"]').attributes('aria-pressed')).toBe('true')
+  })
+  it('rail toggle reads as an explicit show/hide toggle (label + aria-expanded track railOpen)', async () => {
+    const open = await mountSuspended(AnnotationBar, { props: { ...base, railOpen: true } })
+    const openBtn = open.find('[data-test="ann-rail-toggle"]')
+    expect(openBtn.text()).toContain('Hide comments (3)')
+    expect(openBtn.attributes('aria-expanded')).toBe('true')
+
+    const closed = await mountSuspended(AnnotationBar, { props: { ...base, railOpen: false } })
+    const closedBtn = closed.find('[data-test="ann-rail-toggle"]')
+    expect(closedBtn.text()).toContain('Show comments (3)')
+    expect(closedBtn.attributes('aria-expanded')).toBe('false')
+    await closedBtn.trigger('click')
+    expect(closed.emitted('toggle-rail')).toBeTruthy()
   })
 })

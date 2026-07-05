@@ -267,6 +267,7 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
           :color="color"
           :filter="filter"
           :open-count="openCount"
+          :rail-open="railOpen"
           @update:armed="armed = $event"
           @update:color="setColor"
           @update:filter="filter = $event"
@@ -280,7 +281,7 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
       <div
         ref="previewWrap"
         class="min-w-0 flex-1"
-        :class="[previewClass, { 'ann-arming': armed }]"
+        :class="[previewClass, armed ? ['ann-arming', `ann-arming--${color}`] : []]"
         @click="onContainerClick"
         @keydown="onContainerKeydown"
         @mouseup="onMouseUp"

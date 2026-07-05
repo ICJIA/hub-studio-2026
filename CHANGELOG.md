@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-05
+
+_Added_
+
+- **Expandable Live-preview modal.** New **Expand/Restore** toggle in the preview-modal header (all three content types) switches between the centered `max-w-6xl` dialog and true fullscreen (UModal `fullscreen`) — breathing room for annotation review on smaller screens.
+- **Armed-highlighter selection tint.** With the highlighter armed, the click-and-drag selection previews in the chosen highlight color (same four pastels as the saved marks) instead of the browser's default grey; unarmed selection stays native. Chromium renders the drag slightly translucent — a usable pending-vs-committed cue. Contrast stays AA: the preview surface is always light with near-black prose.
+
+_Changed_
+
+- **Clearer comments toggle.** The reviewer bar's "Comments (n)" button is now an explicit **Hide comments (n) / Show comments (n)** toggle with `aria-expanded` and panel open/close icons.
+- **"Review view" → "Live preview view".** The modal-header link to the shareable `/preview/{type}/{id}` page is renamed to stay consistent with the Live preview button naming.
+
 ### 2026-07-04
 
 _Added_

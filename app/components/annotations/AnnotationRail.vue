@@ -118,6 +118,10 @@ function timeOf(iso: string): string {
 
 async function scrollToActive(id: string | null) {
   if (!id) return
+  // Aligned mode, top not yet measured (a just-saved thread): the card transiently sits at
+  // 0 — scrolling now yanks the whole preview to the top (user report 2026-07-05). Skip:
+  // the card is about to land right beside its highlight, exactly where the reader is.
+  if (aligned.value && props.alignTops?.[id] === undefined) return
   await nextTick()
   const el = rootEl.value?.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(id)}"]`)
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches

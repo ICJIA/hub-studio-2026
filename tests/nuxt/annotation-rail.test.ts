@@ -21,6 +21,25 @@ beforeEach(() => { useAuthStore().setSession(makeDevAdminSession('editor')) })
 afterEach(() => { vi.restoreAllMocks() })
 
 describe('AnnotationRail', () => {
+  it('aligned mode: does NOT scroll a just-created active card into view before its top is measured', async () => {
+    // Regression (user report 2026-07-05): on save, activeId lands BEFORE the new card's
+    // mark top is measured — the card transiently sits at 0 and scrollIntoView yanked the
+    // whole preview to the top. Aligned cards sit beside their highlight; no scroll needed.
+    const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {})
+    const wrapper = await mountSuspended(AnnotationRail, { props: {
+      threads: [{ annotation: ann('fresh'), orphan: false, start: 1 }],
+      filter: 'all', activeId: null, alignTops: {}, // aligned mode, top NOT yet measured
+    } })
+    await wrapper.setProps({ activeId: 'fresh' })
+    await nextTick()
+    expect(spy).not.toHaveBeenCalled()
+
+    // Once the top IS known, activation may scroll (block: nearest) as before.
+    await wrapper.setProps({ activeId: null, alignTops: { fresh: 240 } })
+    await wrapper.setProps({ activeId: 'fresh' })
+    await nextTick()
+    expect(spy).toHaveBeenCalled()
+  })
   it('sorts by document position with orphans last and flags them', async () => {
     const wrapper = await mountSuspended(AnnotationRail, { props: {
       threads: [

@@ -32,6 +32,9 @@ _Added (later 2026-07-05)_
 
 _Fixed (later 2026-07-05)_
 
+- **The shareable preview page is no longer a dead end.** Saving a draft lands on `/preview/{type}/{id}` (and the modal's Live-preview-view link opens it in a tab) with no way back — the reviewer bar now leads with **Back to editor** and **Dashboard** links.
+- **Saving an annotation no longer yanks the preview to the top.** The rail scrolled the just-created active card into view before its aligned position was measured (it transiently sat at 0). Aligned cards land beside their highlight — exactly where the reader already is — so that scroll is skipped until the card's top is known.
+
 - **Preview-modal controls invisible in dark mode.** The modal surface is pinned white (the published look), but dark mode flipped the semantic tokens to light-on-dark — making Restore/Close/link chrome light-on-white. A `.preview-modal-light` scope re-declares the light token set inside the modal (custom-property proximity wins), and the annotation card/composer surfaces moved from literal `dark:` classes to semantic tokens so they follow whichever scope they render in. Modal + preview page re-measured: 0 axe violations, both themes.
 
 _Changed_

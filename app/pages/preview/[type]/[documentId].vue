@@ -59,7 +59,22 @@ async function copyShareLink() {
       preview-class="-mx-4 sm:-mx-6"
     >
       <template #bar-leading>
-        <p class="text-xs text-muted uppercase tracking-wide">Draft preview</p>
+        <!-- The shareable page must never be a dead end (user report 2026-07-05): saving a
+             draft lands here, and the modal's Live-preview-view link opens it in a new tab —
+             give both audiences a way back to the editor and the content list. -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <UButton
+            data-test="preview-back-to-editor"
+            size="xs" variant="outline" color="neutral" icon="i-lucide-arrow-left"
+            label="Back to editor" :to="`/edit/${type}/${documentId}`"
+          />
+          <UButton
+            data-test="preview-back-to-dashboard"
+            size="xs" variant="ghost" color="neutral" icon="i-lucide-layout-dashboard"
+            label="Dashboard" to="/"
+          />
+          <p class="text-xs text-muted uppercase tracking-wide">Draft preview</p>
+        </div>
       </template>
       <template #bar-actions>
         <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-link" label="Copy share link" @click="copyShareLink" />

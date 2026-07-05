@@ -231,6 +231,17 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
+  it('bar links back to the editor and the dashboard (the shareable page is not a dead end)', async () => {
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    const editor = wrapper.find('[data-test="preview-back-to-editor"]')
+    expect(editor.exists()).toBe(true)
+    expect(editor.attributes('href')).toBe('/edit/article/a1')
+    const dash = wrapper.find('[data-test="preview-back-to-dashboard"]')
+    expect(dash.exists()).toBe(true)
+    expect(dash.attributes('href')).toBe('/')
+  })
   it('Clean view unpaints all highlights and hides the review controls; toggling back repaints', async () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))

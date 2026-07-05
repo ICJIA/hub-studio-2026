@@ -1,26 +1,29 @@
 // Reactive orchestration for reviewer annotations on the preview page (spec §4, §7).
-// Adapter seam: Phase 1 is localStorage for every session. Phase 2 swaps in the Strapi
-// repository adapter for real (non-demo) sessions right here — `isDemoData()` keeps
-// demo builds on localStorage forever:
-//   const store = isDemoData() ? createLocalAnnotationStore(...) : createStrapiAnnotationStore(...)
+// Adapter seam (spec §4b): demo builds and dev/demo sessions stay on localStorage forever
+// (isDemoData — the public demo's zero-network audit posture is untouched); a real signed-in
+// session gets the Strapi adapter, so threads are shared across every reviewer and device.
 import { ref } from '#imports'
-import type { AnnotationAnchor, AnnotationColor, AnnotationContentType, ReviewAnnotation } from '~/types/annotations'
+import type { $Fetch } from 'ofetch'
+import type { AnnotationAnchor, AnnotationColor, AnnotationContentType, AnnotationStore, ReviewAnnotation } from '~/types/annotations'
 import { createLocalAnnotationStore } from '~/lib/annotations/store-local'
+import { createStrapiAnnotationStore } from '~/lib/annotations/store-strapi'
 import { annotationAuthor, type AnnotationAuthor } from '~/lib/annotations/attribution'
-import { isDemoSession } from '~/lib/demo'
+import { isDemoData, isDemoSession } from '~/lib/demo'
 import { useAuthStore } from '~/stores/auth'
 
 export function useAnnotations(contentType: AnnotationContentType, documentId: string) {
   const auth = useAuthStore()
   const toast = useToast()
 
-  const store = createLocalAnnotationStore({
-    onPersistFailure: () => toast.add({
-      title: 'Comments are session-only in this browser',
-      description: 'Storage is unavailable, so review comments will not survive a reload.',
-      color: 'warning',
-    }),
-  })
+  const store: AnnotationStore = isDemoData()
+    ? createLocalAnnotationStore({
+        onPersistFailure: () => toast.add({
+          title: 'Comments are session-only in this browser',
+          description: 'Storage is unavailable, so review comments will not survive a reload.',
+          color: 'warning',
+        }),
+      })
+    : createStrapiAnnotationStore(useNuxtApp().$api as $Fetch)
 
   const annotations = ref<ReviewAnnotation[]>([])
   const loading = ref(true)
@@ -53,9 +56,11 @@ export function useAnnotations(contentType: AnnotationContentType, documentId: s
       createdBy: by,
       comments: [{ id: crypto.randomUUID(), body, authorName: by.name, authorEmail: by.email, createdAt: now }],
     }
-    await store.create(a)
-    annotations.value = [...annotations.value, a]
-    return a
+    // Keep the STORE's returned row, not the local draft: the Strapi adapter comes back with
+    // the server-assigned id (the localStorage adapter returns the same object — identity).
+    const created = await store.create(a)
+    annotations.value = [...annotations.value, created]
+    return created
   }
 
   async function reply(id: string, body: string) {

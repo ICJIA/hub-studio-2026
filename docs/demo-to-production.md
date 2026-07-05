@@ -1,0 +1,152 @@
+# Demo → Production cutover runbook
+
+How to move the Studio from the public demo (static, in-memory, `admin/admin`) to the live
+production deploy (real Strapi 5 content, real annotations, real admin auth). Written
+2026-07-05, when everything except the Strapi-side install and the deploy switches already
+ships in this repo.
+
+**The short version:** production is not a different app — it is the SAME build with
+`NUXT_PUBLIC_DEMO_MODE` unset, built with `npm run build` instead of `nuxt generate`, plus a
+handful of secrets. Every demo behavior (demo login, in-memory content, localStorage
+annotations, blocked writes) keys off that one flag and disables itself. The work below is
+mostly Strapi-side setup and verification, not code.
+
+---
+
+## 0. What flips automatically (no work, but know it)
+
+| Concern | Demo build (`NUXT_PUBLIC_DEMO_MODE=true`) | Production build (flag unset) |
+| --- | --- | --- |
+| Login | Demo bypass + role buttons only; real login impossible | Real Strapi admin login (`/admin/login` → JWT → `/admin/users/me` with roles); bypass compiled out |
+| Content | In-memory demo repository, seeded synthetic articles | `$api` → Content-Manager API on `https://v2.hub.icjia-api.cloud` |
+| Annotations | localStorage adapter (per-browser) | Strapi adapter → `review-annotation` content type (shared across reviewers/devices) — selected by `isDemoData()` in `app/composables/useAnnotations.ts` |
+| Writes | Hard-blocked (`assertWritesAllowed()` throws) | Real creates/updates/publish via the admin JWT |
+| Sample-content generators | Visible (dev/demo only) | Auto-removed |
+| CSP / headers | `deploy/headers-demo.txt` copied over `_headers` (connect-src 'self') | `public/_headers` production set (connect-src limits to the Strapi host + Mailgun) |
+| Server routes | None (pure static) | `server/api/request-review.post.ts` deploys as a Netlify Function (Mailgun + rate limit) |
+
+The Strapi host is **hardcoded** in `studio.config.ts` (`strapiBaseUrl: 'https://v2.hub.icjia-api.cloud'`
+when not demo). If the production API lives elsewhere, edit that line AND the `connect-src`
+entry in `public/_headers` together.
+
+---
+
+## 1. Strapi-side setup (owner: whoever deploys the Strapi project)
+
+Do this any time before cutover — it does not affect the running Hub.
+
+1. **Install the `review-annotation` content type.** Follow
+   `deploy/strapi/review-annotation/INSTALL.md` exactly: copy the folder into the Strapi
+   project as `src/api/review-annotation/`, deploy/restart. Content types are code in
+   Strapi — this cannot be done through the admin UI or an API token.
+2. **Permissions** (also in INSTALL.md):
+   - Admin roles: **Author** and **Editor** get full CRUD on **Review Annotation**
+     (Settings → Administration panel → Roles). The Studio enforces the finer
+     creator-or-editor rules in the UI.
+   - **Users & Permissions → Public and Authenticated: ZERO access** to Review Annotation.
+     Review threads are internal workflow data; they must never appear on the public REST/GraphQL surface.
+3. **Confirm the content-side roles for articles/apps/datasets** match what the Studio
+   expects: Authors create/update drafts (no publish); Editors also publish/unpublish.
+   The Studio's publish button is defense-in-depth — Strapi's server-side RBAC is the real gate.
+4. **Create the real admin accounts** (Author/Editor roles) for everyone who had been using
+   the demo. No Studio-side user provisioning exists — accounts live in Strapi.
+5. **Smoke test** (from INSTALL.md): `GET /api/review-annotations` with the dev API token —
+   `200 {"data":[]}` or `403` both prove the type deployed.
+
+## 2. Staging validation (do this BEFORE approval day)
+
+Stand up a second Netlify site (or a branch deploy) so the public demo keeps running
+untouched. Point it at the SAME repo with the production build settings from §3.
+
+Checklist — every line exercised with a real Strapi account, none with admin/admin:
+
+- [ ] Real login as an **Author**: sees drafts, no Publish control anywhere.
+- [ ] Real login as an **Editor**: sees Publish/Unpublish + the queue.
+- [ ] Content list shows REAL articles; open one in the editor; edit + save a draft; confirm
+      the change in the Strapi admin.
+- [ ] **Annotations end-to-end:** in the Live preview (and on `/preview/...`), highlight →
+      comment → reply → resolve → delete. Then the cross-user test: annotate as user A,
+      open the same draft as user B on another machine — the thread is there; reply as B;
+      reload as A. (Freshness model is refetch-on-open + after-write; there is no live push.)
+- [ ] Verify rows land in Strapi under **Review Annotation** and are **absent** from the
+      public API (`/api/review-annotations` unauthenticated → 403/404).
+- [ ] Publish + unpublish an article as Editor; confirm on the public Hub side.
+- [ ] **Request review** email: submit the form; confirm the Mailgun send and the rate limit
+      (6th request inside 10 minutes → 429).
+- [ ] **CSP check** (README "Action required before launch"): open devtools on the staging
+      deploy — if a Nuxt bootstrap inline script is blocked, add its `sha256` hash to
+      `script-src` in `public/_headers`. Never add `'unsafe-inline'` to production.
+- [ ] Uploads: add a splash image / main-file PDF via the Media Library path; confirm no
+      base64 ever hits the payload (the write guard throws if it does).
+- [ ] Annotation failure UX: kill the network (devtools offline) and try to comment — the
+      composer stays open with the text preserved; nothing is silently lost.
+
+## 3. Netlify production configuration
+
+On the production site (Site settings → Build & deploy + Environment variables):
+
+**Build settings** — edit `netlify.toml` (or override in the UI for the production site only,
+leaving the demo site's TOML untouched — see note below):
+
+```toml
+[build]
+  command = "npm run build"     # Nitro build (server functions), NOT `nuxt generate`
+  publish = "dist"
+  # DELETE the `cp deploy/headers-demo.txt dist/_headers` step — production keeps public/_headers
+  [build.environment]
+    # NUXT_PUBLIC_DEMO_MODE deliberately ABSENT
+```
+
+> Two-sites note: `netlify.toml` in the repo currently configures the DEMO. If demo and
+> production deploy from the same repo simultaneously, keep the TOML as the demo config and
+> set the production site's build command + env in the Netlify UI (UI settings apply when the
+> site is configured to ignore/override the TOML), or maintain a `production` branch whose
+> TOML is the production version. Decide once, write it down here.
+
+**Environment variables (production site only):**
+
+| Variable | Value | Notes |
+| --- | --- | --- |
+| `MAILGUN_API_KEY` | (secret) | server-only; request-review emails |
+| `MAILGUN_DOMAIN` | e.g. `mg.icjia.example` | server-only |
+| `MAILGUN_FROM` | e.g. `Studio <studio@…>` | server-only |
+| `PUBLIC_BASE_URL` | the Studio's production URL | used for links in the review email |
+| `NUXT_PUBLIC_DEMO_MODE` | **unset / absent** | presence of `true` = demo build |
+
+No Strapi secret is needed in the Studio: users authenticate with their own admin JWTs.
+
+## 4. Cutover day (≈30 minutes once §1–§3 are done)
+
+1. Freeze: no demo pushes to `main` during the window.
+2. Flip the production site's build settings + env per §3 (or merge the production TOML).
+3. Trigger the deploy; watch the Netlify build log — expect **functions deployed** (the
+   request-review route), unlike the demo's "No functions deployed".
+4. Run the §2 checklist's top five lines against production (login ×2 roles, real content,
+   one annotation round-trip, one publish round-trip).
+5. Point people at the production URL. The demo site can keep running as long as it's useful —
+   it is isolated by design (own site, own flag, zero backend reach).
+6. Tag the release: version + date in `CHANGELOG.md` (per repo convention), `git tag`.
+
+## 5. Rollback
+
+The demo is unaffected by anything above, so rollback is only about the production site:
+
+- Bad build → Netlify → Deploys → **Publish** the previous known-good deploy (instant).
+- Bad config → restore §3 settings; redeploy.
+- Strapi-side trouble with `review-annotation` → the Studio degrades cleanly: annotation
+  calls fail with toasts/console errors but drafts, editing, and publishing are untouched
+  (the adapter is only reached from the preview surfaces).
+
+## 6. Known launch-posture decisions (documented, deliberate)
+
+- **Annotation freshness:** refetch on preview open and after every write. No polling, no
+  websockets. Two reviewers replying to the *same thread* in the same instant is
+  last-write-wins (`addComment` re-fetches then PUTs the whole row). Fine at ICJIA review
+  volumes; revisit only if it ever bites.
+- **Annotation ids:** in production, an annotation's id IS its Strapi `documentId` (the
+  target entry's id lives in `targetDocumentId`). localStorage (demo) ids are client UUIDs.
+- **Demo annotations do not migrate.** localStorage threads live in individual browsers and
+  reference synthetic demo documentIds; they are demonstration data by definition. Anything
+  worth keeping should be re-entered against real drafts after cutover.
+- **Coarse RBAC on annotations** (any Author/Editor can CRUD all of them at the API level)
+  is intentional for launch; the UI enforces the polite rules.

@@ -11,6 +11,9 @@ import { mountSuspended } from '@nuxt/test-utils/runtime'
 vi.mock('~/lib/demo', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/demo')>()),
   isDemoSession: () => true,
+  // Pin the store seam to localStorage: this suite exercises the Phase-1 adapter semantics
+  // (the Strapi adapter has its own unit suite, tests/unit/annotations-store-strapi.test.ts).
+  isDemoData: () => true,
 }))
 
 import { useAnnotations } from '~/composables/useAnnotations'

@@ -6,6 +6,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import ArticleForm from '~/components/forms/ArticleForm.vue'
+
+// Pin the annotation store seam to localStorage (the suite's storage fixture): the nuxt test
+// env is neither a demo build nor import.meta.dev, so the real isDemoData() would select the
+// network-backed Strapi adapter (unit-tested separately in annotations-store-strapi.test.ts).
+vi.mock('~/lib/demo', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/lib/demo')>()),
+  isDemoData: () => true,
+}))
 import { useAuthStore } from '~/stores/auth'
 import { makeDevAdminSession } from '~/lib/dev-auth'
 import { ANNOTATIONS_STORAGE_PREFIX } from '~/lib/annotations/store-local'

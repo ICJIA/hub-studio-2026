@@ -38,10 +38,14 @@ const asApp = computed(() => (type === 'app' ? (entry.value as App | null) : nul
 const asDataset = computed(() => (type === 'dataset' ? (entry.value as Dataset | null) : null))
 
 /** Tab-only preview: when this tab was opened FROM the Studio (the editor's Live preview
- *  or a list's Preview link — named-target anchors keep a window.opener), "back" means
- *  CLOSE THIS TAB — navigating would turn the preview into a second copy of the editor.
- *  A shared-link visit has no opener (closing would strand the reviewer), so that case
- *  keeps a real Back-to-editor link that navigates in place. ssr:false → window is safe. */
+ *  or a list's Preview link), "back" means CLOSE THIS TAB — navigating would turn the
+ *  preview into a second live editor for the same draft. Those links carry rel="opener"
+ *  (user report 2026-07-05: NuxtLink's fallback rel="noopener noreferrer" applies to ANY
+ *  targeted link, named tabs included, which nulled window.opener here and made every
+ *  Studio-opened preview show the navigate-away button). Same-origin authed page, so
+ *  keeping the opener is safe. A shared-link visit has no opener (closing would strand
+ *  the reviewer), so that case keeps a real Back-to-editor link that navigates in place —
+ *  that tab BECOMES the one editor, still no duplicate. ssr:false → window is safe. */
 const openedFromStudio = import.meta.client && !!window.opener
 function closePreviewTab() {
   window.close()

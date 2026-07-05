@@ -105,7 +105,7 @@ defineExpose({ submit, setField, onPublished, errors, model })
             v-if="mode === 'edit' && model.documentId"
             data-test="live-preview-link"
             size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview"
-            :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+            :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
           />
           <UButton
             v-else
@@ -163,7 +163,7 @@ defineExpose({ submit, setField, onPublished, errors, model })
       <UButton
         v-if="mode === 'edit' && model.documentId"
         variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published"
-        :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+        :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
       />
       <UButton
         v-else

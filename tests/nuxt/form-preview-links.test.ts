@@ -36,6 +36,21 @@ describe('editor → live preview (tab-only)', () => {
     expect(wrapper.find('[data-test="live-preview-disabled"]').exists()).toBe(false)
   })
 
+  it('every preview link keeps the opener (rel="opener") so the preview tab can close itself', async () => {
+    // NuxtLink puts a fallback rel="noopener noreferrer" on ANY link with a target — named
+    // tabs included — which nulls window.opener in the preview tab. The preview page reads
+    // window.opener to show "Close preview" (close the tab, the editor is where you came
+    // from) instead of "Back to editor" (navigate → a SECOND live editor for the draft).
+    // Same-origin authed page, so opting back in with rel="opener" is safe.
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: saved } })
+    const previewLinks = wrapper.findAll('a').filter((a) => a.attributes('href')?.startsWith('/preview/'))
+    expect(previewLinks.length).toBe(2) // sticky-bar "Live preview" + footer "Preview as published"
+    for (const a of previewLinks) {
+      expect(a.attributes('target')).toBe('studio-preview-art-42')
+      expect(a.attributes('rel')).toBe('opener')
+    }
+  })
+
   it('create mode (unsaved): disabled with a save-first hint — no link, no modal anywhere', async () => {
     const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' }, attachTo: document.body })
     const btn = wrapper.find('[data-test="live-preview-disabled"]')

@@ -228,8 +228,11 @@ function authorLabel(item: AnyItem): string {
                 <p v-if="excerptOf(item)" class="mt-2 text-sm text-toned line-clamp-3">{{ excerptOf(item) }}</p>
                 <div class="mt-3 flex items-center gap-2 flex-wrap">
                   <UButton size="xs" variant="soft" color="primary" icon="i-lucide-pencil" label="Edit" :to="`/edit/${type}/${item.documentId}`" />
-                  <!-- Tab-only preview: same per-document named tab the editor uses. -->
-                  <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye" label="Preview" :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" />
+                  <!-- Tab-only preview: same per-document named tab the editor uses. rel="opener"
+                       (here and on every studio-preview link) beats NuxtLink's noopener fallback so
+                       the preview tab keeps window.opener and offers "Close preview", not a
+                       navigate-away "Back to editor" that would open a second live editor. -->
+                  <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye" label="Preview" :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" rel="opener" />
                   <slot name="row-actions" :document-id="item.documentId" :published="item.publishedAt != null" />
                 </div>
               </div>
@@ -285,7 +288,7 @@ function authorLabel(item: AnyItem): string {
                 <span class="flex gap-3 items-center">
                   <NuxtLink :to="`/edit/${type}/${item.documentId}`" class="text-primary underline">Edit</NuxtLink>
                   <!-- Tab-only preview: same per-document named tab the editor's Live preview uses. -->
-                  <NuxtLink :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" class="text-primary underline">Preview</NuxtLink>
+                  <NuxtLink :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" rel="opener" class="text-primary underline">Preview</NuxtLink>
                   <slot name="row-actions" :document-id="item.documentId" :published="item.publishedAt != null" />
                 </span>
               </td>

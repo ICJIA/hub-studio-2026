@@ -194,6 +194,25 @@ describe('ContentList — card view (visual default) vs list toggle', () => {
     expect(hrefs).toContain('/preview/article/c1')
   })
 
+  it('Preview links in BOTH views keep the opener (rel="opener" + named tab)', async () => {
+    // The preview page shows "Close preview" only when window.opener survives; NuxtLink's
+    // fallback rel="noopener noreferrer" on targeted links would null it and clicking
+    // "Back to editor" would turn the preview tab into a second live editor.
+    listPageMock.mockResolvedValue(makePagedResult([CARD_ITEM]))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    const previewLinks = () => wrapper.findAll('a').filter((a) => a.attributes('href')?.startsWith('/preview/'))
+    expect(previewLinks().length).toBe(1) // card view
+    expect(previewLinks()[0]!.attributes('target')).toBe('studio-preview-c1')
+    expect(previewLinks()[0]!.attributes('rel')).toBe('opener')
+    await wrapper.find('[data-test="view-list"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(previewLinks().length).toBe(1) // list view
+    expect(previewLinks()[0]!.attributes('target')).toBe('studio-preview-c1')
+    expect(previewLinks()[0]!.attributes('rel')).toBe('opener')
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+  })
+
   it('toggles to LIST, persists the choice, and remounts in list mode from storage', async () => {
     listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
     const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })

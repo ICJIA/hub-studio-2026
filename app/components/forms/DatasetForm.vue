@@ -89,7 +89,7 @@ defineExpose({ submit, setField, errors, model })
       <UButton
         v-if="mode === 'edit' && model.documentId"
         variant="outline" icon="i-lucide-eye" label="Preview as published"
-        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
       />
       <UButton v-else variant="outline" icon="i-lucide-eye" label="Preview as published" disabled title="Save the draft first to preview" />
     </div>
@@ -141,7 +141,7 @@ defineExpose({ submit, setField, errors, model })
       <UButton
         v-if="mode === 'edit' && model.documentId"
         variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published"
-        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
       />
       <UButton v-else variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" disabled title="Save the draft first to preview" />
     </div>

@@ -242,4 +242,15 @@ describe('ContentList — card view (visual default) vs list toggle', () => {
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.find('[data-test="card-image-placeholder"]').exists()).toBe(true)
   })
+
+  it('card image src is scheme-pinned (2026-07-05 audit F-1): javascript:/data: fall back to the placeholder', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult([
+      { ...CARD_ITEM, documentId: 'c3', splash: { url: 'javascript:alert(1)' } },
+      { ...CARD_ITEM, documentId: 'c4', splash: { url: 'data:image/svg+xml,<svg/>' } },
+    ]))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.findAll('img')).toHaveLength(0)
+    expect(wrapper.findAll('[data-test="card-image-placeholder"]')).toHaveLength(2)
+  })
 })

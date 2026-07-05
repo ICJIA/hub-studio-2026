@@ -20,6 +20,7 @@ import type { ContentStatus } from '~/types/content'
 import type { PagedResult } from '~/lib/repository'
 import { ARTICLE_TYPE_OPTIONS, articleTypeLabel } from '~/lib/field-options'
 import { plainExcerpt } from '~/lib/text-excerpt'
+import { safeHref } from '~/lib/safe-url'
 
 const props = withDefaults(defineProps<{
   type: 'article' | 'app' | 'dataset'
@@ -58,7 +59,12 @@ function setView(v: 'cards' | 'list') {
 
 function imageUrlOf(item: AnyItem): string | null {
   const media = props.type === 'article' ? item.splash : props.type === 'app' ? item.image : null
-  return media?.url || null
+  if (!media?.url) return null
+  // 2026-07-05 audit F-1 (defense-in-depth): media URLs come from the admin-only Media
+  // Library, but pin the scheme anyway — same safeHref allowlist as every other URL sink;
+  // anything else renders the neutral placeholder instead.
+  const safe = safeHref(media.url)
+  return safe === '#' ? null : safe
 }
 function excerptOf(item: AnyItem): string {
   return plainExcerpt(props.type === 'article' ? item.abstract : item.description, 240)

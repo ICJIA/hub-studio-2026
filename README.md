@@ -32,7 +32,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today, **as an Author or an Editor**, with a first-run **guided tour**.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager (Editor) clicks **Publish**.
-- **Security:** independently red/blue-team audited three times (production, the public demo, and the demo-roles/main-files/tour/dependency surface) — **0 critical issues**; in-repo fixes done and covered by **514 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **647 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -103,7 +103,7 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 ## Status: built and working in development (pre-launch)
 
-The core Studio is **built and working** — authoring, the live "exactly-as-published" preview, publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), and a first-run **guided tour** are all in place and covered by **514 automated tests**. It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus a short launch checklist remain. The full design and the security review live here:
+The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **647 automated tests**. The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
 
 - 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
@@ -121,7 +121,23 @@ A running log of red / blue team security audits. The **latest** summary is show
 
 <!-- Maintenance: when a new audit is run, move the current "Latest" block into a new entry under "Previous audits" below, then replace the Latest block with the new summary. -->
 
-### Latest — 2026-06-22 · Demo roles, Main Files, guided tour & dependency refresh
+### Latest — 2026-07-05 · Annotations, tab-only preview & card view
+
+**Fourth adversarial pass (2026-07-05).** Covered the surface added since the 2026-06-22 audit: **reviewer annotations** end to end (quote-anchored `<mark>` highlights, threaded comments in versioned `localStorage`, the composer/bar/rail UI, Word-style margin-aligned cards, Clean view), the **dormant Phase-2 Strapi annotation adapter**, the **tab-only preview** architecture (modal removed; per-document named tabs; opener-based Close-vs-Back), the **card view** content lists, and the **WCAG token darkening**. **Verdict: 0 Critical, 0 High, 0 Medium.** The XSS sweep found every new render path is Vue interpolation or attribute binding — the `v-html` sink count is unchanged (3, all `html:false` markdown pipeline); the adapter cannot reach Strapi from any demo build (`isDemoData()` selection **plus** the repo-level write block); `plainExcerpt` is ReDoS-free and text-only. One defense-in-depth fix landed with the audit; measured card contrast runs 5.78–17.83:1 across both themes (AA floor is 4.5). `npm audit` → 0 critical / high / moderate; the 1 known dev-only Low (esbuild) is unchanged.
+
+| Finding | Severity | Remediation | Status |
+|---|---|---|---|
+| F-1 — Card `img :src` took Media-Library URLs unfiltered (inert-scheme residual; CSP `img-src` already bounded it) | Low | Pin the scheme through the same `safeHref` allowlist as every URL sink; non-http(s)/relative URLs render the neutral placeholder; regression-tested | ✅ Fixed |
+| F-2 — Annotation write limits are client-enforced; launch RBAC on the Strapi type is coarse | Info | Deliberate launch posture, documented in the cutover runbook §6; UI enforces creator-or-editor rules | ✅ Accepted (documented) |
+| F-3 / F-4 — localStorage store trusts stored shape (same-origin self-poisoning only); preview tabs keep `window.opener` (it powers Close-preview; internal links only) | Info | Reviewed; parse failures caught, all fields render as text; no external `target` exists | ✅ Accepted (safe) |
+| F-5..F-7 — adapter demo double-lock, XSS sweep, excerpt ReDoS review | — | Blue-team credit | ✅ Verified |
+
+Full detail in [`docs/security-audit.md`](docs/security-audit.md) §9. Verification: **647 tests + typecheck (0) + axe-core 0 violations (light and dark)**; measured contrast table in §9.3.
+
+<details>
+<summary><strong>Previous audits</strong></summary>
+
+### 2026-06-22 · Demo roles, Main Files, guided tour & dependency refresh
 
 **Third adversarial pass (2026-06-22).** Covered the surface added since the demo audit: the **Author/Editor demo roles**, **multiple Main Files** (the PDF array + per-file download links), the in-app **guided tour**, live **Publish/Unpublish** in the demo, and the **dependency refresh** (Nuxt 4.4.8 / Vue 3.5.38 / Pinia 3 / vue-router 5 / TypeScript 6 / Vitest 4 / @nuxt/ui 4.9). **Verdict: 0 Critical, 0 High, 0 Medium.** Every brief concern was already correctly mitigated — publish/unpublish is enforced server-side (Strapi 403) with the UI gate as defense-in-depth; the demo identities are dev/demo-only and tree-shaken from a normal build; Main-File links pass through `safeHref`; the tour has zero `v-html` and a namespaced+versioned `localStorage` key; markdown stays `html:false` with an `id`/`class`-only attrs allowlist. `npm audit` → **0 critical / 0 high / 0 moderate**, 1 known **dev-only Low** (esbuild dev-server file-read, Windows). Two **defense-in-depth** fixes turned prior §7 residuals into tested guarantees.
 
@@ -132,9 +148,6 @@ A running log of red / blue team security audits. The **latest** summary is show
 | F-3..F-10 — demo isolation, server-side publish/unpublish, Main-Files injection, tour XSS, markdown `html:false`/attrs allowlist, CSP sets, deps, prior protections | Info | Reviewed; already correctly mitigated — accepted with rationale | ✅ Accepted (safe) |
 
 Full detail in [`docs/security-audit.md`](docs/security-audit.md) §8. Verification: **514 tests + typecheck (0) + demo `generate`** green.
-
-<details>
-<summary><strong>Previous audits</strong></summary>
 
 ### 2026-06-21 · Demo & public-deploy audit
 
@@ -323,9 +336,19 @@ The public demo additionally **hard-blocks all writes** (`assertWritesAllowed()`
 
 The Studio consumes the **ICJIA Markdown Editor 2026** ([github.com/ICJIA/icjia-markdown-editor-2026](https://github.com/ICJIA/icjia-markdown-editor-2026)) as a Nuxt layer. It is built on **CodeMirror 6** (packages vendored in `app/lib/editor/vendor/`): `@codemirror/state`, `@codemirror/view`, `@codemirror/lang-markdown`, `@codemirror/commands`, `@codemirror/search`, `@codemirror/autocomplete`, `@codemirror/language`, `@codemirror/language-data`, `@lezer/highlight`. The editor exposes a formatting toolbar (bold, italic, headings, links, lists, code fences, tables) requiring no markdown knowledge from authors.
 
-### Live "exactly-as-published" preview
+### "Exactly-as-published" preview (tab-only)
 
 `app/components/PublishedArticlePreview.vue` (and sibling `PublishedAppPreview` / `PublishedDatasetPreview`) renders output using the same `renderArticleBody()` function and the same CSS (`assets/css/prose-preview.css` — faithful hub styles with Oswald headings) as the public Research Hub. A **sticky Table of Contents** (h2-level) is generated from the markdown AST in a single pass (see [Data layer &amp; validation](#data-layer--validation) below).
+
+Preview is **tab-only**: every entry point — the editor's **Live preview** / **Preview as published** buttons and the content list's **Preview** action — opens `/preview/{type}/{documentId}` in a **per-document named tab** (`studio-preview-{id}`), so repeated clicks reuse and refresh one preview tab, and editor + preview can sit side by side. Unsaved create-mode drafts disable the button until the first save. The page is the **shareable review URL** (behind the auth guard; **Copy share link** grabs it), and it branches its bar control on `window.opener`: opened from the Studio → **Close preview** (closes the tab); a shared-link visit → **Back to editor** (navigates in place — never a second editor copy).
+
+### Reviewer annotations (Word-style review on drafts)
+
+On the review page, any signed-in user can turn on **Highlight**, select a passage (4 colors), and attach a threaded comment — reply, resolve/reopen, delete (creator or Editor). Highlights are **quote-anchored** (`app/lib/annotations/anchor.ts`: exact/prefix/suffix selectors resolved over the rendered text — they survive edits elsewhere, and orphaned threads stay listed as "text changed"), painted as accessible `<mark>` elements (keyboard + screen-reader reachable, excluded from print), and the desktop comment cards are **margin-aligned Word-style** — each card sits level with its highlight via a pure collision layout (`app/lib/annotations/rail-layout.ts`), with overlapping cards pushed down. Comments start hidden (arming the highlighter opens them); a **Clean view** toggle shows the plain published article. Storage sits behind an `AnnotationStore` seam: versioned `localStorage` for the demo weeks (zero network — the demo's audited posture is untouched), and a **Strapi 5 adapter** (`store-strapi.ts`, dormant behind `isDemoData()`) plus a drop-in `review-annotation` content type (`deploy/strapi/review-annotation/`) ready for launch. The article markdown is never modified — annotations are a pure overlay.
+
+### Card view content lists
+
+Dashboard and manage lists open as **visual media cards** (default): the splash/image on the left with the **status badge riding the artwork** (green = Published, red = Draft), title + date + type chip + authors and a plain-text excerpt (`app/lib/text-excerpt.ts` strips markdown safely) on the right, plus the same tools as the table — Edit, the named-tab Preview, and the publish-toggle slot. The artwork itself links to the editor (scheme-pinned through `safeHref`). A **Cards / List** toggle switches to the original columnar table; the choice persists per browser.
 
 ### Body-image gallery
 
@@ -407,25 +430,25 @@ A first-run, skippable walkthrough on the dashboard (`app/composables/useGuidedT
 
 **Runner:** Vitest `^4.1.9` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.10.6`.
 
-**Current totals:** **514 tests** across **78 test files** (54 unit + 24 Nuxt component).
+**Current totals:** **647 tests** across **95 test files** (65 unit + 30 Nuxt component).
 
 **Structure:**
 
 ```
 tests/
-  unit/       # 54 files — pure app/lib/ logic (no DOM, no network)
-  nuxt/       # 24 files — components via mountSuspended (Nuxt test environment)
+  unit/       # 65 files — pure app/lib/ logic (no DOM, no network)
+  nuxt/       # 30 files — components via mountSuspended (Nuxt test environment)
   fixtures/   # shared data helpers
 ```
 
-**Unit coverage includes:** auth store, guard logic, all validators, repository logic (incl. publish/unpublish + the demo write-block), mappers (article/app/dataset, incl. the Main-Files array), markdown rendering + TOC + the `markdown-it-attrs` allowlist, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository / demo session / demo content, the guided-tour config, the deep-freeze public-config guard, the security-header sets (production **and** demo), profile gate, form submit, studio-profile repository.
+**Unit coverage includes:** auth store, guard logic, all validators (incl. the annotation write-boundary validator), repository logic (incl. publish/unpublish + the demo write-block), mappers (article/app/dataset/annotation, incl. the Main-Files array and defensive comments-JSON parsing), the **annotation engine** (quote anchoring, mark painting, the localStorage store, the Strapi `AnnotationStore` adapter with its full pagination sweep, the Word-style rail collision layout, composer placement math, author attribution, the Strapi drop-in schema-parity guard), markdown rendering + TOC + the `markdown-it-attrs` allowlist, the card-view excerpt stripper, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository / demo session / demo content, the guided-tour config, the deep-freeze public-config guard, the security-header sets (production **and** demo), profile gate, form submit, studio-profile repository.
 
-**Component coverage includes:** login (incl. demo-role entry), dashboard, content-list, article/app/dataset forms, the Main-Files field, body-images field, markdown editor, markdown field, media picker, media field, image dropzone, repeatable field, publish button, request-review form, preview page (incl. print), onboarding form, demo mode, routing smoke.
+**Component coverage includes:** login (incl. demo-role entry), dashboard, content-list (**card view default** — toggle persistence, on-image status colors, scheme-pinned artwork links, slot parity — plus the table), article/app/dataset forms, the tab-only **preview links** (named tabs, save-first gating), the **annotation UI** (reviewer bar incl. Clean view, rail incl. aligned-mode scroll guard, composer, the annotated review page: select→comment, repaint, orphans, storage events, focus lifecycle, the Close-vs-Back opener branch), the Main-Files field, body-images field, markdown editor, markdown field, media picker, media field, image dropzone, repeatable field, publish button, request-review form, preview page (incl. print), onboarding form, demo mode, routing smoke.
 
 **Commands:**
 
 ```bash
-npm test            # run all 514 tests once (vitest run)
+npm test            # run all 647 tests once (vitest run)
 npm run test:watch  # watch mode (vitest)
 npm run typecheck   # vue-tsc type-check
 ```
@@ -514,7 +537,7 @@ NUXT_PUBLIC_DEMO_MODE=true npm run generate   # static demo build → .output/pu
 ```
 
 ```bash
-npm test          # run 514 tests
+npm test          # run 647 tests
 npm run typecheck # TypeScript type-check
 npm run build     # production build
 ```
@@ -566,16 +589,18 @@ public/
 
 deploy/
   headers-demo.txt # PUBLIC DEMO header set (connect-src 'self'); netlify.toml copies it over _headers
+  strapi/review-annotation/  # Phase-2 Strapi 5 drop-in content type (+ INSTALL.md) for launch
 
 tests/
-  unit/            # 54 test files — pure app/lib/ logic
-  nuxt/            # 24 test files — Nuxt component tests (mountSuspended)
+  unit/            # 65 test files — pure app/lib/ logic
+  nuxt/            # 30 test files — Nuxt component tests (mountSuspended)
   fixtures/        # shared test data
 
 docs/
   ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md
   ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx
   security-audit.md
+  demo-to-production.md      # the demo → live cutover runbook (Strapi install, staging checklist, launch day)
   deploy-rebuild-and-email.md
   onboarding-studio-profile-setup.md
 ```

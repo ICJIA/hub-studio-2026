@@ -1,7 +1,71 @@
 # Security Audit — ICJIA Research Hub Studio (Red Team / Blue Team)
 
-> **Ordering:** newest audit first. The latest pass is **§8 (2026-06-22)** immediately below;
-> the 2026-06-21 production audit (§1–§6) and demo/public-deploy audit (§7) follow, unchanged.
+> **Ordering:** newest audit first. The latest pass is **§9 (2026-07-05)** immediately below;
+> the 2026-06-22 audit (§8), the 2026-06-21 production audit (§1–§6) and demo/public-deploy
+> audit (§7) follow, unchanged.
+
+---
+
+## 9. Annotations, Tab-Only Preview & Card View Audit (2026-07-05)
+
+**Target:** `hub-studio-2026` — Nuxt 4 SPA (`ssr: false`) staff content tool
+**Reviewed commit:** `2e2adef` (branch `main` — the 2026-07-05 feature day)
+**Date:** 2026-07-05
+**Method:** Static source review (red team) + defensive credit (blue team), a live `npm audit`,
+and full axe-core 4.10 WCAG 2.1 A/AA sweeps (light **and** dark) over every changed surface.
+The Strapi 5 backend stays out of scope; the new Strapi adapter is client code and **dormant**
+until launch.
+
+### 9.1 Scope — the new surface since §8
+
+- **Reviewer annotations, end to end:** quote-anchored highlights painted as accessible
+  `<mark>` elements, threaded comments in versioned `localStorage`, the composer/bar/rail UI,
+  Word-style aligned comment cards (`lib/annotations/rail-layout.ts` collision pass), the
+  Clean-view toggle, and the armed `::selection` tint.
+- **Phase 2 Strapi `AnnotationStore` adapter** (`store-strapi.ts` + mapper/validator/repository) —
+  selected only for real (non-demo) sessions; dormant in every demo build.
+- **Tab-only preview architecture:** the Live-preview modal was removed; every preview entry
+  point opens `/preview/{type}/{id}` in a per-document **named tab**; the page branches
+  Close-preview (has `window.opener`) vs Back-to-editor (shared-link visit).
+- **Content-list card view (default):** splash imagery with on-image status badge, plain-text
+  excerpts (`lib/text-excerpt.ts`), clickable artwork.
+- **Semantic-token darkening** for WCAG AA (primary→700, success/warning→800, error→700 in
+  light; 400s in dark).
+
+### 9.2 Findings
+
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| F-1 | Card `img :src` took Media-Library URLs unfiltered (residual risk was inert-scheme only: media is admin-authored and the CSP `img-src` already bounds it) | Low (defense-in-depth) | ✅ **Fixed this audit** — the same `safeHref` allowlist as every URL sink pins the scheme; anything else renders the neutral placeholder; regression-tested (`javascript:` / `data:` → placeholder) |
+| F-2 | Annotation write limits (quote ≤ 1000, context ≤ 32, non-empty body) are client-enforced; the launch Strapi type keeps coarse RBAC (any Author/Editor CRUD via the admin API) | Info | ✅ Accepted for launch — deliberate, documented posture (`docs/demo-to-production.md` §6); the UI enforces creator-or-editor rules; server tightening is a post-launch candidate |
+| F-3 | The localStorage annotation store trusts stored JSON shape (same-origin self-poisoning only) | Info | ✅ Accepted — parse failures are caught (in-memory fallback + one-time toast), every rendered field is Vue-interpolated **text**, and the CSP blocks foreign script |
+| F-4 | Named-target preview tabs retain `window.opener` | Info | ✅ Accepted (by design) — same-origin internal links only; the opener **is** the feature (the Close-preview branch); no external `target` was added |
+| F-5 | Strapi adapter demo-reach check: `isDemoData()` store selection **plus** repo-level `assertWritesAllowed()` double-lock; zero-base64 guard inherited at the write boundary; server rows mapped field-by-field with defensive comments-JSON parsing; server ids reaching DOM selectors go through `CSS.escape` | — | ✅ Blue-team credit |
+| F-6 | XSS sweep of all new UI: comment bodies, quotes, author names, and labels are interpolation or attribute bindings; mark `aria-label`s go through `setAttribute` (no HTML parse); the `v-html` sink count is **unchanged** (3, all fed by the `html:false` markdown pipeline) | — | ✅ Blue-team credit |
+| F-7 | `plainExcerpt` regex set is linear (no nested quantifiers → no ReDoS); output is only ever interpolated as text | — | ✅ Blue-team credit |
+
+**`npm audit`:** 0 critical / 0 high / 0 moderate; the 1 known **dev-only Low** (esbuild
+dev-server file-read) is unchanged since §8.
+
+### 9.3 Verification
+
+**647 tests** + typecheck (0 errors) green. axe-core 4.10 (WCAG 2.1 A/AA): **0 violations** on
+the dashboard (cards **and** table views), the editor, and the annotated review page — in
+**both light and dark** (the same day's token work fixed the pre-existing light-mode contrast
+family: white-on-warning buttons, soft chips, soft/outline primary labels).
+
+Measured WCAG contrast on the new card elements (AA requires 4.5:1; badge text is measured
+against the badge's solid fill, alpha backgrounds composited over the card):
+
+| Element | Light | Dark |
+|---|---|---|
+| Published badge (green, on-image) | 7.13 | 10.02 |
+| Draft badge (red, on-image) | 6.42 | 6.17 |
+| Card title | 17.83 | 17.83 |
+| Date / authors meta | 7.58 | 6.78 |
+| Excerpt | 10.36 | 12.00 |
+| Edit button (soft primary) | 5.83 | 5.78 |
+| Preview button (outline) | 14.62 | 14.46 |
 
 ---
 

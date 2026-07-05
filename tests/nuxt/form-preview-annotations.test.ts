@@ -78,7 +78,7 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     wrapper.unmount()
   })
 
-  it('Expand toggles the modal to fullscreen (inset-0, no max-w clamp) and back', async () => {
+  it('opens fullscreen by default; Restore drops to the centered dialog and Expand returns', async () => {
     const wrapper = await mountSuspended(ArticleForm, {
       props: { mode: 'edit', initial: saved },
       attachTo: document.body,
@@ -86,12 +86,8 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     await openPreview(wrapper)
     const expand = document.querySelector('[data-test="preview-expand"]') as HTMLButtonElement | null
     expect(expand, 'expand toggle in modal header').toBeTruthy()
-    expect(expand!.getAttribute('aria-label')).toBe('Expand preview')
     const dialog = () => document.querySelector('[role="dialog"]') as HTMLElement
-    expect(dialog().className).toContain('max-w-6xl')
-
-    expand!.click()
-    await new Promise((r) => setTimeout(r, 0))
+    // Fullscreen is the default preview experience.
     expect(expand!.getAttribute('aria-label')).toBe('Restore preview size')
     expect(dialog().className).toContain('inset-0')
     expect(dialog().className).not.toContain('max-w-6xl')
@@ -100,6 +96,11 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(expand!.getAttribute('aria-label')).toBe('Expand preview')
     expect(dialog().className).toContain('max-w-6xl')
+
+    expand!.click()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(expand!.getAttribute('aria-label')).toBe('Restore preview size')
+    expect(dialog().className).toContain('inset-0')
     wrapper.unmount()
   })
 

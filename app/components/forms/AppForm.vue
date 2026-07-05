@@ -22,9 +22,9 @@ const model = reactive<App>(props.initial ? { ...props.initial } : blankApp())
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
 const previewOpen = ref(false)
-/** Live-preview modal size: false = centered max-w-6xl dialog, true = fullscreen (UModal
- *  fullscreen prop) — the reviewer's escape hatch when annotations feel cramped. */
-const previewExpanded = ref(false)
+/** Live-preview modal size: fullscreen by DEFAULT (the most visual review surface); Restore
+ *  drops to the centered max-w-6xl dialog (UModal fullscreen prop drives both). */
+const previewExpanded = ref(true)
 
 // contributors share the {title,description} row shape (parseAuthors fits).
 const contributorColumns = [

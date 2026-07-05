@@ -72,6 +72,15 @@ const threads = computed<RailThread[]>(() => ann.annotations.value.map((a) => ({
   start: resolvedStarts.value[a.id] ?? null,
 })))
 
+/** Arming opens the rail: the select→comment flow ends in a thread there, and the narrower
+ *  prose column keeps the composer clear of the preview's right edge. Disarming deliberately
+ *  leaves the rail alone — reviewers disarm to read or reply without accidental captures,
+ *  and auto-closing would yank that context (including a reply mid-type). */
+function setArmed(v: boolean) {
+  armed.value = v
+  if (v) railOpen.value = true
+}
+
 function setColor(c: AnnotationColor) {
   color.value = c
   try { window.localStorage.setItem(COLOR_KEY, c) } catch { /* preference only */ }
@@ -268,7 +277,7 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
           :filter="filter"
           :open-count="openCount"
           :rail-open="railOpen"
-          @update:armed="armed = $event"
+          @update:armed="setArmed"
           @update:color="setColor"
           @update:filter="filter = $event"
           @toggle-rail="railOpen = !railOpen"

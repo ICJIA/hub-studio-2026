@@ -216,6 +216,20 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
+  it('arming auto-opens the comments rail; disarming leaves it open (deliberate asymmetry)', async () => {
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    const toggle = () => wrapper.find('[data-test="ann-rail-toggle"]')
+    expect(toggle().attributes('aria-expanded')).toBe('true') // default open
+    await toggle().trigger('click') // reviewer closed it
+    expect(toggle().attributes('aria-expanded')).toBe('false')
+    await wrapper.find('[data-test="ann-arm"]').trigger('click') // arm → reopen
+    expect(toggle().attributes('aria-expanded')).toBe('true')
+    await wrapper.find('[data-test="ann-arm"]').trigger('click') // disarm → rail stays
+    expect(toggle().attributes('aria-expanded')).toBe('true')
+    wrapper.unmount()
+  })
   it('arming carries the chosen color on the wrapper (drives the live ::selection tint)', async () => {
     // The color preference key survives the annotations-prefix cleanup in beforeEach —
     // clear it explicitly so this test always starts from the yellow default.

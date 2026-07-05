@@ -8,6 +8,7 @@
 -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from '#imports'
+import { composerPosition } from '~/lib/annotations/composer-position'
 
 const props = defineProps<{ position: { x: number; y: number }; quote: string }>()
 const emit = defineEmits<{ save: [body: string]; cancel: [] }>()
@@ -16,16 +17,36 @@ const body = ref('')
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
 const rootEl = ref<HTMLElement | null>(null)
 const canSave = computed(() => body.value.trim().length > 0)
+const mounted = ref(false)
 
-/** Clamp so the popover never overflows the viewport: right edge (320px wide + 16px gutter)
- *  and bottom edge (~220px tall + 16px gutter) alike, each with a 16px floor for tiny viewports. */
+/** The composer's containing block when `fixed` is NOT viewport-anchored — inside the
+ *  Live-preview modal, offsetParent is the dialog (its translate creates the containing
+ *  block; its overflow-hidden clips). Degenerate rects (jsdom/happy-dom report 0×0) fall
+ *  back to null = plain viewport anchoring. */
+function containingBlock(): DOMRect | null {
+  const op = rootEl.value?.offsetParent
+  if (!(op instanceof HTMLElement) || op === document.body || op === document.documentElement) return null
+  const r = op.getBoundingClientRect()
+  return r.width > 0 && r.height > 0 ? r : null
+}
+
+/** Clamp so the popover never clips: within the viewport AND, in the modal, within the
+ *  dialog's box — converted to whichever coordinate space `fixed` resolves in. */
 const style = computed(() => {
-  const left = import.meta.client ? Math.min(props.position.x, Math.max(16, window.innerWidth - 336)) : props.position.x
-  const top = import.meta.client ? Math.min(props.position.y, Math.max(16, window.innerHeight - 220)) : props.position.y
-  return { left: `${left}px`, top: `${top}px` }
+  if (!import.meta.client) return { left: `${props.position.x}px`, top: `${props.position.y}px` }
+  const cb = mounted.value ? containingBlock() : null
+  const pos = composerPosition({
+    desired: { x: props.position.x, y: props.position.y },
+    viewport: { width: window.innerWidth, height: window.innerHeight },
+    container: cb ? { left: cb.left, top: cb.top, right: cb.right, bottom: cb.bottom } : null,
+  })
+  return { left: `${pos.left}px`, top: `${pos.top}px` }
 })
 
-onMounted(() => textareaEl.value?.focus())
+onMounted(() => {
+  mounted.value = true // re-run style: offsetParent is only knowable once in the DOM
+  textareaEl.value?.focus()
+})
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') { e.stopPropagation(); emit('cancel'); return }

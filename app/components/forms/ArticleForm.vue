@@ -9,7 +9,7 @@
   lib/forms/*; this component is intentionally thin.
 -->
 <script setup lang="ts">
-import { reactive, ref, onMounted } from '#imports'
+import { reactive, ref } from '#imports'
 import type { Article } from '~/types/content'
 import { blankArticle } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
@@ -22,7 +22,6 @@ const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
 const emit = defineEmits<{ published: [entity: Article] }>()
 const repo = useArticles()
 const toast = useToast()
-const route = useRoute() // setup-scope: injection is unavailable inside lifecycle callbacks
 // The toolbar's Publish/Unpublish control (PublishButton) is self-gating (default-deny): it renders
 // the live toggle for an editor and NOTHING for an author. The "Save the draft first to publish"
 // hint is therefore editor-only too — an author can't publish at all, so the hint would be
@@ -32,10 +31,6 @@ const { canPublish } = useAuth()
 const model = reactive<Article>(props.initial ? { ...props.initial } : blankArticle())
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
-const previewOpen = ref(false)
-/** Live-preview modal size: fullscreen by DEFAULT (the most visual review surface); Restore
- *  drops to the centered max-w-6xl dialog (UModal fullscreen prop drives both). */
-const previewExpanded = ref(true)
 
 // Ref to the body MarkdownField so the sidebar BodyImagesField can insert figures at the cursor.
 const bodyField = ref<{ insertMarkdown: (text: string) => void } | null>(null)
@@ -59,15 +54,11 @@ async function submit() {
     const res: SubmitResult<Article> = await submitForm(toSave, validateArticle, persist)
     if (!res.ok) { errors.value = res.errors; return }
     toast.add({ title: 'Draft saved', color: 'success' })
-    // Save → preview coherence (user report 2026-07-05): saving always shows the FULLSCREEN
-    // preview MODAL, never the standalone page (that page is the shareable reviewer URL).
-    // Create mode moves to the edit route first (the entry now exists) — ?preview=1 reopens
-    // the modal on arrival, so both modes feel identical.
+    // Tab-only preview (user decision 2026-07-05): save just saves. A first-time create moves
+    // to the entry's edit route (it now exists); preview is always the Live preview link,
+    // which opens the standalone review page in its own named tab.
     if (props.mode === 'create') {
-      await navigateTo(`/edit/article/${res.saved!.documentId}?preview=1`)
-    } else {
-      previewExpanded.value = true
-      previewOpen.value = true
+      await navigateTo(`/edit/article/${res.saved!.documentId}`)
     }
   } catch {
     toast.add({ title: 'Save failed', description: 'Please try again.', color: 'error' })
@@ -82,15 +73,6 @@ function onPublished(entity: Article) {
   model.publishedAt = entity.publishedAt
   emit('published', entity)
 }
-
-/** Post-create hand-off: submit() (create mode) lands on /edit/…?preview=1 — reopen the
- *  fullscreen preview modal on arrival so "save" behaves identically in both modes. */
-onMounted(() => {
-  if (props.mode === 'edit' && route.query?.preview === '1') {
-    previewExpanded.value = true
-    previewOpen.value = true
-  }
-})
 
 defineExpose({ submit, setField, onPublished, errors, model })
 </script>
@@ -117,7 +99,20 @@ defineExpose({ submit, setField, onPublished, errors, model })
              default-deny — it renders the live toggle for an editor and NOTHING for an author. The
              "save first" hint is editor-only (an author can't publish, so it never shows for them). -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-          <UButton size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview" @click="previewOpen = true" />
+          <!-- Tab-only preview (user decision 2026-07-05): opens the standalone review page in
+               a NAMED tab — one preview tab per document, reused (and refreshed) on every click. -->
+          <UButton
+            v-if="mode === 'edit' && model.documentId"
+            data-test="live-preview-link"
+            size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview"
+            :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+          />
+          <UButton
+            v-else
+            data-test="live-preview-disabled"
+            size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview"
+            disabled title="Save the draft first to preview"
+          />
           <PublishButton
             v-if="mode === 'edit' && model.documentId"
             type="article"
@@ -165,51 +160,16 @@ defineExpose({ submit, setField, onPublished, errors, model })
 
     <div class="flex items-center gap-3">
       <UButton type="submit" :loading="saving" label="Save draft" />
-      <UButton variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+      <UButton
+        v-if="mode === 'edit' && model.documentId"
+        variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published"
+        :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+      />
+      <UButton
+        v-else
+        variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published"
+        disabled title="Save the draft first to preview"
+      />
     </div>
-
-    <UModal v-model:open="previewOpen" :fullscreen="previewExpanded" :ui="{ content: previewExpanded ? undefined : 'max-w-6xl' }">
-      <template #content>
-        <div class="preview-modal-light flex flex-col bg-white" :class="previewExpanded ? 'h-full' : 'max-h-[88vh]'">
-          <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
-            <span class="text-sm font-medium text-gray-700">Published preview</span>
-            <div class="flex items-center gap-2">
-              <!-- Saved drafts: jump to the standalone review page (the shareable reviewer URL). -->
-              <UButton
-                v-if="mode === 'edit' && model.documentId"
-                data-test="review-view-link"
-                size="xs" variant="outline" color="neutral" icon="i-lucide-external-link"
-                label="Live preview view" :to="`/preview/article/${model.documentId}`" target="_blank"
-              />
-              <UButton
-                data-test="preview-expand"
-                size="xs" variant="ghost" color="neutral"
-                :icon="previewExpanded ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
-                :aria-label="previewExpanded ? 'Restore preview size' : 'Expand preview'"
-                :title="previewExpanded ? 'Restore preview size' : 'Expand preview'"
-                @click="previewExpanded = !previewExpanded"
-              />
-              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
-            </div>
-          </div>
-          <!-- pb-6 only: no TOP padding, so the sticky reviewer bar sits flush under the modal
-               header instead of floating a padding-gap below it; no horizontal padding, the body
-               inset is carried by .published-layout in prose-preview.css. The inner max-w-6xl
-               wrapper keeps prose + comment cards composed together, centered — in fullscreen an
-               unconstrained row let the cards drift to the far right edge (user report 2026-07-05).
-               SAVED drafts get the full annotation overlay (spec Addendum A) — same threads as the
-               /preview page; unsaved create-mode previews stay plain (no documentId to key threads to).
-               --ann-sticky-top: 0px pins the reviewer bar to the top of the modal's scroll area. -->
-          <div class="overflow-y-auto pb-6 [scrollbar-gutter:stable]" style="--ann-sticky-top: 0px">
-            <div class="mx-auto w-full max-w-6xl">
-              <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="article" :document-id="model.documentId">
-                <PublishedArticlePreview :article="model" />
-              </AnnotatedPreview>
-              <PublishedArticlePreview v-else :article="model" />
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
   </UForm>
 </template>

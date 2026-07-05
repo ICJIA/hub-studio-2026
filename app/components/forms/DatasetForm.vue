@@ -6,7 +6,7 @@
   against the option lists. Relations (apps/articles) render READ-ONLY (relation WRITE deferred).
 -->
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from '#imports'
+import { reactive, ref, computed } from '#imports'
 import type { Dataset } from '~/types/content'
 import { blankDataset } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
@@ -18,15 +18,10 @@ import { parseSources, parseVariables, parseNotes, formatNotes } from '~/lib/tex
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: Dataset }>()
 const repo = useDatasets()
 const toast = useToast()
-const route = useRoute() // setup-scope: injection is unavailable inside lifecycle callbacks
 
 const model = reactive<Dataset>(props.initial ? { ...props.initial } : blankDataset())
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
-const previewOpen = ref(false)
-/** Live-preview modal size: fullscreen by DEFAULT (the most visual review surface); Restore
- *  drops to the centered max-w-6xl dialog (UModal fullscreen prop drives both). */
-const previewExpanded = ref(true)
 
 const sourceColumns = [
   { key: 'title', label: 'Title' },
@@ -72,15 +67,10 @@ async function submit() {
     const res: SubmitResult<Dataset> = await submitForm(toSave, validateDataset, persist)
     if (!res.ok) { errors.value = res.errors; return }
     toast.add({ title: 'Draft saved', color: 'success' })
-    // Save → preview coherence (user report 2026-07-05): saving always shows the FULLSCREEN
-    // preview MODAL, never the standalone page (that page is the shareable reviewer URL).
-    // Create mode moves to the edit route first (the entry now exists) — ?preview=1 reopens
-    // the modal on arrival, so both modes feel identical.
+    // Tab-only preview (user decision 2026-07-05): save just saves. A first-time create moves
+    // to the entry's edit route (it now exists); preview is the Preview link's own named tab.
     if (props.mode === 'create') {
-      await navigateTo(`/edit/dataset/${res.saved!.documentId}?preview=1`)
-    } else {
-      previewExpanded.value = true
-      previewOpen.value = true
+      await navigateTo(`/edit/dataset/${res.saved!.documentId}`)
     }
   } catch {
     toast.add({ title: 'Save failed', description: 'Please try again.', color: 'error' })
@@ -89,22 +79,19 @@ async function submit() {
   }
 }
 
-/** Post-create hand-off: submit() (create mode) lands on /edit/…?preview=1 — reopen the
- *  fullscreen preview modal on arrival so "save" behaves identically in both modes. */
-onMounted(() => {
-  if (props.mode === 'edit' && route.query?.preview === '1') {
-    previewExpanded.value = true
-    previewOpen.value = true
-  }
-})
-
 defineExpose({ submit, setField, errors, model })
 </script>
 
 <template>
   <UForm :state="model" class="space-y-6" @submit.prevent="submit">
     <div class="flex justify-end">
-      <UButton variant="outline" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+      <!-- Tab-only preview: the standalone review page in a per-document named tab. -->
+      <UButton
+        v-if="mode === 'edit' && model.documentId"
+        variant="outline" icon="i-lucide-eye" label="Preview as published"
+        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+      />
+      <UButton v-else variant="outline" icon="i-lucide-eye" label="Preview as published" disabled title="Save the draft first to preview" />
     </div>
 
     <TextField v-model="model.title" label="Title" />
@@ -151,46 +138,12 @@ defineExpose({ submit, setField, errors, model })
 
     <div class="flex items-center gap-3">
       <UButton type="submit" :loading="saving" label="Save draft" />
-      <UButton variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" @click="previewOpen = true" />
+      <UButton
+        v-if="mode === 'edit' && model.documentId"
+        variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published"
+        :to="`/preview/dataset/${model.documentId}`" :target="`studio-preview-${model.documentId}`"
+      />
+      <UButton v-else variant="ghost" color="neutral" icon="i-lucide-eye" label="Preview as published" disabled title="Save the draft first to preview" />
     </div>
-
-    <UModal v-model:open="previewOpen" :fullscreen="previewExpanded" :ui="{ content: previewExpanded ? undefined : 'max-w-6xl' }">
-      <template #content>
-        <div class="preview-modal-light flex flex-col bg-white" :class="previewExpanded ? 'h-full' : 'max-h-[88vh]'">
-          <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
-            <span class="text-sm font-medium text-gray-700">Published preview</span>
-            <div class="flex items-center gap-2">
-              <!-- Saved drafts: jump to the standalone review page (the shareable reviewer URL). -->
-              <UButton
-                v-if="mode === 'edit' && model.documentId"
-                data-test="review-view-link"
-                size="xs" variant="outline" color="neutral" icon="i-lucide-external-link"
-                label="Live preview view" :to="`/preview/dataset/${model.documentId}`" target="_blank"
-              />
-              <UButton
-                data-test="preview-expand"
-                size="xs" variant="ghost" color="neutral"
-                :icon="previewExpanded ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
-                :aria-label="previewExpanded ? 'Restore preview size' : 'Expand preview'"
-                :title="previewExpanded ? 'Restore preview size' : 'Expand preview'"
-                @click="previewExpanded = !previewExpanded"
-              />
-              <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
-            </div>
-          </div>
-          <!-- Saved drafts carry the annotation overlay (spec Addendum A); unsaved stay plain.
-               pb/px only (no top padding): the sticky reviewer bar sits flush under the header;
-               the max-w-6xl wrapper keeps prose + comment cards composed in fullscreen. -->
-          <div class="overflow-y-auto px-6 pb-6 [scrollbar-gutter:stable]" style="--ann-sticky-top: 0px">
-            <div class="mx-auto w-full max-w-6xl">
-              <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="dataset" :document-id="model.documentId">
-                <PublishedDatasetPreview :dataset="model" />
-              </AnnotatedPreview>
-              <PublishedDatasetPreview v-else :dataset="model" />
-            </div>
-          </div>
-        </div>
-      </template>
-    </UModal>
   </UForm>
 </template>

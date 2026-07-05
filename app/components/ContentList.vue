@@ -165,7 +165,8 @@ function authorLabel(item: AnyItem): string {
               <td class="py-2">
                 <span class="flex gap-3 items-center">
                   <NuxtLink :to="`/edit/${type}/${item.documentId}`" class="text-primary underline">Edit</NuxtLink>
-                  <NuxtLink :to="`/preview/${type}/${item.documentId}`" class="text-primary underline">Preview</NuxtLink>
+                  <!-- Tab-only preview: same per-document named tab the editor's Live preview uses. -->
+                  <NuxtLink :to="`/preview/${type}/${item.documentId}`" :target="`studio-preview-${item.documentId}`" class="text-primary underline">Preview</NuxtLink>
                   <slot name="row-actions" :document-id="item.documentId" :published="item.publishedAt != null" />
                 </span>
               </td>

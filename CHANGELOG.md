@@ -30,6 +30,10 @@ _Added (later 2026-07-05)_
 - **Word-style comment alignment.** Desktop comment cards now sit level with the passage they annotate — measured from the painted highlight, with overlapping cards pushed down by a pure collision pass (`lib/annotations/rail-layout.ts`) and re-measured on reflows (images, resizes, the rail mounting). Cards glide to new spots; clicking a card/highlight still cross-links the pair. A wider gutter separates the text column from the cards.
 - **Clean view toggle** in the reviewer bar: read the article exactly as published — no highlights painted, no comments panel, review controls collapsed to the one toggle. Pure overlay; stored threads untouched.
 
+_Changed (later 2026-07-05, third pass — architecture simplification)_
+
+- **Preview is TAB-ONLY: the Live-preview modal is removed entirely** (user decision). Every preview entry point — the editor's **Live preview** / **Preview as published** buttons and the content list's **Preview** action — opens the standalone review page in a **per-document named tab** (`studio-preview-{id}`), so repeated clicks reuse and refresh one preview tab instead of piling up. Unsaved create-mode disables the button ("Save the draft first to preview"); save just saves. One surface = no modal-vs-page confusion, browser-native close/switch, editor-and-preview side-by-side on wide screens; the review page keeps annotations, Clean view, Back to editor, and Copy share link. Removes the UModal blocks from all three forms and the `.preview-modal-light` scope; the whole modal bug class (dark-mode chrome, fullscreen composition, scale-animation measurement) goes with it.
+
 _Changed (later 2026-07-05, second pass)_
 
 - **Saving a draft now opens the fullscreen preview modal — never the standalone page.** Edit-mode saves open it in place; a first-time create moves to the new `/edit/...` route and reopens the modal there (`?preview=1` hand-off), so "save" feels identical in both modes and the modal/page confusion is gone. The standalone page remains the shareable reviewer URL (Live preview view, the list's Preview action).

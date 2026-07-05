@@ -9,7 +9,7 @@
   lib/forms/*; this component is intentionally thin.
 -->
 <script setup lang="ts">
-import { reactive, ref } from '#imports'
+import { reactive, ref, onMounted } from '#imports'
 import type { Article } from '~/types/content'
 import { blankArticle } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
@@ -22,6 +22,7 @@ const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
 const emit = defineEmits<{ published: [entity: Article] }>()
 const repo = useArticles()
 const toast = useToast()
+const route = useRoute() // setup-scope: injection is unavailable inside lifecycle callbacks
 // The toolbar's Publish/Unpublish control (PublishButton) is self-gating (default-deny): it renders
 // the live toggle for an editor and NOTHING for an author. The "Save the draft first to publish"
 // hint is therefore editor-only too — an author can't publish at all, so the hint would be
@@ -58,7 +59,16 @@ async function submit() {
     const res: SubmitResult<Article> = await submitForm(toSave, validateArticle, persist)
     if (!res.ok) { errors.value = res.errors; return }
     toast.add({ title: 'Draft saved', color: 'success' })
-    await navigateTo(`/preview/article/${res.saved!.documentId}`)
+    // Save → preview coherence (user report 2026-07-05): saving always shows the FULLSCREEN
+    // preview MODAL, never the standalone page (that page is the shareable reviewer URL).
+    // Create mode moves to the edit route first (the entry now exists) — ?preview=1 reopens
+    // the modal on arrival, so both modes feel identical.
+    if (props.mode === 'create') {
+      await navigateTo(`/edit/article/${res.saved!.documentId}?preview=1`)
+    } else {
+      previewExpanded.value = true
+      previewOpen.value = true
+    }
   } catch {
     toast.add({ title: 'Save failed', description: 'Please try again.', color: 'error' })
   } finally {
@@ -72,6 +82,15 @@ function onPublished(entity: Article) {
   model.publishedAt = entity.publishedAt
   emit('published', entity)
 }
+
+/** Post-create hand-off: submit() (create mode) lands on /edit/…?preview=1 — reopen the
+ *  fullscreen preview modal on arrival so "save" behaves identically in both modes. */
+onMounted(() => {
+  if (props.mode === 'edit' && route.query?.preview === '1') {
+    previewExpanded.value = true
+    previewOpen.value = true
+  }
+})
 
 defineExpose({ submit, setField, onPublished, errors, model })
 </script>
@@ -173,16 +192,21 @@ defineExpose({ submit, setField, onPublished, errors, model })
               <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
             </div>
           </div>
-          <!-- py-6 (not p-6): no horizontal padding so the full-bleed splash reaches the modal's
-               left/right edges; the body inset is carried by .published-layout in prose-preview.css.
+          <!-- pb-6 only: no TOP padding, so the sticky reviewer bar sits flush under the modal
+               header instead of floating a padding-gap below it; no horizontal padding, the body
+               inset is carried by .published-layout in prose-preview.css. The inner max-w-6xl
+               wrapper keeps prose + comment cards composed together, centered — in fullscreen an
+               unconstrained row let the cards drift to the far right edge (user report 2026-07-05).
                SAVED drafts get the full annotation overlay (spec Addendum A) — same threads as the
                /preview page; unsaved create-mode previews stay plain (no documentId to key threads to).
                --ann-sticky-top: 0px pins the reviewer bar to the top of the modal's scroll area. -->
-          <div class="overflow-y-auto py-6" style="--ann-sticky-top: 0px">
-            <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="article" :document-id="model.documentId">
-              <PublishedArticlePreview :article="model" />
-            </AnnotatedPreview>
-            <PublishedArticlePreview v-else :article="model" />
+          <div class="overflow-y-auto pb-6 [scrollbar-gutter:stable]" style="--ann-sticky-top: 0px">
+            <div class="mx-auto w-full max-w-6xl">
+              <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="article" :document-id="model.documentId">
+                <PublishedArticlePreview :article="model" />
+              </AnnotatedPreview>
+              <PublishedArticlePreview v-else :article="model" />
+            </div>
           </div>
         </div>
       </template>

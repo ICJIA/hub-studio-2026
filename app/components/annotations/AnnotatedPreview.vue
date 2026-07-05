@@ -83,13 +83,25 @@ function measureMarkTops() {
   const container = annotationContainer()
   const row = rowEl.value
   if (!container || !row) { markTops.value = {}; return }
-  const rowTop = row.getBoundingClientRect().top
+  const rowRect = row.getBoundingClientRect()
+  // Scale immunity: rects shrink under any ancestor transform scale — the modal's 200ms
+  // open animation (which a throttled background tab can even freeze mid-flight). Offsets
+  // must be stored in LAYOUT pixels (the space position:absolute `top` resolves in), so
+  // divide out the current visual scale. Foreground steady state: scale = 1, a no-op.
+  const scale = row.offsetWidth > 0 ? rowRect.width / row.offsetWidth : 1
   const tops: Record<string, number | null> = {}
   for (const a of ann.annotations.value) {
     const m = container.querySelector<HTMLElement>(`mark[data-ann-id="${CSS.escape(a.id)}"]`)
-    tops[a.id] = m ? Math.round(m.getBoundingClientRect().top - rowTop) : null
+    tops[a.id] = m ? Math.round((m.getBoundingClientRect().top - rowRect.top) / scale) : null
   }
-  markTops.value = tops
+  // Damping: only publish a real change (> 1px somewhere). Rewriting equal-but-new objects
+  // churns the rail for nothing, and a layout feedback (e.g. a scrollbar toggling the column
+  // width — also prevented by scrollbar-gutter on the modal) must never oscillate the cards.
+  const prev = markTops.value
+  const ids = Object.keys(tops)
+  const changed = ids.length !== Object.keys(prev).length
+    || ids.some((id) => (tops[id] ?? -1) !== (prev[id] ?? -1) && Math.abs((tops[id] ?? 0) - (prev[id] ?? 0)) > 1)
+  if (changed) markTops.value = tops
 }
 /** rAF-coalesced re-measure for reflows repaint() can't see (images loading, resizes). */
 let reflowRaf = 0
@@ -304,7 +316,15 @@ watch([railOpen, cleanView], async () => {
 })
 
 let contentResizeObserver: ResizeObserver | null = null
+/** Self-healing alignment: reflows the observers can't reliably see inside the preview
+ *  modal (lazy images, font swaps, the dialog's open animation) would otherwise leave
+ *  cards at stale offsets. A few rect reads per tick; the damping in measureMarkTops
+ *  makes the steady state a free no-op. */
+let alignPoll: ReturnType<typeof setInterval> | undefined
 onMounted(async () => {
+  alignPoll = setInterval(() => {
+    if (railOpen.value && !cleanView.value) measureMarkTops()
+  }, 600)
   color.value = initialColor()
   window.addEventListener('storage', onStorage)
   window.addEventListener('resize', onContentReflow)
@@ -323,6 +343,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', onContentReflow)
   contentResizeObserver?.disconnect()
   if (reflowRaf) cancelAnimationFrame(reflowRaf)
+  if (alignPoll) clearInterval(alignPoll)
 })
 </script>
 

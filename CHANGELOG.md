@@ -30,6 +30,15 @@ _Added (later 2026-07-05)_
 - **Word-style comment alignment.** Desktop comment cards now sit level with the passage they annotate — measured from the painted highlight, with overlapping cards pushed down by a pure collision pass (`lib/annotations/rail-layout.ts`) and re-measured on reflows (images, resizes, the rail mounting). Cards glide to new spots; clicking a card/highlight still cross-links the pair. A wider gutter separates the text column from the cards.
 - **Clean view toggle** in the reviewer bar: read the article exactly as published — no highlights painted, no comments panel, review controls collapsed to the one toggle. Pure overlay; stored threads untouched.
 
+_Changed (later 2026-07-05, second pass)_
+
+- **Saving a draft now opens the fullscreen preview modal — never the standalone page.** Edit-mode saves open it in place; a first-time create moves to the new `/edit/...` route and reopens the modal there (`?preview=1` hand-off), so "save" feels identical in both modes and the modal/page confusion is gone. The standalone page remains the shareable reviewer URL (Live preview view, the list's Preview action).
+- **Fullscreen preview keeps prose and comment cards composed together** (centered `max-w-6xl`) instead of letting the cards drift to the far right edge of wide screens, and the reviewer bar now sits flush under the modal header (the padding gap is gone).
+
+_Fixed (later 2026-07-05, second pass)_
+
+- **Alignment hardening for the Word-style cards:** mark offsets are stored in layout pixels (any ancestor transform scale — e.g. the modal's open animation mid-flight — is divided out), only >1px changes republish (no oscillation), a slow self-heal re-measure runs while the rail is open, and the modal scroll area reserves its scrollbar gutter so the bar appearing can never reflow the prose.
+
 _Fixed (later 2026-07-05)_
 
 - **The shareable preview page is no longer a dead end.** Saving a draft lands on `/preview/{type}/{id}` (and the modal's Live-preview-view link opens it in a tab) with no way back — the reviewer bar now leads with **Back to editor** and **Dashboard** links.

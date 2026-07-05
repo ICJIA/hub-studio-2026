@@ -21,14 +21,19 @@ import { blankArticle } from '~/lib/forms/blank-models'
 import type { Article } from '~/types/content'
 
 mockNuxtImport('useArticles', () => () => ({
-  list: vi.fn(), findOne: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn(),
+  list: vi.fn(), findOne: vi.fn(), create: vi.fn(),
+  update: vi.fn(async (_id: string, m: unknown) => m), // echo back: submit()'s saved entity
+  remove: vi.fn(),
 }))
 
 // Full valid empty model (RepeatableField etc. need iterable fields) + saved identity.
+// slug/date filled so validateArticle passes — the save→preview test drives a real submit().
 const saved: Article = {
   ...blankArticle(),
   documentId: 'art-42',
   title: 'Saved Draft',
+  slug: 'saved-draft',
+  date: '2025-12-28',
   markdown: 'The quick brown fox jumps over the lazy dog.',
 } as Article
 
@@ -112,6 +117,22 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(expand!.getAttribute('aria-label')).toBe('Restore preview size')
     expect(dialog().className).toContain('inset-0')
+    wrapper.unmount()
+  })
+
+  it('saving in edit mode opens the FULLSCREEN preview modal in place (no page navigation)', async () => {
+    const wrapper = await mountSuspended(ArticleForm, {
+      props: { mode: 'edit', initial: saved },
+      attachTo: document.body,
+    })
+    expect(document.querySelector('[role="dialog"]')).toBeNull() // closed before save
+    await (wrapper.vm as unknown as { submit: () => Promise<void> }).submit()
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement | null
+    expect(dialog, 'preview modal opened by save').toBeTruthy()
+    expect(dialog!.className).toContain('inset-0') // fullscreen
+    expect(document.querySelector('[data-test="preview-expand"]')!.getAttribute('aria-label')).toBe('Restore preview size')
     wrapper.unmount()
   })
 

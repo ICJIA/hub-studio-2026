@@ -6,7 +6,7 @@
   against the option lists. Relations (apps/articles) render READ-ONLY (relation WRITE deferred).
 -->
 <script setup lang="ts">
-import { reactive, ref, computed } from '#imports'
+import { reactive, ref, computed, onMounted } from '#imports'
 import type { Dataset } from '~/types/content'
 import { blankDataset } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
@@ -18,6 +18,7 @@ import { parseSources, parseVariables, parseNotes, formatNotes } from '~/lib/tex
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: Dataset }>()
 const repo = useDatasets()
 const toast = useToast()
+const route = useRoute() // setup-scope: injection is unavailable inside lifecycle callbacks
 
 const model = reactive<Dataset>(props.initial ? { ...props.initial } : blankDataset())
 const errors = ref<FieldError[]>([])
@@ -71,13 +72,31 @@ async function submit() {
     const res: SubmitResult<Dataset> = await submitForm(toSave, validateDataset, persist)
     if (!res.ok) { errors.value = res.errors; return }
     toast.add({ title: 'Draft saved', color: 'success' })
-    await navigateTo(`/preview/dataset/${res.saved!.documentId}`)
+    // Save → preview coherence (user report 2026-07-05): saving always shows the FULLSCREEN
+    // preview MODAL, never the standalone page (that page is the shareable reviewer URL).
+    // Create mode moves to the edit route first (the entry now exists) — ?preview=1 reopens
+    // the modal on arrival, so both modes feel identical.
+    if (props.mode === 'create') {
+      await navigateTo(`/edit/dataset/${res.saved!.documentId}?preview=1`)
+    } else {
+      previewExpanded.value = true
+      previewOpen.value = true
+    }
   } catch {
     toast.add({ title: 'Save failed', description: 'Please try again.', color: 'error' })
   } finally {
     saving.value = false
   }
 }
+
+/** Post-create hand-off: submit() (create mode) lands on /edit/…?preview=1 — reopen the
+ *  fullscreen preview modal on arrival so "save" behaves identically in both modes. */
+onMounted(() => {
+  if (props.mode === 'edit' && route.query?.preview === '1') {
+    previewExpanded.value = true
+    previewOpen.value = true
+  }
+})
 
 defineExpose({ submit, setField, errors, model })
 </script>
@@ -159,12 +178,16 @@ defineExpose({ submit, setField, errors, model })
               <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close preview" @click="previewOpen = false" />
             </div>
           </div>
-          <!-- Saved drafts carry the annotation overlay (spec Addendum A); unsaved stay plain. -->
-          <div class="overflow-y-auto p-6" style="--ann-sticky-top: 0px">
-            <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="dataset" :document-id="model.documentId">
-              <PublishedDatasetPreview :dataset="model" />
-            </AnnotatedPreview>
-            <PublishedDatasetPreview v-else :dataset="model" />
+          <!-- Saved drafts carry the annotation overlay (spec Addendum A); unsaved stay plain.
+               pb/px only (no top padding): the sticky reviewer bar sits flush under the header;
+               the max-w-6xl wrapper keeps prose + comment cards composed in fullscreen. -->
+          <div class="overflow-y-auto px-6 pb-6 [scrollbar-gutter:stable]" style="--ann-sticky-top: 0px">
+            <div class="mx-auto w-full max-w-6xl">
+              <AnnotatedPreview v-if="mode === 'edit' && model.documentId" content-type="dataset" :document-id="model.documentId">
+                <PublishedDatasetPreview :dataset="model" />
+              </AnnotatedPreview>
+              <PublishedDatasetPreview v-else :dataset="model" />
+            </div>
           </div>
         </div>
       </template>

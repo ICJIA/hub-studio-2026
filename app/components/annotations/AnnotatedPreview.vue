@@ -49,7 +49,11 @@ function initialColor(): AnnotationColor {
 const armed = ref(false)
 const color = ref<AnnotationColor>('yellow')
 const filter = ref<'open' | 'resolved' | 'all'>('open')
-const railOpen = ref(true)
+/** Comments start HIDDEN (user decision 2026-07-05): the preview opens as a clean read;
+ *  the rail appears on demand — the Show comments toggle, opening a highlight, or arming
+ *  the highlighter (setArmed below). Also keeps the mobile drawer from covering content
+ *  on load. */
+const railOpen = ref(false)
 const activeId = ref<string | null>(null)
 /** Pending composer state: anchor captured, waiting for the comment body. */
 const composer = ref<{ anchor: AnnotationAnchor; position: { x: number; y: number } } | null>(null)

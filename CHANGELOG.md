@@ -19,8 +19,15 @@ _Added_
 - **Arming the highlighter auto-opens the comments rail.** The select→comment flow ends in a thread there, and the narrower prose column keeps the composer clear of the preview's edge. Deliberately asymmetric: disarming leaves the rail open — reviewers disarm to read or reply without accidental captures.
 - **Armed-highlighter selection tint.** With the highlighter armed, the click-and-drag selection previews in the chosen highlight color (same four pastels as the saved marks) instead of the browser's default grey; unarmed selection stays native. Chromium renders the drag slightly translucent — a usable pending-vs-committed cue. Contrast stays AA: the preview surface is always light with near-black prose.
 
+_Fixed (accessibility — full axe-core WCAG 2.1 AA sweep, light AND dark)_
+
+- **Semantic color tokens darkened for light mode** (`--ui-primary` → 700, `--ui-success`/`--ui-warning` → 800; dark mode keeps the measured-clean 400s). Kills a family of AA contrast failures the sweep found: white labels on solid warning buttons (Unpublish, the demo-entry button — 1.91:1), color-on-tint soft chips and buttons (status chips, sample shortcuts, the rail's Resolve button, soft/outline primary labels — 1.7–4.3:1). All surfaces now measure 0 violations in both themes.
+- **Type-list dropdown had no accessible name** (axe `button-name`, critical) — labelled.
+- **Markdown editor host carried `aria-labelledby` on a generic div** (axe `aria-prohibited-attr`) — now `role="group"`.
+
 _Changed_
 
+- **Live preview opens with comments hidden** (user decision): the preview starts as a clean read; the rail appears via Show comments, opening a highlight, or arming the highlighter. Also keeps the mobile drawer from covering content on load.
 - **Clearer comments toggle.** The reviewer bar's "Comments (n)" button is now an explicit **Hide comments (n) / Show comments (n)** toggle with `aria-expanded` and panel open/close icons.
 - **"Review view" → "Live preview view".** The modal-header link to the shareable `/preview/{type}/{id}` page is renamed to stay consistent with the Live preview button naming.
 

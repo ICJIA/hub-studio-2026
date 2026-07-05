@@ -79,6 +79,7 @@ const showDevSamples = import.meta.dev
               { label: 'Datasets', value: 'dataset' },
             ]"
             size="sm"
+            aria-label="Content type to list"
           />
         </div>
       </template>

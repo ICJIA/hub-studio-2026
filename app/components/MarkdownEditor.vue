@@ -326,7 +326,9 @@ defineExpose({
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
 
     <div class="grid gap-3" :class="showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'">
-      <div ref="host" data-test="cm-host" :class="compact ? 'cm-host cm-host--compact' : 'cm-host'" class="border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
+      <!-- role="group": a generic div may not carry aria-labelledby (axe aria-prohibited-attr);
+           group is the correct container role for the labelled editor region. -->
+      <div ref="host" data-test="cm-host" role="group" :class="compact ? 'cm-host cm-host--compact' : 'cm-host'" class="border border-default rounded" :aria-labelledby="label ? labelId : undefined" />
       <!-- The preview shows the PUBLISHED look, which is always on a white page — so this pane is
            white in BOTH light and dark mode (otherwise the near-black published prose is invisible
            on a dark surface). Fixed gray label so it's readable on the white pane in dark mode. -->

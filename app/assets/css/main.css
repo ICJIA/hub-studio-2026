@@ -19,8 +19,20 @@
   --ui-radius: 0.375rem;
 
   /* Darker primary so WHITE text on solid primary buttons / the brand mark clears AA
-     (blue-500 ≈ 3.1:1 fails; blue-600 ≈ 4.7:1 passes). Applies app-wide. */
-  --ui-primary: var(--ui-color-primary-600);
+     (blue-500 ≈ 3.1:1 fails). blue-600 passed that solid case (4.7:1) but the 2026-07-05
+     axe sweep caught it as normal-weight TEXT on the primary/10 soft tint (outline/soft
+     buttons: 4.34:1) — blue-700 clears both usages. Applies app-wide; dark restores 400. */
+  --ui-primary: var(--ui-color-primary-700);
+
+  /* Darker success/warning for the same AA reason, found by the 2026-07-05 axe sweep:
+     the 500-shade defaults fail BOTH ways in light mode — as white-on-solid (Unpublish,
+     the demo-entry button: ~1.9:1) and as tinted-soft text (status chips, the rail's
+     Resolve button: 1.7–2.0:1). 700 was measured first and still missed (4.17–4.33:1)
+     because the /10 tints stack on tinted cards and striped rows; the 800 shades clear
+     4.5:1 with margin in BOTH usages. Dark mode restores the brighter 400s below
+     (dark-card text needs light shades, measured clean). */
+  --ui-success: var(--ui-color-success-800);
+  --ui-warning: var(--ui-color-warning-800);
 
   /* Text — one step darker than stock (dimmed-400 / muted-500 / toned-600 /
      text-700 / highlighted-900) so muted/secondary text clears AA on the canvas. */
@@ -64,6 +76,10 @@
 :root.dark,
 .dark {
   --ui-primary: var(--ui-color-primary-400);
+  /* Mirror of the light-mode 700s above: on the dark cards the 400s are the AA-passing
+     shades (the 2026-07-05 axe sweep measured dark mode clean with these). */
+  --ui-success: var(--ui-color-success-400);
+  --ui-warning: var(--ui-color-warning-400);
 }
 
 /* The page canvas — a soft slate (light) / near-black (dark) so cards lift off it. */

@@ -78,11 +78,14 @@ beforeEach(() => {
 })
 
 describe('preview page — annotations', () => {
-  it('mounts the reviewer bar and rail with the stored thread', async () => {
+  it('mounts the reviewer bar; the rail starts HIDDEN and opens on the toggle', async () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0)) // load → nextTick paint
     expect(wrapper.find('[data-test="ann-arm"]').exists()).toBe(true)
+    // Default-closed (user decision 2026-07-05): the preview opens clean; comments on demand.
+    expect(wrapper.text()).not.toContain('Consider a citation here.')
+    await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click')
     expect(wrapper.text()).toContain('Consider a citation here.')
   })
   it('paints the stored annotation over the rendered markdown', async () => {
@@ -101,6 +104,7 @@ describe('preview page — annotations', () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click') // rail starts hidden
     expect(wrapper.find('mark[data-ann-id="ghost"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('text changed — highlight not found')
   })
@@ -108,6 +112,7 @@ describe('preview page — annotations', () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click') // rail starts hidden
     await wrapper.find('[data-test="ann-resolve"]').trigger('click')
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.find('mark[data-ann-id="seed-1"]').exists()).toBe(false)
@@ -116,6 +121,7 @@ describe('preview page — annotations', () => {
     const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click') // rail starts hidden
     expect(wrapper.text()).toContain('Consider a citation here.') // rail(s) rendered with the thread
     expect(document.querySelectorAll('[id^="ann-card-"]')).toHaveLength(0)
     wrapper.unmount()
@@ -156,6 +162,7 @@ describe('preview page — annotations', () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click') // rail starts hidden
     await wrapper.find('[data-test="ann-resolve"]').trigger('click') // resolve thread 1
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
@@ -224,15 +231,13 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
-  it('arming auto-opens the comments rail; disarming leaves it open (deliberate asymmetry)', async () => {
+  it('rail starts hidden; arming auto-opens it; disarming leaves it open (deliberate asymmetry)', async () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))
     await new Promise((r) => setTimeout(r, 0))
     const toggle = () => wrapper.find('[data-test="ann-rail-toggle"]')
-    expect(toggle().attributes('aria-expanded')).toBe('true') // default open
-    await toggle().trigger('click') // reviewer closed it
-    expect(toggle().attributes('aria-expanded')).toBe('false')
-    await wrapper.find('[data-test="ann-arm"]').trigger('click') // arm → reopen
+    expect(toggle().attributes('aria-expanded')).toBe('false') // default HIDDEN (user decision 2026-07-05)
+    await wrapper.find('[data-test="ann-arm"]').trigger('click') // arm → open
     expect(toggle().attributes('aria-expanded')).toBe('true')
     await wrapper.find('[data-test="ann-arm"]').trigger('click') // disarm → rail stays
     expect(toggle().attributes('aria-expanded')).toBe('true')

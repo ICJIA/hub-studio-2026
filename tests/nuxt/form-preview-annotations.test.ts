@@ -79,6 +79,9 @@ describe('editor Live-preview modal — annotations (Addendum A)', () => {
     })
     await openPreview(wrapper)
     await new Promise((r) => setTimeout(r, 0))
+    // The rail starts hidden (user decision 2026-07-05) — open it to see the thread.
+    ;(document.querySelector('[data-test="ann-rail-toggle"]') as HTMLButtonElement).click()
+    await new Promise((r) => setTimeout(r, 0))
     expect(document.body.textContent).toContain('Modal sees this thread.')
     const mark = document.querySelector('mark[data-ann-id="seed-m1"]')
     expect(mark, 'stored annotation painted in modal').toBeTruthy()

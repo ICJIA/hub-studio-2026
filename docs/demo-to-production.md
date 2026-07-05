@@ -17,11 +17,11 @@ mostly Strapi-side setup and verification, not code.
 
 | Concern | Demo build (`NUXT_PUBLIC_DEMO_MODE=true`) | Production build (flag unset) |
 | --- | --- | --- |
-| Login | Demo bypass + role buttons only; real login impossible | Real Strapi admin login (`/admin/login` → JWT → `/admin/users/me` with roles); bypass compiled out |
+| Login | Demo bypass + role buttons only; real login impossible | Real Strapi admin login (`/admin/login` → JWT → `/admin/users/me` with roles); the bypass code ships but is unreachable (`import.meta.dev` and `demoMode` both false) |
 | Content | In-memory demo repository, seeded synthetic articles | `$api` → Content-Manager API on `https://v2.hub.icjia-api.cloud` |
 | Annotations | localStorage adapter (per-browser) | Strapi adapter → `review-annotation` content type (shared across reviewers/devices) — selected by `isDemoData()` in `app/composables/useAnnotations.ts` |
 | Writes | Hard-blocked (`assertWritesAllowed()` throws) | Real creates/updates/publish via the admin JWT |
-| Sample-content generators | Visible (dev/demo only) | Auto-removed |
+| Sample-content generators | Local dev only (`import.meta.dev` — already absent from the deployed demo) | Absent |
 | CSP / headers | `deploy/headers-demo.txt` copied over `_headers` (connect-src 'self') | `public/_headers` production set (connect-src limits to the Strapi host + Mailgun) |
 | Server routes | None (pure static) | `server/api/request-review.post.ts` deploys as a Netlify Function (Mailgun + rate limit) |
 
@@ -52,16 +52,35 @@ Do this any time before cutover — it does not affect the running Hub.
    the demo. No Studio-side user provisioning exists — accounts live in Strapi.
 5. **Smoke test** (from INSTALL.md): `GET /api/review-annotations` with the dev API token —
    `200 {"data":[]}` or `403` both prove the type deployed.
+6. **CORS.** The Studio browser calls Strapi's admin + content-manager routes cross-origin
+   (`app/plugins/api.ts` uses `strapiBaseUrl` directly — no proxy). If the Strapi project
+   restricts CORS origins, add the Studio's production origin AND the staging origin used in
+   §2. Symptom if missed: login fails with CORS errors in the console, not a 401.
+
+> **Order matters:** finish this section on the PRODUCTION Strapi before starting §2 —
+> the staging Studio talks to the production instance (see the warning below).
 
 ## 2. Staging validation (do this BEFORE approval day)
 
 Stand up a second Netlify site (or a branch deploy) so the public demo keeps running
 untouched. Point it at the SAME repo with the production build settings from §3.
 
+> **⚠️ Staging writes to the PRODUCTION Strapi.** `strapiBaseUrl` is hardcoded to
+> `https://v2.hub.icjia-api.cloud` whenever the demo flag is unset (`studio.config.ts`) —
+> there is no separate staging backend unless you temporarily edit that line (and the
+> `connect-src` in `public/_headers`) to point at one. If you validate against production:
+> use clearly-named throwaway drafts (e.g. `ZZZ Staging Test — delete me`), do the
+> publish/unpublish round-trip on that throwaway only, and delete the test drafts and test
+> annotations afterward.
+
 Checklist — every line exercised with a real Strapi account, none with admin/admin:
 
-- [ ] Real login as an **Author**: sees drafts, no Publish control anywhere.
+- [ ] Real login as an **Author**: sees drafts, no Publish control anywhere. (A CORS error
+      in the console here means §1.6 wasn't done.)
 - [ ] Real login as an **Editor**: sees Publish/Unpublish + the queue.
+- [ ] **First login of a brand-new account**: the onboarding/profile gate behaves — create
+      the Studio profile, land on the dashboard; second login skips the gate. (The gate is
+      FAIL-OPEN by design: an API error must never lock anyone out.)
 - [ ] Content list shows REAL articles; open one in the editor; edit + save a draft; confirm
       the change in the Strapi admin.
 - [ ] **Annotations end-to-end:** in the Live preview (and on `/preview/...`), highlight →
@@ -115,6 +134,10 @@ leaving the demo site's TOML untouched — see note below):
 
 No Strapi secret is needed in the Studio: users authenticate with their own admin JWTs.
 
+Optional hardening: the Studio is an internal tool on a public URL — consider adding
+`X-Robots-Tag: noindex` to `public/_headers` (there is no robots.txt today) so the login
+page never gets indexed.
+
 ## 4. Cutover day (≈30 minutes once §1–§3 are done)
 
 1. Freeze: no demo pushes to `main` during the window.
@@ -123,9 +146,13 @@ No Strapi secret is needed in the Studio: users authenticate with their own admi
    request-review route), unlike the demo's "No functions deployed".
 4. Run the §2 checklist's top five lines against production (login ×2 roles, real content,
    one annotation round-trip, one publish round-trip).
-5. Point people at the production URL. The demo site can keep running as long as it's useful —
+5. **Custom domain, if one is planned** (e.g. `studio.icjia.example`): add it to the
+   production Netlify site, wait for DNS + the auto-provisioned certificate, and re-run the
+   login smoke test from that hostname (it must also be in Strapi's CORS allowlist, §1.6).
+   Do this before announcing — HSTS (`max-age=31536000`) makes the hostname hard to walk back.
+6. Point people at the production URL. The demo site can keep running as long as it's useful —
    it is isolated by design (own site, own flag, zero backend reach).
-6. Tag the release: version + date in `CHANGELOG.md` (per repo convention), `git tag`.
+7. Tag the release: version + date in `CHANGELOG.md` (per repo convention), `git tag`.
 
 ## 5. Rollback
 
@@ -150,3 +177,7 @@ The demo is unaffected by anything above, so rollback is only about the producti
   worth keeping should be re-entered against real drafts after cutover.
 - **Coarse RBAC on annotations** (any Author/Editor can CRUD all of them at the API level)
   is intentional for launch; the UI enforces the polite rules.
+- **Non-blocking polish backlog:** the Phase-1 final review logged a hardening follow-up
+  list at the end of `.superpowers/sdd/progress.md` (annotation a11y riders: swatch
+  radiogroup semantics, roving toolbar tabindex, drawer dialog semantics, document-level
+  keyboard-create listener). None block launch; keep them visible.

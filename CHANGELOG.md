@@ -32,6 +32,7 @@ _Added (later 2026-07-05)_
 
 _Added (later 2026-07-05)_
 
+- **Card view polish:** the Draft badge is now **red** (green = published, red = draft — a go/stop read at a glance; light-mode `--ui-error` darkened to the 700 shade so the white-on-red badge clears AA, same discipline as the other tokens), and the **card artwork is clickable** — the image links to the editor with a proper accessible name.
 - **Card view for content lists — and it's the default.** Every list (dashboard + manage, all three types) now opens as visual media cards: splash/image on the left with the **status badge riding the artwork corner** (Published/Draft at a glance), title + date + type chip + authors and a clean plain-text excerpt (markdown stripped via `lib/text-excerpt.ts`) on the right, plus the same tools as the table — Edit, Preview (named tab), and the publish toggle slot. A **Cards / List** toggle switches to the original columnar table; the choice persists per browser (`icjia-studio-content-view-v1`). Entries without an image get a quiet placeholder block. Measured 0 axe violations in both themes.
 
 _Changed (later 2026-07-05, third pass — architecture simplification)_

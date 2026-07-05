@@ -183,6 +183,10 @@ describe('ContentList — card view (visual default) vs list toggle', () => {
     expect(wrapper.find('[data-test="content-cards"]').exists()).toBe(true)
     expect(wrapper.find('table').exists()).toBe(false)
     expect(wrapper.find('img').attributes('src')).toBe('/images/gavel.jpg')
+    // The artwork itself is a door to the editor (user request 2026-07-05).
+    const imageLink = wrapper.find('[data-test="card-image-link"]')
+    expect(imageLink.attributes('href')).toBe('/edit/article/c1')
+    expect(imageLink.attributes('aria-label')).toContain('Edit')
     expect(wrapper.text()).toContain('Plain bold abstract with a link inside.') // markdown stripped
     expect(wrapper.text()).toContain('Published')
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
@@ -214,6 +218,21 @@ describe('ContentList — card view (visual default) vs list toggle', () => {
     })
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.find('[data-test="content-cards"] [data-test="slot-probe"]').exists()).toBe(true)
+  })
+
+  it('card status colors: green = Published, RED = Draft (user decision 2026-07-05)', async () => {
+    listPageMock.mockResolvedValueOnce(makePagedResult([
+      CARD_ITEM,
+      { ...CARD_ITEM, documentId: 'c-draft', title: 'Draft Card', publishedAt: null },
+    ]))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    const badges = wrapper.findAll('[data-test="card-status"]')
+    expect(badges).toHaveLength(2)
+    expect(badges[0]!.text()).toBe('Published')
+    expect(badges[0]!.classes().join(' ')).toContain('bg-success')
+    expect(badges[1]!.text()).toBe('Draft')
+    expect(badges[1]!.classes().join(' ')).toContain('bg-error')
   })
 
   it('cards without an image render the neutral placeholder block', async () => {

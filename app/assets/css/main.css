@@ -33,6 +33,9 @@
      (dark-card text needs light shades, measured clean). */
   --ui-success: var(--ui-color-success-800);
   --ui-warning: var(--ui-color-warning-800);
+  /* Same AA discipline for error (the card view's red Draft badge is white-on-solid-error:
+     the 500 default measures ~4:1; 700 clears 4.5:1 with margin in both usages). */
+  --ui-error: var(--ui-color-error-700);
 
   /* Text — one step darker than stock (dimmed-400 / muted-500 / toned-600 /
      text-700 / highlighted-900) so muted/secondary text clears AA on the canvas. */
@@ -80,6 +83,7 @@
      shades (the 2026-07-05 axe sweep measured dark mode clean with these). */
   --ui-success: var(--ui-color-success-400);
   --ui-warning: var(--ui-color-warning-400);
+  --ui-error: var(--ui-color-error-400);
 }
 
 /* The page canvas — a soft slate (light) / near-black (dark) so cards lift off it. */

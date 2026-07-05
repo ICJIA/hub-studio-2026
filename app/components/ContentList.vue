@@ -174,21 +174,34 @@ function authorLabel(item: AnyItem): string {
           <li v-for="item in result.items" :key="item.documentId">
             <article class="flex flex-col sm:flex-row gap-4 rounded-lg border border-default bg-default p-3 sm:p-4 shadow-sm transition-shadow hover:shadow-md hover:border-accented">
               <div class="relative sm:w-56 shrink-0">
-                <img
-                  v-if="imageUrlOf(item)"
-                  :src="imageUrlOf(item)!"
-                  alt=""
-                  loading="lazy"
-                  class="h-40 sm:h-36 w-full rounded-md object-cover"
+                <!-- The artwork is a door to the editor (aria-label carries the name — the
+                     image is decorative). The badge stays OUTSIDE the link so the accessible
+                     name stays clean. -->
+                <NuxtLink
+                  data-test="card-image-link"
+                  :to="`/edit/${type}/${item.documentId}`"
+                  :aria-label="`Edit ${item.title || '(untitled)'}`"
+                  class="block rounded-md transition hover:opacity-90"
                 >
-                <div v-else data-test="card-image-placeholder" class="h-40 sm:h-36 w-full rounded-md bg-muted flex items-center justify-center" aria-hidden="true">
-                  <UIcon name="i-lucide-image" class="size-7 text-dimmed" />
-                </div>
-                <!-- Signature: state rides the artwork — Published/Draft reads at a glance. -->
+                  <img
+                    v-if="imageUrlOf(item)"
+                    :src="imageUrlOf(item)!"
+                    alt=""
+                    loading="lazy"
+                    class="h-40 sm:h-36 w-full rounded-md object-cover"
+                  >
+                  <div v-else data-test="card-image-placeholder" class="h-40 sm:h-36 w-full rounded-md bg-muted flex items-center justify-center" aria-hidden="true">
+                    <UIcon name="i-lucide-image" class="size-7 text-dimmed" />
+                  </div>
+                </NuxtLink>
+                <!-- Signature: state rides the artwork — Published/Draft reads at a glance.
+                     Green = published, RED = draft (user decision 2026-07-05: a stronger
+                     go/stop read than the table's quiet gray). -->
                 <UBadge
+                  data-test="card-status"
                   class="absolute left-2 top-2 shadow-sm"
                   :label="item.publishedAt ? 'Published' : 'Draft'"
-                  :color="item.publishedAt ? 'success' : 'neutral'"
+                  :color="item.publishedAt ? 'success' : 'error'"
                   variant="solid"
                   size="sm"
                 />

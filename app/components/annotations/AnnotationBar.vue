@@ -8,11 +8,12 @@
 import { ANNOTATION_COLORS, type AnnotationColor } from '~/types/annotations'
 
 type Filter = 'open' | 'resolved' | 'all'
-const props = defineProps<{ armed: boolean; color: AnnotationColor; filter: Filter; openCount: number; railOpen: boolean }>()
+const props = defineProps<{ armed: boolean; color: AnnotationColor; filter: Filter; openCount: number; railOpen: boolean; cleanView: boolean }>()
 const emit = defineEmits<{
   'update:armed': [value: boolean]
   'update:color': [value: AnnotationColor]
   'update:filter': [value: Filter]
+  'update:cleanView': [value: boolean]
   'toggle-rail': []
 }>()
 
@@ -31,7 +32,21 @@ const SWATCH: Record<AnnotationColor, string> = {
 
 <template>
   <div class="ann-bar flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Review tools">
+    <!-- Clean view (plain published article): collapses every review control to this one
+         toggle — some readers just want the article, no highlights, no comments. -->
     <UButton
+      data-test="ann-clean-toggle"
+      size="xs"
+      :variant="cleanView ? 'solid' : 'outline'"
+      color="neutral"
+      :icon="cleanView ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+      :aria-pressed="cleanView ? 'true' : 'false'"
+      :label="cleanView ? 'Show review tools' : 'Clean view'"
+      :title="cleanView ? 'Bring back highlights and comments' : 'Read the article without highlights or comments'"
+      @click="emit('update:cleanView', !cleanView)"
+    />
+    <UButton
+      v-if="!cleanView"
       data-test="ann-arm"
       size="xs"
       :variant="armed ? 'solid' : 'outline'"
@@ -42,7 +57,7 @@ const SWATCH: Record<AnnotationColor, string> = {
       :title="armed ? 'Select text, then press Enter to comment' : 'Turn on highlighting'"
       @click="emit('update:armed', !armed)"
     />
-    <div class="flex items-center gap-1" role="group" aria-label="Highlight color">
+    <div v-if="!cleanView" class="flex items-center gap-1" role="group" aria-label="Highlight color">
       <button
         v-for="c in ANNOTATION_COLORS"
         :key="c"
@@ -56,6 +71,7 @@ const SWATCH: Record<AnnotationColor, string> = {
       />
     </div>
     <UButton
+      v-if="!cleanView"
       data-test="ann-filter"
       size="xs"
       variant="outline"
@@ -64,6 +80,7 @@ const SWATCH: Record<AnnotationColor, string> = {
       @click="cycleFilter"
     />
     <UButton
+      v-if="!cleanView"
       data-test="ann-rail-toggle"
       size="xs"
       variant="outline"

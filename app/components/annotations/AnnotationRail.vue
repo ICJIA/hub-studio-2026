@@ -4,16 +4,31 @@
   resolve/reopen, delete (creator or Editor — canDeleteAnnotation), click-quote → jump
   to the highlight. Reads the auth store directly (PublishButton precedent). Comment
   bodies are Vue-interpolated text — NEVER v-html.
+
+  Two layout modes:
+  - flow (mobile drawer): cards stack normally.
+  - ALIGNED (desktop aside passes `alignTops`, px per annotation id): Word-style margin
+    comments — each card absolutely positioned level with its highlight, overlaps pushed
+    down by the pure collision pass in lib/annotations/rail-layout.ts. Card heights are
+    live-measured (ResizeObserver: replies grow cards), orphans align to the top.
 -->
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from '#imports'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from '#imports'
 import type { RailThread } from '~/types/annotations'
 import { canDeleteAnnotation } from '~/lib/annotations/attribution'
+import { layoutRailCards } from '~/lib/annotations/rail-layout'
 import { useAuthStore } from '~/stores/auth'
 
 type Filter = 'open' | 'resolved' | 'all'
 
-const props = defineProps<{ threads: RailThread[]; filter: Filter; activeId: string | null }>()
+const props = defineProps<{
+  threads: RailThread[]
+  filter: Filter
+  activeId: string | null
+  /** Word-style alignment (desktop rail): px top per annotation id, measured from the
+   *  painted mark; null/absent id → orphan → aligns to the top. Omit for flow layout. */
+  alignTops?: Record<string, number | null>
+}>()
 const emit = defineEmits<{
   reply: [id: string, body: string]
   resolve: [id: string, resolved: boolean]
@@ -41,6 +56,53 @@ const visible = computed(() => {
     return a.annotation.createdAt.localeCompare(b.annotation.createdAt)
   })
 })
+
+// ---- Word-style aligned mode (only when the parent passes alignTops) ----
+const aligned = computed(() => props.alignTops !== undefined)
+const CARD_GAP = 12
+const FALLBACK_CARD_HEIGHT = 140 // pre-measure estimate; corrected on the next frame
+
+const cardEls = new Map<string, HTMLElement>()
+const cardHeights = ref<Record<string, number>>({})
+
+function setCardEl(id: string, el: unknown) {
+  if (el instanceof HTMLElement) cardEls.set(id, el)
+  else cardEls.delete(id)
+}
+
+let ro: ResizeObserver | null = null
+function measureCards() {
+  const next: Record<string, number> = {}
+  for (const [id, el] of cardEls) next[id] = el.offsetHeight || FALLBACK_CARD_HEIGHT
+  cardHeights.value = next
+}
+/** (Re)observe the current card set — cards mount/unmount with filter changes. */
+async function observeCards() {
+  if (!aligned.value) return
+  await nextTick()
+  measureCards()
+  if (typeof ResizeObserver === 'undefined') return
+  ro?.disconnect()
+  ro = new ResizeObserver(() => measureCards())
+  for (const el of cardEls.values()) ro.observe(el)
+}
+watch(() => [props.threads, props.filter, props.alignTops] as const, observeCards, { deep: true })
+onMounted(observeCards)
+onBeforeUnmount(() => ro?.disconnect())
+
+const layout = computed(() => layoutRailCards(
+  visible.value.map((t) => ({
+    id: t.annotation.id,
+    desiredTop: Math.max(0, props.alignTops?.[t.annotation.id] ?? 0),
+    height: cardHeights.value[t.annotation.id] ?? FALLBACK_CARD_HEIGHT,
+  })),
+  CARD_GAP,
+))
+
+function cardStyle(id: string): Record<string, string> | undefined {
+  if (!aligned.value) return undefined
+  return { position: 'absolute', left: '0', right: '0', top: `${layout.value.positions[id] ?? 0}px` }
+}
 
 function sendReply(id: string) {
   const body = (drafts.value[id] ?? '').trim()
@@ -73,17 +135,28 @@ onMounted(() => { void scrollToActive(props.activeId) })
 </script>
 
 <template>
-  <section ref="rootEl" class="ann-rail" aria-label="Review comments">
+  <section
+    ref="rootEl"
+    class="ann-rail"
+    :class="{ 'ann-rail--aligned': aligned }"
+    :style="aligned ? { position: 'relative', height: `${layout.totalHeight}px` } : undefined"
+    aria-label="Review comments"
+  >
     <p v-if="visible.length === 0" class="text-sm text-muted p-3">
       No {{ filter === 'all' ? '' : filter + ' ' }}comments yet. Turn on <strong>Highlight</strong> and select text to add one.
     </p>
     <article
       v-for="t in visible"
       :key="t.annotation.id"
+      :ref="(el) => setCardEl(t.annotation.id, el)"
       :data-card-id="t.annotation.id"
       data-test="ann-card"
-      class="rounded-lg border p-3 mb-3 bg-white dark:bg-neutral-900"
-      :class="t.annotation.id === activeId ? 'border-blue-600 dark:border-blue-400' : 'border-neutral-200 dark:border-neutral-700'"
+      class="rounded-lg border p-3 bg-default"
+      :class="[
+        aligned ? 'ann-card--aligned' : 'mb-3',
+        t.annotation.id === activeId ? 'border-primary' : 'border-default',
+      ]"
+      :style="cardStyle(t.annotation.id)"
     >
       <header class="flex items-center gap-2 mb-1">
         <span class="h-3 w-3 rounded-full shrink-0" :class="`ann-dot--${t.annotation.color}`" aria-hidden="true" />
@@ -117,7 +190,7 @@ onMounted(() => { void scrollToActive(props.activeId) })
           data-test="ann-reply-input"
           :value="drafts[t.annotation.id] ?? ''"
           type="text"
-          class="flex-1 rounded border border-neutral-300 dark:border-neutral-600 bg-transparent px-2 py-1 text-sm"
+          class="flex-1 rounded border border-accented bg-transparent px-2 py-1 text-sm"
           placeholder="Reply…"
           :aria-label="`Reply to ${t.annotation.createdBy.name}`"
           @input="drafts = { ...drafts, [t.annotation.id]: ($event.target as HTMLInputElement).value }"
@@ -156,4 +229,9 @@ onMounted(() => { void scrollToActive(props.activeId) })
 .ann-dot--green  { background-color: #bbf7d0; }
 .ann-dot--blue   { background-color: #bfdbfe; }
 .ann-dot--pink   { background-color: #fbcfe8; }
+
+/* Aligned cards glide to their recomputed spots (new replies, filter flips, reflows). */
+@media (prefers-reduced-motion: no-preference) {
+  .ann-card--aligned { transition: top 150ms ease-out; }
+}
 </style>

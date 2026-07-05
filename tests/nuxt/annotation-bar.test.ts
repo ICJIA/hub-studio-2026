@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import AnnotationBar from '~/components/annotations/AnnotationBar.vue'
 
-const base = { armed: false, color: 'yellow' as const, filter: 'open' as const, openCount: 3, railOpen: true }
+const base = { armed: false, color: 'yellow' as const, filter: 'open' as const, openCount: 3, railOpen: true, cleanView: false }
 
 describe('AnnotationBar', () => {
   it('shows the open-thread count and arms the highlighter', async () => {
@@ -28,6 +28,23 @@ describe('AnnotationBar', () => {
   it('announces armed state accessibly', async () => {
     const wrapper = await mountSuspended(AnnotationBar, { props: { ...base, armed: true } })
     expect(wrapper.find('[data-test="ann-arm"]').attributes('aria-pressed')).toBe('true')
+  })
+  it('clean view collapses every review control to the single toggle and flips its label', async () => {
+    const off = await mountSuspended(AnnotationBar, { props: base })
+    const toggle = off.find('[data-test="ann-clean-toggle"]')
+    expect(toggle.text()).toContain('Clean view')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    expect(off.find('[data-test="ann-arm"]').exists()).toBe(true)
+    await toggle.trigger('click')
+    expect(off.emitted('update:cleanView')![0]).toEqual([true])
+
+    const on = await mountSuspended(AnnotationBar, { props: { ...base, cleanView: true } })
+    const onToggle = on.find('[data-test="ann-clean-toggle"]')
+    expect(onToggle.text()).toContain('Show review tools')
+    expect(onToggle.attributes('aria-pressed')).toBe('true')
+    expect(on.find('[data-test="ann-arm"]').exists()).toBe(false)
+    expect(on.find('[data-test="ann-filter"]').exists()).toBe(false)
+    expect(on.find('[data-test="ann-rail-toggle"]').exists()).toBe(false)
   })
   it('rail toggle reads as an explicit show/hide toggle (label + aria-expanded track railOpen)', async () => {
     const open = await mountSuspended(AnnotationBar, { props: { ...base, railOpen: true } })

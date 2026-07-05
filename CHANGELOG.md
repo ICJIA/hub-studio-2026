@@ -25,6 +25,15 @@ _Fixed (accessibility — full axe-core WCAG 2.1 AA sweep, light AND dark)_
 - **Type-list dropdown had no accessible name** (axe `button-name`, critical) — labelled.
 - **Markdown editor host carried `aria-labelledby` on a generic div** (axe `aria-prohibited-attr`) — now `role="group"`.
 
+_Added (later 2026-07-05)_
+
+- **Word-style comment alignment.** Desktop comment cards now sit level with the passage they annotate — measured from the painted highlight, with overlapping cards pushed down by a pure collision pass (`lib/annotations/rail-layout.ts`) and re-measured on reflows (images, resizes, the rail mounting). Cards glide to new spots; clicking a card/highlight still cross-links the pair. A wider gutter separates the text column from the cards.
+- **Clean view toggle** in the reviewer bar: read the article exactly as published — no highlights painted, no comments panel, review controls collapsed to the one toggle. Pure overlay; stored threads untouched.
+
+_Fixed (later 2026-07-05)_
+
+- **Preview-modal controls invisible in dark mode.** The modal surface is pinned white (the published look), but dark mode flipped the semantic tokens to light-on-dark — making Restore/Close/link chrome light-on-white. A `.preview-modal-light` scope re-declares the light token set inside the modal (custom-property proximity wins), and the annotation card/composer surfaces moved from literal `dark:` classes to semantic tokens so they follow whichever scope they render in. Modal + preview page re-measured: 0 axe violations, both themes.
+
 _Changed_
 
 - **Live preview opens with comments hidden** (user decision): the preview starts as a clean read; the rail appears via Show comments, opening a highlight, or arming the highlighter. Also keeps the mobile drawer from covering content on load.

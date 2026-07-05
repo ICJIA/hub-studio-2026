@@ -137,7 +137,7 @@ defineExpose({ submit, setField, errors, model })
 
     <UModal v-model:open="previewOpen" :fullscreen="previewExpanded" :ui="{ content: previewExpanded ? undefined : 'max-w-6xl' }">
       <template #content>
-        <div class="flex flex-col bg-white" :class="previewExpanded ? 'h-full' : 'max-h-[88vh]'">
+        <div class="preview-modal-light flex flex-col bg-white" :class="previewExpanded ? 'h-full' : 'max-h-[88vh]'">
           <div class="flex items-center justify-between gap-3 border-b border-default px-4 py-2">
             <span class="text-sm font-medium text-gray-700">Published preview</span>
             <div class="flex items-center gap-2">

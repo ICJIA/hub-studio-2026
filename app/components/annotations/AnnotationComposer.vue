@@ -67,7 +67,7 @@ function save() {
 <template>
   <div
     ref="rootEl"
-    class="ann-composer fixed z-50 w-80 max-w-[calc(100vw-32px)] rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-3 shadow-lg"
+    class="ann-composer fixed z-50 w-80 max-w-[calc(100vw-32px)] rounded-lg border border-accented bg-default p-3 shadow-lg"
     :style="style"
     role="dialog"
     aria-label="Add review comment"
@@ -78,7 +78,7 @@ function save() {
       ref="textareaEl"
       v-model="body"
       rows="3"
-      class="w-full rounded border border-neutral-300 dark:border-neutral-600 bg-transparent p-2 text-sm"
+      class="w-full rounded border border-accented bg-transparent p-2 text-sm"
       placeholder="Add a comment for the author…"
       aria-label="Comment text"
     />

@@ -82,6 +82,31 @@
   --ui-warning: var(--ui-color-warning-400);
 }
 
+/* The editor's Live-preview modal is pinned WHITE in both themes (the published look).
+   In dark mode the app-level tokens flip to light-on-dark values, which made the modal's
+   own chrome (Restore/Close buttons, the reviewer bar) light-on-white — near-invisible
+   (user report 2026-07-05). Re-declaring the LIGHT token set on the modal wrapper wins by
+   custom-property proximity, so every semantic-token component inside renders light-mode
+   regardless of the app theme. Values mirror the :root block above — keep them in sync. */
+.preview-modal-light {
+  --ui-primary: var(--ui-color-primary-700);
+  --ui-success: var(--ui-color-success-800);
+  --ui-warning: var(--ui-color-warning-800);
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-600);
+  --ui-text-toned: var(--ui-color-neutral-700);
+  --ui-text: var(--ui-color-neutral-800);
+  --ui-text-highlighted: var(--ui-color-neutral-900);
+  --ui-text-inverted: #ffffff;
+  --ui-bg: #ffffff;
+  --ui-bg-muted: var(--ui-color-neutral-100);
+  --ui-bg-elevated: var(--ui-color-neutral-100);
+  --ui-bg-accented: var(--ui-color-neutral-200);
+  --ui-border: var(--ui-color-neutral-200);
+  --ui-border-muted: var(--ui-color-neutral-100);
+  --ui-border-accented: var(--ui-color-neutral-300);
+}
+
 /* The page canvas — a soft slate (light) / near-black (dark) so cards lift off it. */
 body { background-color: var(--ui-color-neutral-50); }
 .dark body { background-color: var(--ui-color-neutral-950); }

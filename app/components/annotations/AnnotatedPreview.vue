@@ -49,6 +49,10 @@ function initialColor(): AnnotationColor {
 const armed = ref(false)
 const color = ref<AnnotationColor>('yellow')
 const filter = ref<'open' | 'resolved' | 'all'>('open')
+/** Clean view (user request 2026-07-05): read the article exactly as published — no painted
+ *  highlights, no rail, review controls collapsed to the single toggle. Overlay-only, so
+ *  flipping it never touches stored threads. */
+const cleanView = ref(false)
 /** Comments start HIDDEN (user decision 2026-07-05): the preview opens as a clean read;
  *  the rail appears on demand — the Show comments toggle, opening a highlight, or arming
  *  the highlighter (setArmed below). Also keeps the mobile drawer from covering content
@@ -65,8 +69,33 @@ const composerReturnFocus = ref<Element | null>(null)
 const resolvedStarts = ref<Record<string, number | null>>({})
 
 const previewWrap = ref<HTMLElement | null>(null)
+/** The preview+rail flex row — the coordinate origin for Word-style card alignment
+ *  (the aside starts at this row's top, so mark tops measured against it ARE card tops). */
+const rowEl = ref<HTMLElement | null>(null)
 function annotationContainer(): Element | null {
   return previewWrap.value?.querySelector('.published-content') ?? null
+}
+
+/** id → px top of the painted mark within the row (null = orphan). Drives the desktop
+ *  rail's Word-style alignment; measured after every repaint and on content reflow. */
+const markTops = ref<Record<string, number | null>>({})
+function measureMarkTops() {
+  const container = annotationContainer()
+  const row = rowEl.value
+  if (!container || !row) { markTops.value = {}; return }
+  const rowTop = row.getBoundingClientRect().top
+  const tops: Record<string, number | null> = {}
+  for (const a of ann.annotations.value) {
+    const m = container.querySelector<HTMLElement>(`mark[data-ann-id="${CSS.escape(a.id)}"]`)
+    tops[a.id] = m ? Math.round(m.getBoundingClientRect().top - rowTop) : null
+  }
+  markTops.value = tops
+}
+/** rAF-coalesced re-measure for reflows repaint() can't see (images loading, resizes). */
+let reflowRaf = 0
+function onContentReflow() {
+  if (reflowRaf) return
+  reflowRaf = requestAnimationFrame(() => { reflowRaf = 0; measureMarkTops() })
 }
 
 const openCount = computed(() => ann.annotations.value.filter((a) => !a.resolved).length)
@@ -101,6 +130,11 @@ function repaint() {
   const container = annotationContainer()
   if (!container) return
   clearAnnotations(container)
+  if (cleanView.value) { // plain published article: nothing painted, nothing measured
+    resolvedStarts.value = {}
+    markTops.value = {}
+    return
+  }
   const starts: Record<string, number | null> = {}
   for (const a of ann.annotations.value) {
     const span = resolveAnchor(container, a.anchor)
@@ -117,6 +151,7 @@ function repaint() {
     }
   }
   resolvedStarts.value = starts
+  measureMarkTops()
 }
 
 /** Open a thread from its highlight: activate, open the rail, let the rail scroll to it. */
@@ -255,16 +290,40 @@ async function onStorage(e: StorageEvent) {
 }
 
 watch(filter, () => repaint())
+watch(cleanView, (clean) => {
+  if (clean) armed.value = false // no capture surface in the plain read
+  repaint()
+})
+/** Mounting/unmounting the aside reflows the prose column (it narrows/widens), moving every
+ *  mark — repaint()'s synchronous measure ran against the PRE-mount geometry. Re-measure
+ *  after the DOM settles, plus one more frame later for the post-reflow layout. */
+watch([railOpen, cleanView], async () => {
+  await nextTick()
+  measureMarkTops()
+  onContentReflow()
+})
 
+let contentResizeObserver: ResizeObserver | null = null
 onMounted(async () => {
   color.value = initialColor()
   window.addEventListener('storage', onStorage)
+  window.addEventListener('resize', onContentReflow)
+  if (typeof ResizeObserver !== 'undefined' && previewWrap.value) {
+    contentResizeObserver = new ResizeObserver(onContentReflow)
+    contentResizeObserver.observe(previewWrap.value)
+  }
   await ann.load()
   await nextTick() // let the slotted Published*Preview render its v-html body first
   repaint()
+  onContentReflow() // second measure a frame later — fonts/images may still be settling
 })
 
-onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', onStorage)
+  window.removeEventListener('resize', onContentReflow)
+  contentResizeObserver?.disconnect()
+  if (reflowRaf) cancelAnimationFrame(reflowRaf)
+})
 </script>
 
 <template>
@@ -281,16 +340,18 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
           :filter="filter"
           :open-count="openCount"
           :rail-open="railOpen"
+          :clean-view="cleanView"
           @update:armed="setArmed"
           @update:color="setColor"
           @update:filter="filter = $event"
+          @update:clean-view="cleanView = $event"
           @toggle-rail="railOpen = !railOpen"
         />
         <slot name="bar-actions" />
       </div>
     </div>
 
-    <div class="flex items-start gap-6">
+    <div ref="rowEl" class="flex items-start gap-6">
       <div
         ref="previewWrap"
         class="min-w-0 flex-1"
@@ -302,14 +363,17 @@ onBeforeUnmount(() => window.removeEventListener('storage', onStorage))
         <slot />
       </div>
 
-      <aside v-if="railOpen" class="ann-rail-wrap hidden lg:block w-80 shrink-0 sticky top-[calc(var(--ann-sticky-top,4rem)+4rem)] max-h-[calc(100vh-var(--ann-sticky-top,4rem)-5rem)] overflow-y-auto">
-        <AnnotationRail :threads="threads" :filter="filter" :active-id="activeId"
+      <!-- Word-style margin comments: non-scrolling column, cards absolutely aligned to their
+           highlights via :align-tops (lib/annotations/rail-layout collision pass). lg:ml-4 on
+           top of the row's gap-6 keeps a clear gutter between the text column and the cards. -->
+      <aside v-if="railOpen && !cleanView" class="ann-rail-wrap hidden lg:block w-80 shrink-0 lg:ml-4 relative">
+        <AnnotationRail :threads="threads" :filter="filter" :active-id="activeId" :align-tops="markTops"
           @reply="onReply" @resolve="onResolve" @remove="onRemove" @jump="jumpToMark" />
       </aside>
     </div>
 
     <!-- Mobile: the rail as a slide-over drawer (z above the preview modal's overlay). -->
-    <div v-if="railOpen" class="lg:hidden fixed inset-y-0 right-0 z-[60] w-80 max-w-full bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-700 shadow-xl overflow-y-auto p-3">
+    <div v-if="railOpen && !cleanView" class="lg:hidden fixed inset-y-0 right-0 z-[60] w-80 max-w-full bg-default border-l border-default shadow-xl overflow-y-auto p-3">
       <div class="flex justify-end mb-2">
         <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close comments" @click="railOpen = false" />
       </div>

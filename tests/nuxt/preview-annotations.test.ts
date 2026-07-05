@@ -231,6 +231,20 @@ describe('preview page — annotations', () => {
     expect(active?.getAttribute('data-ann-id')).toBe(created!.id)
     wrapper.unmount()
   })
+  it('Clean view unpaints all highlights and hides the review controls; toggling back repaints', async () => {
+    const wrapper = await mountSuspended(PreviewPage)
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('mark[data-ann-id="seed-1"]').exists()).toBe(true)
+    await wrapper.find('[data-test="ann-clean-toggle"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('mark[data-ann-id="seed-1"]').exists()).toBe(false) // plain article
+    expect(wrapper.find('[data-test="ann-arm"]').exists()).toBe(false)      // controls collapsed
+    await wrapper.find('[data-test="ann-clean-toggle"]').trigger('click')   // back to review view
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('mark[data-ann-id="seed-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="ann-arm"]').exists()).toBe(true)
+  })
   it('rail starts hidden; arming auto-opens it; disarming leaves it open (deliberate asymmetry)', async () => {
     const wrapper = await mountSuspended(PreviewPage)
     await new Promise((r) => setTimeout(r, 0))

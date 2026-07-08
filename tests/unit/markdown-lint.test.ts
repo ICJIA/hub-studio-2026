@@ -56,4 +56,14 @@ describe('lintMarkdown', () => {
       expect(Array.isArray(lintMarkdown(body))).toBe(true)
     }
   })
+
+  it('flags headings on CRLF (\\r\\n) input (line endings normalized)', () => {
+    const issues = lintMarkdown('## Section\r\n\r\n#### Too deep\r\n')
+    expect(issues.some((i) => i.rule === 'heading-increment' && i.line === 3)).toBe(true)
+  })
+
+  it('flags BOTH empty links when two are adjacent with no separator', () => {
+    const issues = lintMarkdown('[](a)[](b)\n')
+    expect(issues.filter((i) => i.rule === 'empty-link-text')).toHaveLength(2)
+  })
 })

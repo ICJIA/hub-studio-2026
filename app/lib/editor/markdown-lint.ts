@@ -23,13 +23,13 @@ const FENCE_RE = /^\s*(?:```|~~~)/
 // ATX heading: 1–6 hashes, optional text, optional trailing closing hashes. (Setext ===/--- not handled.)
 const HEADING_RE = /^(#{1,6})(?:[ \t]+(.*?))?[ \t]*#*[ \t]*$/
 const IMAGE_RE = /!\[([^\]]*)\]\([^)]*\)/g
-// Inline link NOT preceded by '!': capture the leading char so images are excluded.
-const LINK_RE = /(^|[^!])\[([^\]]*)\]\([^)]*\)/g
+// Inline link NOT preceded by '!': use negative lookbehind to exclude images.
+const LINK_RE = /(?<!!)\[([^\]]*)\]\([^)]*\)/g
 
 /** Lint a Markdown body. Returns issues sorted by (line, column). Fenced code blocks are skipped. */
 export function lintMarkdown(source: string): LintIssue[] {
   const issues: LintIssue[] = []
-  const lines = (source ?? '').split('\n')
+  const lines = (source ?? '').replace(/\r\n?/g, '\n').split('\n')
   let inFence = false
   let prevHeadingLevel = 1 // the published page title is the implicit H1
 
@@ -86,11 +86,10 @@ export function lintMarkdown(source: string): LintIssue[] {
 
     LINK_RE.lastIndex = 0
     while ((m = LINK_RE.exec(raw)) !== null) {
-      const prefix = m[1] ?? ''
-      if (!(m[2] ?? '').trim()) {
+      if (!(m[1] ?? '').trim()) {
         issues.push({
           line: lineNo,
-          column: m.index + prefix.length + 1,
+          column: m.index + 1,
           severity: 'info',
           rule: 'empty-link-text',
           message: 'This link has no visible text.',

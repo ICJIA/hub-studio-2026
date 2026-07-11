@@ -12,7 +12,7 @@
   Client-only: EditorView mounts in onMounted, tears down in onBeforeUnmount (app is ssr:false).
 -->
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, useId } from '#imports'
+import { ref, computed, watch, onMounted, onBeforeUnmount, useId } from '#imports'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
@@ -20,6 +20,7 @@ import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands'
 import { createStudioEditorState } from '~/lib/editor/studio-editor-state'
 import { handleImageFiles, type InsertedImage } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
+import { lintMarkdown, type LintIssue } from '~/lib/editor/markdown-lint'
 
 const props = defineProps<{ modelValue: string; label?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -33,6 +34,19 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const uploadError = ref<string | null>(null)
 // Default to a wide, full-width editor; the Preview button splits in a live preview on demand.
 const showPreview = ref(false)
+// Body linter (full mode only): a cheap O(n) scan over the current source. Reads the prop so the
+// badge/panel stay correct even where CodeMirror can't fully mount (tests).
+const showIssues = ref(false)
+const issues = computed<LintIssue[]>(() => lintMarkdown(props.modelValue))
+
+/** Scroll to + select a 1-based source line in the editor (no-op until CM has mounted). */
+function goToLine(line: number) {
+  if (!view) return
+  const clamped = Math.max(1, Math.min(line, view.state.doc.lines))
+  const l = view.state.doc.line(clamped)
+  view.dispatch({ selection: EditorSelection.range(l.from, l.to), scrollIntoView: true })
+  view.focus()
+}
 let view: EditorView | null = null
 // Guards the modelValue→doc watcher against re-emitting our own onChange echo.
 let applyingExternal = false
@@ -259,6 +273,8 @@ defineExpose({
   __handleFiles: handleFiles,
   __insertMarkdown: insertMarkdown,
   __uploadError: uploadError,
+  __issues: issues,
+  __goToLine: goToLine,
 })
 </script>
 
@@ -313,15 +329,28 @@ defineExpose({
           <input ref="fileInput" type="file" :accept="accept" multiple class="hidden" @change="onFileInput">
         </template>
       </div>
-      <UButton
-        size="xs"
-        :variant="showPreview ? 'solid' : 'outline'"
-        :icon="showPreview ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-        :label="showPreview ? 'Hide preview' : 'Preview'"
-        :aria-pressed="showPreview"
-        data-test="preview-toggle"
-        @click="showPreview = !showPreview"
-      />
+      <div class="flex items-center gap-2">
+        <UButton
+          v-if="!compact"
+          size="xs"
+          :variant="showIssues ? 'solid' : 'outline'"
+          :color="issues.length ? 'warning' : 'neutral'"
+          icon="i-lucide-list-checks"
+          :label="issues.length ? `Check · ${issues.length}` : 'Check'"
+          :aria-pressed="showIssues"
+          data-test="lint-toggle"
+          @click="showIssues = !showIssues"
+        />
+        <UButton
+          size="xs"
+          :variant="showPreview ? 'solid' : 'outline'"
+          :icon="showPreview ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          :label="showPreview ? 'Hide preview' : 'Preview'"
+          :aria-pressed="showPreview"
+          data-test="preview-toggle"
+          @click="showPreview = !showPreview"
+        />
+      </div>
     </div>
     <p v-if="uploadError" role="alert" class="text-sm text-red-600 mb-2">{{ uploadError }}</p>
 
@@ -336,6 +365,37 @@ defineExpose({
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Preview</div>
         <MarkdownPreview :source="modelValue" :inline="compact" />
       </div>
+    </div>
+
+    <!-- Body linter results: on-demand, plain-language, click a row to jump to the line. -->
+    <div
+      v-if="showIssues && !compact"
+      role="region"
+      aria-label="Markdown issues"
+      data-test="lint-panel"
+      class="mt-3 rounded border border-default"
+    >
+      <p v-if="issues.length === 0" class="p-3 text-sm text-muted" data-test="lint-empty">
+        No issues found.
+      </p>
+      <ul v-else class="divide-y divide-default">
+        <li v-for="(issue, idx) in issues" :key="idx">
+          <button
+            type="button"
+            class="flex w-full items-start gap-2 p-2 text-left text-sm hover:bg-elevated/50"
+            :data-test="`lint-issue-${idx}`"
+            @click="goToLine(issue.line)"
+          >
+            <UIcon
+              :name="issue.severity === 'warn' ? 'i-lucide-triangle-alert' : 'i-lucide-info'"
+              :class="issue.severity === 'warn' ? 'text-warning' : 'text-muted'"
+              class="mt-0.5 size-4 shrink-0"
+            />
+            <span class="shrink-0 font-medium text-muted tabular-nums">Line {{ issue.line }}</span>
+            <span class="text-highlighted">{{ issue.message }}</span>
+          </button>
+        </li>
+      </ul>
     </div>
   </div>
 </template>

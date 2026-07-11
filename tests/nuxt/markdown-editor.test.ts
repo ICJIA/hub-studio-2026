@@ -95,4 +95,38 @@ describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
     const emittedAfter = wrapper.emitted('update:modelValue')
     expect(emittedAfter).toBeFalsy()
   })
+
+  it('full mode: the Check button shows the current issue count', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# H1 in body\n\n#### Deep', label: 'Body' } })
+    const btn = wrapper.find('[data-test="lint-toggle"]')
+    expect(btn.exists()).toBe(true)
+    expect(btn.text()).toContain('2') // body-heading-level (L1) + heading-increment (L3)
+  })
+
+  it('opening the Check panel lists one row per issue', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# H1 in body\n\n#### Deep', label: 'Body' } })
+    expect(wrapper.find('[data-test="lint-panel"]').exists()).toBe(false)
+    await wrapper.find('[data-test="lint-toggle"]').trigger('click')
+    expect(wrapper.find('[data-test="lint-panel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="lint-issue-0"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="lint-issue-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="lint-panel"]').text()).toContain('Line 1')
+  })
+
+  it('a clean body shows the empty state in the panel', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '## Fine\n\ntext', label: 'Body' } })
+    await wrapper.find('[data-test="lint-toggle"]').trigger('click')
+    expect(wrapper.find('[data-test="lint-empty"]').exists()).toBe(true)
+  })
+
+  it('compact mode (Abstract) shows no Check button', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# whatever', label: 'Abstract', compact: true } })
+    expect(wrapper.find('[data-test="lint-toggle"]').exists()).toBe(false)
+  })
+
+  it('exposes __goToLine and __issues seams', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '# x', label: 'Body' } })
+    expect(typeof wrapper.vm.$.exposed!.__goToLine).toBe('function')
+    expect(Array.isArray(wrapper.vm.$.exposed!.__issues.value)).toBe(true)
+  })
 })

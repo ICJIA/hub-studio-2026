@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-11 (post-0.2.0)
+
+_Changed_
+
+- **CI actions bumped `checkout`/`setup-node` v4 → v5.** The first CI run (green across all three jobs) carried GitHub's "Node.js 20 is deprecated on runners" annotation against the v4 actions; v5 targets the Node 24 runners and clears it.
+
 ## [0.2.0] - 2026-07-11
 
 ### 2026-07-11

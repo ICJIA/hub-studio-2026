@@ -18,7 +18,7 @@
 > a researcher will touch — signing in, writing, previewing exactly what will
 > publish, Word-style reviewer comments on drafts, and publishing — exists today,
 > runs on the team's shared, official copy of the project, and is checked by
-> **661 automated tests, all passing**, re-run automatically on every change (CI).
+> **677 automated tests, all passing**, re-run automatically on every change (CI).
 > Anyone can click through the real tool in the **public demo**
 > (<https://studio-2026.netlify.app>) as an Author or an Editor. What is *not* done
 > is the set of setup steps that only ICJIA's own Research & Analysis staff can do
@@ -38,7 +38,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (and up to ~66% of visitors) on icjia.illinois.gov. **Hub 2.0** carries that track record forward: the same publishing mission for Research & Analysis (R&A) authors, rebuilt on a modern web stack and content management system, with a faster, friendlier authoring experience.
 - **Status:** built and working — the **public demo is clickable today at <https://studio-2026.netlify.app>**, as an Author or an Editor, with a first-run guided tour.
 - **How it works:** authors draft in a formatting editor (no formatting codes to learn) with a live "exactly-as-published" preview; reviewers highlight passages and leave Word-style margin comments on the draft; an editor clicks **Publish**.
-- **Security:** independently red/blue-team audited **four times** (production; the public demo; the demo-roles/files/tour surface; the annotations/preview/card-view surface) — **0 critical issues, 0 open high or medium**; the in-repo fixes are done and covered by 661 automated tests, re-run in CI on every change (`docs/security-audit.md`).
+- **Security:** independently red/blue-team audited **four times** (production; the public demo; the demo-roles/files/tour surface; the annotations/preview/card-view surface) — **0 critical issues, 0 open high or medium**; the in-repo fixes are done and covered by 677 automated tests, re-run in CI on every change (`docs/security-audit.md`).
 - **What's left:** setup on the Strapi / email side (Research & Analysis) and a short launch checklist — not new building. The exact path is a written runbook (`docs/demo-to-production.md`); the cutover itself is about 30 minutes once the setup is done.
 
 *That is the whole project in six lines. Everything below is the supporting evidence, organized by section — read what you need.*
@@ -180,7 +180,7 @@ evidence recur:
   without changing or saving anything to any real system. Wherever a feature says
   "you can see this," this demonstration is where you see it. (Developers running
   the code locally can also use the temporary `admin` / `admin` shortcut.)
-- **An automated test suite.** The project carries **661 automated tests** — small
+- **An automated test suite.** The project carries **677 automated tests** — small
   programs that re-check the tool's promises every time the code changes and stop
   the work if a promise breaks; a continuous-integration pipeline re-runs all of
   them automatically on every change. When this document says a promise is
@@ -384,7 +384,7 @@ time, and points to where each can be seen directly.
 
 Everything in this section is **built**, lives on the team's official, shared copy
 of the project (what developers call "main"), and is checked by an automated test
-suite — currently **661 automated tests, all passing**, re-run automatically on
+suite — currently **677 automated tests, all passing**, re-run automatically on
 every change. What is *not* yet done is described in Section 4, and it is mostly
 setup that only ICJIA's Research & Analysis unit can perform. The line between the
 two is drawn honestly.
@@ -625,7 +625,7 @@ listed again in Section 4 with the owner of the remaining step:
 | One-click sample article / app / dataset (local dev) | Demonstrate on demand | **Built** |
 | Light/dark mode + ICJIA logo (WCAG 2.1 AA, both) | Comfortable, on-brand, accessible | **Built** |
 | Public demo with Author/Editor entry | 210 phony articles + 40 apps + 40 datasets; zero live reach — <https://studio-2026.netlify.app> | **Built & audited** |
-| Continuous integration (automated checks per change) | Typecheck + all 661 tests + both builds on every push | **Built** |
+| Continuous integration (automated checks per change) | Typecheck + all 677 tests + both builds on every push | **Built** |
 | First-login onboarding | Capture a new author's reviewer & center | **Built; dormant until R&A creates the storage type** |
 | Publish + review-request email (Mailgun) | One-step publish; notify a reviewer | **Built; awaits R&A's email keys & live test** |
 | Auto rebuild of the public site on publish | New content appears publicly | **Built; awaits R&A wiring the trigger** |
@@ -714,7 +714,7 @@ switched on for the public.
   > carefully, the switch was small and surgical rather than a do-over.
 
 The evidence that this rigor is real, not aspirational: the project currently
-stands at **661 automated tests, all passing**, across the sign-in and roles, the
+stands at **677 automated tests, all passing**, across the sign-in and roles, the
 content engine for all three content types, the image and file handling, the save
 gate, the editor, the "preview as published" view, the reviewer-comments engine,
 the demo mode, the security-header sets, and the publish/email/onboarding code —
@@ -741,7 +741,7 @@ answers.
 
 - ***What is the evidence?*** It is built into this document, by design. You can
   open the public demo (<https://studio-2026.netlify.app>) and use the tool
-  directly; the test suite re-checks 661 promises every time the code changes, and
+  directly; the test suite re-checks 677 promises every time the code changes, and
   a continuous-integration pipeline runs them automatically on every change; and
   every change is an independently reviewed, reversible entry in the official
   record. The tool has also been through **four** independent red/blue-team
@@ -786,7 +786,7 @@ The Studio has now been through **four** independent red/blue-team audits —
 2026-07-05 (reviewer annotations, the tab-only preview, and the card-view lists).
 Combined verdict across all four: **zero critical issues, and zero open high- or
 medium-severity findings**; every in-repo finding is fixed and covered by
-automated tests (**661** of them, re-run in CI on every change). The full reports
+automated tests (**677** of them, re-run in CI on every change). The full reports
 live in the repository (`docs/security-audit.md`), and the README keeps a running
 log of every audit so the review history is visible at a glance.
 
@@ -989,8 +989,7 @@ now built, tested, and on `main`:
   the image-insert hook wired to the media layer. Markdown-source editing was
   retained as designed, so footnotes, math, and complex tables round-trip
   faithfully. A body **linter** ("Check" button flagging heading/link/image
-  problems) is implemented and review-approved on a feature branch, awaiting its
-  merge decision.
+  problems, with jump-to-line results) is merged and shipping (2026-07-11).
 
 - **Publish, rebuild & review email — shipped** (operator keys pending). The
   publisher-only publish/unpublish actions are live against the content system's
@@ -1059,7 +1058,7 @@ proxy that verifies the caller before firing).
 ---
 
 *End of specification. First issued 2026-06-21; revised 2026-07-11 to reflect the
-shipped state (661 tests, four audits, annotations/preview/card-view/tour/demo
+shipped state (677 tests, four audits, annotations/preview/card-view/tour/demo
 roles/CI). The Studio is feature-complete in the workshop with a public
 demonstration at <https://studio-2026.netlify.app>; this document will evolve as
 the remaining setup and go-live steps in Section 4 are completed. Nothing

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 2026-07-11 (post-0.2.0)
 
+_Added_
+
+- **Body markdown linter merged** (`feat/body-lint-and-image-reset` → `main`, user decision; the branch had been recovered from the reflog earlier today). Pure `lintMarkdown()` (`app/lib/editor/markdown-lint.ts`: H1-in-body, heading-increment, empty-heading, image-alt-missing, empty-link-text) + the editor's **Check** button and results panel with jump-to-line; both tasks review-approved 2026-07-08. Suite: **677 tests / 97 files** (67 unit + 30 Nuxt), typecheck clean. README/spec/roadmap counts refreshed.
+
 _Changed_
 
 - **CI actions bumped `checkout`/`setup-node` v4 → v5.** The first CI run (green across all three jobs) carried GitHub's "Node.js 20 is deprecated on runners" annotation against the v4 actions; v5 targets the Node 24 runners and clears it.

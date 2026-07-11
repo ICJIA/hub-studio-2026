@@ -29,7 +29,7 @@ continuous between passes:
   sentinel ships in exactly one production-bundle file and remains unreachable — consistent with
   the corrected runbook §0 row ("ships but unreachable"; the earlier "tree-shaken" phrasing in
   §3/§8 below is superseded on this point).
-- **Suite totals:** 661 tests / 96 files, all passing; typecheck clean (verified 2026-07-11).
+- **Suite totals:** 661 tests / 96 files at the v0.2.0 release; **677 tests / 97 files** after the body-linter branch merge later the same day — all passing, typecheck clean (both verified 2026-07-11).
 
 ---
 

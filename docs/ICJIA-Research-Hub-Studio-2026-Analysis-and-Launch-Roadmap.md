@@ -14,14 +14,14 @@
 
 - **What this is:** the Studio — the private tool ICJIA staff will use to write, review, and publish Research Hub content. The Research Hub is roughly **half of everything read on the agency's website**, so this tool is the production line for the site's flagship content.
 - **See it yourself in two minutes:** open **<https://studio-2026.netlify.app>**, click **Enter as Editor**, take the short built-in tour, open an article, publish it. It is the real tool with a safety switch on — nothing done there can touch any real system.
-- **Is it done?** Yes — built and working. **661 automated checks pass on every change**, and **four independent security audits found zero critical issues** (Appendix B is the full record).
+- **Is it done?** Yes — built and working. **677 automated checks pass on every change**, and **four independent security audits found zero critical issues** (Appendix B is the full record).
 - **Is the demo different from the real thing?** No. Demo and live are the **same application, one switch apart**. Going live is setup + a rehearsal + a **~30-minute switch** with one-click rollback (Appendix C is the step-by-step plan) — no new building.
 - **What's left before launch:** a short setup list owned mostly by Research & Analysis — staff accounts, two storage types in the content system, email keys — then a dress rehearsal with real accounts.
 - **When:** demos run through early August 2026; the tool can be live within days of approval once that setup is done.
-- **What this review found:** **no blockers.** A short list of inexpensive improvements — three were finished the same day as this review; the most important ones remaining protect authors from losing unsaved work. One already-finished feature (a draft-checking tool) was rescued from an accidentally deleted branch and awaits a go/no-go (§5.1).
+- **What this review found:** **no blockers.** A short list of inexpensive improvements — three were finished the same day as this review; the most important ones remaining protect authors from losing unsaved work. One already-finished feature (a draft-checking tool) was rescued from an accidentally deleted branch and has since been merged (§5.1).
 - **What managers need to decide (§8):** the approval date, the web address, whether the demo stays up after launch, and who owns the content-system and email setup.
 
-*Verified July 11, 2026: 661/661 tests passing, clean type check, WCAG 2.1 AA accessible in light and dark, four audits with zero open critical/high/medium findings. The full design specification is Appendix A.*
+*Verified July 11, 2026: 677/677 tests passing, clean type check, WCAG 2.1 AA accessible in light and dark, four audits with zero open critical/high/medium findings. The full design specification is Appendix A.*
 
 ---
 
@@ -59,7 +59,7 @@ Two properties of the architecture are worth calling out because everything else
 
 | Check | Result |
 |---|---|
-| Full test suite (`npm test`) | **649 tests / 95 files — all passing** at the morning assessment (10.3 s); **661 / 96 — all passing** after the same-day §5.2 items landed |
+| Full test suite (`npm test`) | **649 tests / 95 files — all passing** at the morning assessment (10.3 s); **661 / 96** after the same-day §5.2 items; **677 / 97 — all passing** after the linter-branch merge later that day |
 | TypeScript check (`npm run typecheck`) | **Clean — zero errors** |
 | Security audit record | Four red/blue-team rounds (June 21, June 21, June 22, July 5) — **0 critical / 0 high / 0 medium open**; the one High ever found (missing CSP headers) was fixed the same day it was reported |
 | Accessibility | WCAG 2.1 AA, axe-verified **0 violations in light and dark**; measured contrast on the newest surfaces 5.78–17.83:1 (AA floor is 4.5) |
@@ -67,14 +67,14 @@ Two properties of the architecture are worth calling out because everything else
 | Code hygiene | **Zero** `TODO`/`FIXME`/`HACK` markers in application code |
 | Repository state | `main` clean and pushed; **one orphaned feature branch discovered and re-protected** (§5.1) |
 
-*(Small drift note, since resolved: the README advertised 647 tests against an actual 649 at assessment time; the same-day documentation pass brought the README, spec, audit log, and runbook current at 661.)*
+*(Small drift note, since resolved: the README advertised 647 tests against an actual 649 at assessment time; the same-day documentation pass brought the README, spec, audit log, and runbook current — refreshed to 677 after the linter merge.)*
 
 ### 4.2 Strengths worth preserving
 
 These are not generic compliments; they are specific practices that should survive contact with launch pressure.
 
 - **Defense-in-depth as a habit.** Every protection exists at two or more layers: publish rights are enforced by Strapi server-side *and* hidden in the UI; base64 images are rejected by the form *and* by a guard at the repository write boundary; the demo is isolated by in-memory data *and* a write-block *and* an unreachable-network CSP. The audits repeatedly credit this pattern.
-- **Pure-function core.** Validators, mappers, the URL allowlist, the markdown pipeline, annotation anchoring/layout math — all plain TypeScript with no framework dependency, which is why 661 tests run in ten seconds and why the audit could verify behavior by reading small, focused modules.
+- **Pure-function core.** Validators, mappers, the URL allowlist, the markdown pipeline, annotation anchoring/layout math — all plain TypeScript with no framework dependency, which is why 677 tests run in ten seconds and why the audit could verify behavior by reading small, focused modules.
 - **A single, tight XSS seam.** All author content renders through one markdown pipeline with raw HTML disabled (`html: false`) and an id/class-only attribute allowlist; there are exactly three `v-html` sinks in the app, all fed by that pipeline. Every URL that reaches an `href` or `src` passes one allowlist function (`safeHref`).
 - **Documentation as part of the deliverable.** The cutover runbook, the Strapi install guides, the audit log, and the changelog discipline mean this project is *transferable* — a second developer could pick it up from the repo alone. For a small team, that is risk management, not paperwork.
 - **The demo-first strategy itself.** Stakeholders are evaluating the real application (same code, same tests), not a mockup — while the audited isolation keeps a public URL risk-free.
@@ -96,6 +96,8 @@ Documented in the runbook §6 and accepted in audit §9 — listed here so nobod
 **Why it matters.** Beyond the feature itself: the deployed public demo builds from `main`, so the linter that was verified locally on July 8 is **not in the demo stakeholders are clicking today**. And the episode reveals a process gap — completed work existed nowhere but one laptop's reflog.
 
 **Recommendation.** (a) Review and merge (or consciously reject) the branch — it is small and was already approved once; (b) push it to the remote either way so the history is off this single machine; (c) adopt the habit of pushing feature branches at end of day, merged or not. *Effort: half a day including re-review.*
+
+**Outcome (2026-07-11, later the same day):** the branch was pushed to the remote and then **merged to `main`** by user decision; the merged tree passes **677/677 tests (97 files)** with a clean typecheck, and the Check-button linter now ships in the editor.
 
 ### 5.2 High value, low effort — do during the demo window
 
@@ -126,7 +128,7 @@ These three share a theme: **real authors will trust the Studio with hours of wo
 
 ### 5.5 Post-launch / longer-term
 
-- **A small end-to-end (browser) test suite.** All 661 tests are unit/component tests; none drive a real browser. A ~5-flow Playwright suite (login → draft → save → preview → annotate → publish) would automate the cutover smoke checklist and catch the class of bug unit tests structurally miss — exemplified by the July 5 `rel=opener` regression, which was found by a human clicking, precisely because opener behavior only exists in a real browser. Run it against deploy previews in CI. *(2–4 days.)*
+- **A small end-to-end (browser) test suite.** All 677 tests are unit/component tests; none drive a real browser. A ~5-flow Playwright suite (login → draft → save → preview → annotate → publish) would automate the cutover smoke checklist and catch the class of bug unit tests structurally miss — exemplified by the July 5 `rel=opener` regression, which was found by a human clicking, precisely because opener behavior only exists in a real browser. Run it against deploy previews in CI. *(2–4 days.)*
 - **Tighten annotation permissions at the API** once real usage patterns are known (per-creator Strapi policies replacing the accepted coarse launch posture).
 - **Revisit the JWT-in-cookie residual** (audit H-1): the admin token lives in a JavaScript-readable cookie; the CSP is the compensating control and the audit accepts it for a staff tool. The structural fix — a thin backend-for-frontend proxy holding the token in an HttpOnly session — is a deliberate architecture change to evaluate *only if* the tool's exposure grows (more users, external reviewers). Related small item: logout is client-side only (Strapi admin JWTs aren't revocable server-side); a short JWT lifetime on the Strapi side is the practical mitigation, already flagged for launch-time verification.
 - **The two deferred product items** the team already scoped during the July 8 session: the body-images panel redesign (panel should list all images already in the article body) and page-aware guided tours (separate tours for dashboard/editor/preview). Both are spec'd in `docs/superpowers/`; sequence them against real author feedback.
@@ -230,9 +232,9 @@ Playwright end-to-end suite in CI against deploy previews; annotation RBAC tight
 
 ## 9. Conclusion
 
-This is a healthy project in an unusually verifiable state: the demo anyone can click (<https://studio-2026.netlify.app>) is the same audited, 661-test application that will go live, and the remaining distance to launch is measured in configuration and checklists, not code. The analysis found no blockers — it found the gaps a project has *right before* it becomes production software: no automated test gate, no monitoring, no protection yet against the two ways authors lose work, and one finished feature nearly lost to a deleted branch. All are cheap relative to what they protect, and all fit inside the existing demo-to-launch timeline without moving it.
+This is a healthy project in an unusually verifiable state: the demo anyone can click (<https://studio-2026.netlify.app>) is the same audited, 677-test application that will go live, and the remaining distance to launch is measured in configuration and checklists, not code. The analysis found no blockers — it found the gaps a project has *right before* it becomes production software: no automated test gate, no monitoring, no protection yet against the two ways authors lose work, and one finished feature nearly lost to a deleted branch. All are cheap relative to what they protect, and all fit inside the existing demo-to-launch timeline without moving it.
 
-**Immediate next steps (this week):** merge-or-decide the recovered linter branch and push it (the one §5.2 item still open); push today's work so CI runs its first build; and hand the Strapi/Mailgun owners their Phase 1 checklists so the preparation clock starts now. *(The CI pipeline, search-engine exclusion, and documentation refresh from §5.2 were completed the same day as this assessment.)*
+**Immediate next steps (this week):** hand the Strapi/Mailgun owners their Phase 1 checklists so the preparation clock starts now — everything else from this section already closed the same day: the linter branch was recovered, pushed, and merged; the CI pipeline is live and green (v0.2.0 released and tagged); and the search-engine exclusion and documentation refresh shipped with it.
 
 ---
 

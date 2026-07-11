@@ -32,7 +32,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today, **as an Author or an Editor**, with a first-run **guided tour**.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager (Editor) clicks **Publish**.
-- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **661 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **677 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -103,7 +103,7 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 ## Status: built and working in development (pre-launch)
 
-The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **661 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
+The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **677 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
 
 - 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
@@ -337,6 +337,8 @@ The public demo additionally **hard-blocks all writes** (`assertWritesAllowed()`
 
 The Studio consumes the **ICJIA Markdown Editor 2026** ([github.com/ICJIA/icjia-markdown-editor-2026](https://github.com/ICJIA/icjia-markdown-editor-2026)) as a Nuxt layer. It is built on **CodeMirror 6** (packages vendored in `app/lib/editor/vendor/`): `@codemirror/state`, `@codemirror/view`, `@codemirror/lang-markdown`, `@codemirror/commands`, `@codemirror/search`, `@codemirror/autocomplete`, `@codemirror/language`, `@codemirror/language-data`, `@lezer/highlight`. The editor exposes a formatting toolbar (bold, italic, headings, links, lists, code fences, tables) requiring no markdown knowledge from authors.
 
+A **Check** button in the Body editor runs the markdown **body linter** (`app/lib/editor/markdown-lint.ts`, merged 2026-07-11): it flags an H1 used in the body (reserved for the page title), skipped heading levels, empty headings, images missing alt text, and empty link text — each finding listed in a results panel with jump-to-line.
+
 ### "Exactly-as-published" preview (tab-only)
 
 `app/components/PublishedArticlePreview.vue` (and sibling `PublishedAppPreview` / `PublishedDatasetPreview`) renders output using the same `renderArticleBody()` function and the same CSS (`assets/css/prose-preview.css` — faithful hub styles with Oswald headings) as the public Research Hub. A **sticky Table of Contents** (h2-level) is generated from the markdown AST in a single pass (see [Data layer &amp; validation](#data-layer--validation) below).
@@ -431,7 +433,7 @@ A first-run, skippable walkthrough on the dashboard (`app/composables/useGuidedT
 
 **Runner:** Vitest `^4.1.9` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.10.6`.
 
-**Current totals:** **661 tests** across **96 test files** (66 unit + 30 Nuxt component).
+**Current totals:** **677 tests** across **97 test files** (67 unit + 30 Nuxt component).
 
 **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every PR: typecheck + the full suite, a production `nuxt build`, and the public-demo `nuxt generate` with the **dev-bypass bundle-guard positive control** (`scripts/check-dev-bypass.mjs` — proves the sentinel scan detects the token). The production-bundle *absence* check is a commented **launch gate**: enable it in the same PR that deletes `app/lib/dev-auth.ts` (see the runbook §6 note).
 
@@ -451,7 +453,7 @@ tests/
 **Commands:**
 
 ```bash
-npm test            # run all 661 tests once (vitest run)
+npm test            # run all 677 tests once (vitest run)
 npm run test:watch  # watch mode (vitest)
 npm run typecheck   # vue-tsc type-check
 ```
@@ -540,7 +542,7 @@ NUXT_PUBLIC_DEMO_MODE=true npm run generate   # static demo build → .output/pu
 ```
 
 ```bash
-npm test          # run 661 tests
+npm test          # run 677 tests
 npm run typecheck # TypeScript type-check
 npm run build     # production build
 ```

@@ -28,6 +28,9 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
   # Force HTTPS for a year, including subdomains (defends the Bearer-cookie transport from downgrade).
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+  # Internal tool on a public URL: keep the Studio (and its login page) out of search indexes
+  # (runbook §3 hardening, implemented 2026-07-11; paired with public/robots.txt).
+  X-Robots-Tag: noindex
   # Content-Security-Policy — the H-1 blast-radius control. The tight `connect-src` is the core of
   # it: even if script ran in the origin, it could only reach 'self', the Strapi admin API, and
   # Mailgun — not an attacker exfil endpoint. default-src locks everything to same-origin first;

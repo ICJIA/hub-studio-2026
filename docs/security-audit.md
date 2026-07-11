@@ -6,6 +6,33 @@
 
 ---
 
+## Post-audit delta log — 2026-07-11 (maintenance record, NOT an adversarial pass)
+
+Security-relevant changes landed since the §9 audit, recorded here so the audit trail stays
+continuous between passes:
+
+- **Explicit `rel="opener"` on all eight Studio → preview links** (`d78a7ab`). §9 F-4 accepted
+  opener retention on the tab-only preview (same-origin, authed, internal links only); NuxtLink's
+  fallback `rel="noopener noreferrer"` was silently severing it, so the accepted design now holds
+  by explicit attribute. Same posture, now regression-pinned in the component tests.
+- **Search-engine exclusion shipped** (runbook §3 hardening item): `X-Robots-Tag: noindex` in
+  BOTH header sets plus a deny-all `public/robots.txt`, guarded by unit tests
+  (`tests/unit/security-headers.test.ts`).
+- **CI pipeline added** (`.github/workflows/ci.yml`): typecheck + full suite + production build +
+  demo build on every push to `main` / every PR. This hosts the §2 launch-time recommendation
+  ("a CI check that fails if the dev bypass ships") as a **two-part bundle guard**
+  (`scripts/check-dev-bypass.mjs`): a *positive control* runs today against the demo bundle
+  (the sentinel MUST be found — the scan can never rot into a silent pass), and the production
+  *absence* check ships as a commented **launch gate**, to be enabled in the PR that deletes
+  `app/lib/dev-auth.ts` (runbook §6).
+- **Build-verified posture note:** a fresh `npm run build` (2026-07-11) confirms the dev-bypass
+  sentinel ships in exactly one production-bundle file and remains unreachable — consistent with
+  the corrected runbook §0 row ("ships but unreachable"; the earlier "tree-shaken" phrasing in
+  §3/§8 below is superseded on this point).
+- **Suite totals:** 661 tests / 96 files, all passing; typecheck clean (verified 2026-07-11).
+
+---
+
 ## 9. Annotations, Tab-Only Preview & Card View Audit (2026-07-05)
 
 **Target:** `hub-studio-2026` — Nuxt 4 SPA (`ssr: false`) staff content tool

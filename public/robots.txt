@@ -1,0 +1,5 @@
+# The Studio is an internal authoring tool on a public URL — nothing here should be indexed.
+# Paired with the `X-Robots-Tag: noindex` response header in public/_headers (production) and
+# deploy/headers-demo.txt (public demo); both builds serve this same file.
+User-agent: *
+Disallow: /

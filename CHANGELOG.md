@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-11
+
+### 2026-07-11
+
+_Added_
+
+- **Analysis & Launch Roadmap article** (`docs/ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md` + `.docx`) — dual-audience (managers + developers) assessment of the app as of `main` @ `d78a7ab`: fresh verification evidence, strengths analysis, ranked improvement recommendations (CI pipeline, noindex, autosave/unsaved-work guard, edit-conflict detection, list search, monitoring, staging Strapi-host override, a11y riders, E2E suite), the demo-vs-live cutover picture with the public demo link, a phased roadmap anchored to the demo-weeks → early-Aug-2026 timeline, a risk register, and the management decision list. The **Word edition is a compiled report**: a linked, in-document table of contents (static internal links — no Word field-update prompt on open) plus the Design Spec, Security Audit, and cutover runbook bundled as Appendices A–C (built by `scripts/build-word-edition.mjs`).
+- **CI pipeline** (`.github/workflows/ci.yml`, roadmap §5.2-1): every push to `main` and every PR runs typecheck + the full suite, a production `nuxt build`, and the demo `nuxt generate` (with the demo header overlay). Includes the audit-recommended dev-bypass bundle guard (`scripts/check-dev-bypass.mjs`, 9 unit tests): a **positive control** asserts the sentinel IS in the demo bundle (the scan can never rot), and the production **absence check ships as a commented launch gate** — enabled in the PR that deletes `app/lib/dev-auth.ts` (runbook §6), since pre-launch the bypass deliberately ships-but-unreachable.
+- **Search-engine exclusion** (roadmap §5.2-2; runbook §3 "optional hardening" → done): `X-Robots-Tag: noindex` in BOTH header sets + a deny-all `public/robots.txt`, guarded by 3 new unit tests in `security-headers.test.ts`. Suite now **661 tests / 96 files**.
+
+_Changed_
+
+- **Documentation currency pass** (roadmap §5.2-3): README (661 tests, CI section, noindex, corrected "tree-shaken" → ships-but-unreachable per the runbook's earlier correction — build-verified today; repo-layout tree includes `.github/`, `scripts/`, `robots.txt`, the new article); **Design Spec** revised 2026-07-11 (661 tests, all four audits, public-demo link + Author/Editor verify instructions, annotations/tab-preview/card-view/tour sections, §4 launch table incl. `review-annotation` install + runbook pointer, §7.5 "planned" → shipped, D-2 marked fully fixed); **security-audit.md** gains a dated post-audit delta log (rel=opener pinning, noindex, CI bundle guard, build-verified sentinel posture, 661-test totals); **runbook** notes noindex done + the CI launch-gate procedure.
+
+_Fixed_
+
+- **Recovered the orphaned body-linter branch.** The completed, review-approved body-linter work from 2026-07-08 (spec/plan + `lintMarkdown()` + editor Check UI, commits `5558c6d..8199b8a`) had its branch deleted unmerged and unpushed — the commits survived only in the local reflog and were headed for garbage collection. Restored the branch pointer as `feat/body-lint-and-image-reset` @ `8199b8a`; merge/reject decision and a push to origin still pending (see the roadmap article §5.1).
+
 ### 2026-07-05
 
 _Fixed_

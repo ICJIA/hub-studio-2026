@@ -56,6 +56,25 @@ describe('public/_headers (security headers — audit H-1)', () => {
   })
 })
 
+describe('search-engine exclusion (internal tool on a public URL — runbook §3 hardening)', () => {
+  it('production headers send X-Robots-Tag: noindex on every response', () => {
+    expect(headers).toMatch(/X-Robots-Tag:\s*noindex/)
+  })
+
+  it('demo headers send X-Robots-Tag: noindex on every response', () => {
+    expect(demoHeaders).toMatch(/X-Robots-Tag:\s*noindex/)
+  })
+
+  it('public/robots.txt exists and disallows all crawling', () => {
+    const robots = readFileSync(
+      fileURLToPath(new URL('../../public/robots.txt', import.meta.url)),
+      'utf8',
+    )
+    expect(robots).toMatch(/User-agent:\s*\*/)
+    expect(robots).toMatch(/Disallow:\s*\/$/m)
+  })
+})
+
 describe('deploy/headers-demo.txt (public-demo backstop — audit §7 D-2/D-3/D-8)', () => {
   it("locks connect-src to EXACTLY 'self' — no Strapi/Mailgun/Iconify host (the network backstop)", () => {
     const connectSrc = connectSrcOf(demoHeaders)

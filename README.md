@@ -32,7 +32,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today, **as an Author or an Editor**, with a first-run **guided tour**.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager (Editor) clicks **Publish**.
-- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **647 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **661 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -103,10 +103,11 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 ## Status: built and working in development (pre-launch)
 
-The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **647 automated tests**. The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
+The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **661 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
 
 - 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
+- 📊 [**Analysis &amp; Launch Roadmap**](docs/ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md) (2026-07-11; the [Word edition](docs/ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.docx) bundles the spec, audit, and runbook as appendices) — current-state assessment, ranked improvement recommendations, demo-vs-live cutover picture, and the phased launch roadmap.
 
 ## Workflow
 
@@ -323,7 +324,7 @@ On every app load, `useAuth().init()` re-calls `/admin/users/me` with the persis
 
 `app/lib/dev-auth.ts` provides an `admin`/`admin` login shortcut. Both the local-dev bypass **and** the public demo's "Enter as Author / Enter as Editor" buttons mint the **same synthetic sentinel session** (`makeDevAdminSession(role)`); the two demo identities differ **only** in their Strapi role codes (`strapi-editor` → `canPublish` true; `strapi-author` → false), which is what lets a manager compare both views. The whole path is gated by `import.meta.dev || isDemoMode()`, so:
 
-- In a **normal production build** (not dev, `demoMode` false) it is fully **tree-shaken / inert** — `login()` and `loginAsDemo()` never mint a synthetic session, and `init()` / the `$api` 401 interceptor never honor the sentinel token.
+- In a **normal production build** (not dev, `demoMode` false) it is **unreachable / inert** — `login()` and `loginAsDemo()` never mint a synthetic session, and `init()` / the `$api` 401 interceptor never honor the sentinel token. (The module itself still ships in the bundle — the `isDemoMode()` half of the gate is a runtime check, so it cannot be tree-shaken; runbook §0 documents this corrected posture, and CI's bypass-guard positive control plus the commented launch gate in `.github/workflows/ci.yml` keep it honest.)
 - The synthetic JWT is a **sentinel string Strapi will never accept**, so any API call made with it fails closed (401).
 
 The public demo additionally **hard-blocks all writes** (`assertWritesAllowed()` throws before any `$api` call) and serves **in-memory content** (`isDemoData()`), with the demo CSP `connect-src 'self'` as an independent network backstop. The non-secret public runtime config (including `demoMode`) is **deep-frozen on boot** (`app/plugins/00.freeze-config.ts`) so devtools cannot flip it to disarm the guards (audit §8 F-1). See [`docs/security-audit.md`](docs/security-audit.md) §7–§8 for the full notes; remove `app/lib/dev-auth.ts` and its call sites before the real production launch.
@@ -430,7 +431,9 @@ A first-run, skippable walkthrough on the dashboard (`app/composables/useGuidedT
 
 **Runner:** Vitest `^4.1.9` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.10.6`.
 
-**Current totals:** **647 tests** across **95 test files** (65 unit + 30 Nuxt component).
+**Current totals:** **661 tests** across **96 test files** (66 unit + 30 Nuxt component).
+
+**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every PR: typecheck + the full suite, a production `nuxt build`, and the public-demo `nuxt generate` with the **dev-bypass bundle-guard positive control** (`scripts/check-dev-bypass.mjs` — proves the sentinel scan detects the token). The production-bundle *absence* check is a commented **launch gate**: enable it in the same PR that deletes `app/lib/dev-auth.ts` (see the runbook §6 note).
 
 **Structure:**
 
@@ -441,14 +444,14 @@ tests/
   fixtures/   # shared data helpers
 ```
 
-**Unit coverage includes:** auth store, guard logic, all validators (incl. the annotation write-boundary validator), repository logic (incl. publish/unpublish + the demo write-block), mappers (article/app/dataset/annotation, incl. the Main-Files array and defensive comments-JSON parsing), the **annotation engine** (quote anchoring, mark painting, the localStorage store, the Strapi `AnnotationStore` adapter with its full pagination sweep, the Word-style rail collision layout, composer placement math, author attribution, the Strapi drop-in schema-parity guard), markdown rendering + TOC + the `markdown-it-attrs` allowlist, the card-view excerpt stripper, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository / demo session / demo content, the guided-tour config, the deep-freeze public-config guard, the security-header sets (production **and** demo), profile gate, form submit, studio-profile repository.
+**Unit coverage includes:** auth store, guard logic, all validators (incl. the annotation write-boundary validator), repository logic (incl. publish/unpublish + the demo write-block), mappers (article/app/dataset/annotation, incl. the Main-Files array and defensive comments-JSON parsing), the **annotation engine** (quote anchoring, mark painting, the localStorage store, the Strapi `AnnotationStore` adapter with its full pagination sweep, the Word-style rail collision layout, composer placement math, author attribution, the Strapi drop-in schema-parity guard), markdown rendering + TOC + the `markdown-it-attrs` allowlist, the card-view excerpt stripper, base64 guard, safe-url/safeHref, rate limiter, request-review handler, review-email composition, sanitize-svg, slug, upload orchestration, field-options, error-display, demo repository / demo session / demo content, the guided-tour config, the deep-freeze public-config guard, the security-header sets (production **and** demo, incl. the `X-Robots-Tag: noindex` search-exclusion guard and `robots.txt`), the CI dev-bypass bundle guard, profile gate, form submit, studio-profile repository.
 
 **Component coverage includes:** login (incl. demo-role entry), dashboard, content-list (**card view default** — toggle persistence, on-image status colors, scheme-pinned artwork links, slot parity — plus the table), article/app/dataset forms, the tab-only **preview links** (named tabs, save-first gating), the **annotation UI** (reviewer bar incl. Clean view, rail incl. aligned-mode scroll guard, composer, the annotated review page: select→comment, repaint, orphans, storage events, focus lifecycle, the Close-vs-Back opener branch), the Main-Files field, body-images field, markdown editor, markdown field, media picker, media field, image dropzone, repeatable field, publish button, request-review form, preview page (incl. print), onboarding form, demo mode, routing smoke.
 
 **Commands:**
 
 ```bash
-npm test            # run all 647 tests once (vitest run)
+npm test            # run all 661 tests once (vitest run)
 npm run test:watch  # watch mode (vitest)
 npm run typecheck   # vue-tsc type-check
 ```
@@ -459,7 +462,7 @@ npm run typecheck   # vue-tsc type-check
 
 ### Security headers &amp; CSP — two sets
 
-Two hardened header sets are maintained, each applied to every response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` denying camera/mic/geolocation/etc., `Strict-Transport-Security: max-age=31536000; includeSubDomains`, plus a CSP with `object-src/base-uri/frame-ancestors 'none'` and `form-action 'self'`):
+Two hardened header sets are maintained, each applied to every response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` denying camera/mic/geolocation/etc., `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Robots-Tag: noindex` — the Studio is an internal tool on a public URL and is kept out of search indexes, paired with a deny-all `public/robots.txt` — plus a CSP with `object-src/base-uri/frame-ancestors 'none'` and `form-action 'self'`):
 
 - **Production** (`public/_headers`) — tight `connect-src` limiting outbound requests to `'self'`, `https://v2.hub.icjia-api.cloud`, and `https://api.mailgun.net`; **`script-src 'self'`** (no `'unsafe-inline'`).
 - **Public demo** (`deploy/headers-demo.txt`, copied over `_headers` by `netlify.toml`) — **`connect-src 'self'` only** (the independent network backstop: the real backend is unreachable from the browser); `script-src 'self' 'unsafe-inline'` is acceptable here because the demo holds no admin JWT or secrets, and is required for the static Nuxt bootstrap. A unit test guards the demo `connect-src` against re-opening to any non-`'self'` host (audit §8 F-2).
@@ -537,7 +540,7 @@ NUXT_PUBLIC_DEMO_MODE=true npm run generate   # static demo build → .output/pu
 ```
 
 ```bash
-npm test          # run 647 tests
+npm test          # run 661 tests
 npm run typecheck # TypeScript type-check
 npm run build     # production build
 ```
@@ -584,8 +587,17 @@ server/
 
 public/
   _headers         # Netlify PRODUCTION security headers + CSP
+  robots.txt       # deny-all crawl rules (internal tool — paired with X-Robots-Tag: noindex)
   files/demo/      # bundled static demo PDFs (Main Files)
   images/          # static image assets (icjia-logo.png, images/demo/ splash + figures)
+
+scripts/
+  check-dev-bypass.mjs  # CI bundle guard: scans built output for the dev-bypass sentinel
+  gen-demo-figures.mjs  # generates the synthetic demo chart/table SVGs
+
+.github/
+  workflows/ci.yml # CI: typecheck + tests + prod build + demo build (bypass-guard control)
+  dependabot.yml   # dependency monitoring
 
 deploy/
   headers-demo.txt # PUBLIC DEMO header set (connect-src 'self'); netlify.toml copies it over _headers
@@ -599,6 +611,8 @@ tests/
 docs/
   ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md
   ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx
+  ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md    # 2026-07-11 assessment + roadmap
+  ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.docx  # Word edition incl. spec/audit/runbook appendices
   security-audit.md
   demo-to-production.md      # the demo → live cutover runbook (Strapi install, staging checklist, launch day)
   deploy-rebuild-and-email.md

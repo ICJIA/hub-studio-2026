@@ -9,19 +9,23 @@
 | **Document** | Design & Implementation Specification |
 | **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub |
 | **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
-| **Status** | **Feature-complete in the workshop** — the full tool is built; not yet switched on for the public |
-| **Date** | 2026-06-21 |
+| **Status** | **Feature-complete in the workshop** — the full tool is built and a public demo is clickable at <https://studio-2026.netlify.app>; not yet switched on for real publishing |
+| **Date** | 2026-06-21 · **revised 2026-07-11** (test counts, four audits, features shipped since — annotations, tab-only preview, card view, guided tour, public demo roles, CI) |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
 | **Audience** | Two readers, addressed separately: a **manager** (Sections 1–6) and a **developer** (Section 7) |
 
 > **Where the project stands, in one breath.** Hub Studio 2.0 is built. Every feature
 > a researcher will touch — signing in, writing, previewing exactly what will
-> publish, and publishing — exists today, runs on the team's shared, official copy
-> of the project, and is checked by **375 automated tests, all passing**. What is
-> *not* done is the set of setup steps that only ICJIA's own Research & Analysis
-> staff can do (creating one storage type, supplying the email keys and the
-> "rebuild the public site" trigger) and a final dress rehearsal with real staff
-> accounts before it goes live. This document marks each claim as **built**
+> publish, Word-style reviewer comments on drafts, and publishing — exists today,
+> runs on the team's shared, official copy of the project, and is checked by
+> **661 automated tests, all passing**, re-run automatically on every change (CI).
+> Anyone can click through the real tool in the **public demo**
+> (<https://studio-2026.netlify.app>) as an Author or an Editor. What is *not* done
+> is the set of setup steps that only ICJIA's own Research & Analysis staff can do
+> (creating two storage types, supplying the email keys and the "rebuild the public
+> site" trigger) and a final dress rehearsal with real staff accounts before it goes
+> live — all captured step-by-step in the cutover runbook
+> (`docs/demo-to-production.md`). This document marks each claim as **built**
 > (it exists, it's been checked, you can see it) or **still ahead** (a named,
 > owned next step). Nothing here is live to the public yet — and where it isn't, it
 > says so.
@@ -32,10 +36,10 @@
 
 - **What it is:** Hub Studio 2.0 — the internal tool ICJIA staff use to write, preview, and publish Research Hub content (articles, apps, datasets). It is the authoring-and-publishing component of the wider **Hub 2.0 publishing project**, the modernization of the ICJIA Research Hub.
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (and up to ~66% of visitors) on icjia.illinois.gov. **Hub 2.0** carries that track record forward: the same publishing mission for Research & Analysis (R&A) authors, rebuilt on a modern web stack and content management system, with a faster, friendlier authoring experience.
-- **Status:** built and working in development — a complete demo is clickable today.
-- **How it works:** authors draft in a formatting editor (no formatting codes to learn) with a live "exactly-as-published" preview; an editor clicks **Publish**.
-- **Security:** independently red/blue-team audited (production **and** the public demo) — **0 critical issues**; the in-repo fixes are done and covered by 405 automated tests (`docs/security-audit.md`).
-- **What's left:** setup on the Strapi / email side (Research & Analysis) and a short launch checklist — not new building.
+- **Status:** built and working — the **public demo is clickable today at <https://studio-2026.netlify.app>**, as an Author or an Editor, with a first-run guided tour.
+- **How it works:** authors draft in a formatting editor (no formatting codes to learn) with a live "exactly-as-published" preview; reviewers highlight passages and leave Word-style margin comments on the draft; an editor clicks **Publish**.
+- **Security:** independently red/blue-team audited **four times** (production; the public demo; the demo-roles/files/tour surface; the annotations/preview/card-view surface) — **0 critical issues, 0 open high or medium**; the in-repo fixes are done and covered by 661 automated tests, re-run in CI on every change (`docs/security-audit.md`).
+- **What's left:** setup on the Strapi / email side (Research & Analysis) and a short launch checklist — not new building. The exact path is a written runbook (`docs/demo-to-production.md`); the cutover itself is about 30 minutes once the setup is done.
 
 *That is the whole project in six lines. Everything below is the supporting evidence, organized by section — read what you need.*
 
@@ -169,15 +173,18 @@ with something you can examine for yourself — offered in the spirit of one
 colleague handing another the evidence, not as an argument to win. Three kinds of
 evidence recur:
 
-- **A running demonstration you can use.** There is a working copy of the tool. Sign
-  in with the temporary user name `admin` and password `admin` and you can open,
-  edit, and preview hundreds of sample articles directly — without changing or
-  saving anything to the real system. Wherever a feature says "you can see this,"
-  this demonstration is where you see it.
-- **An automated test suite.** The project carries **375 automated tests** — small
+- **A running demonstration you can use.** The public demo at
+  <https://studio-2026.netlify.app> is the real tool with a safety switch on: click
+  **Enter as Author** or **Enter as Editor** (no account needed), take the built-in
+  guided tour, and open, edit, and preview hundreds of sample articles directly —
+  without changing or saving anything to any real system. Wherever a feature says
+  "you can see this," this demonstration is where you see it. (Developers running
+  the code locally can also use the temporary `admin` / `admin` shortcut.)
+- **An automated test suite.** The project carries **661 automated tests** — small
   programs that re-check the tool's promises every time the code changes and stop
-  the work if a promise breaks. When this document says a promise is "guaranteed," a
-  test enforces it.
+  the work if a promise breaks; a continuous-integration pipeline re-runs all of
+  them automatically on every change. When this document says a promise is
+  "guaranteed," a test enforces it.
 - **The shared project record.** Every piece of work is a dated, reversible entry in
   the project's shared history, independently reviewed before it was accepted.
   "Built" here means *accepted into the shared project*, not sitting on one person's
@@ -377,20 +384,24 @@ time, and points to where each can be seen directly.
 
 Everything in this section is **built**, lives on the team's official, shared copy
 of the project (what developers call "main"), and is checked by an automated test
-suite — currently **375 automated tests, all passing**. What is *not* yet done is
-described in Section 4, and it is mostly setup that only ICJIA's Research & Analysis
-unit can perform. The line between the two is drawn honestly.
+suite — currently **661 automated tests, all passing**, re-run automatically on
+every change. What is *not* yet done is described in Section 4, and it is mostly
+setup that only ICJIA's Research & Analysis unit can perform. The line between the
+two is drawn honestly.
 
-A reminder of the stage: the tool is **not yet switched on for the public** — none
-of this is live to the public audience. It is a finished workshop build, waiting on
-its final setup and a dress rehearsal.
+A reminder of the stage: the tool is **not yet switched on for real publishing** —
+nothing here writes to the live system. It is a finished workshop build with a
+public demonstration, waiting on its final setup and a dress rehearsal.
 
-**How to verify this whole section yourself.** Open the running demonstration and
-sign in with user name `admin`, password `admin`. You are now inside the real tool,
-looking at 200-plus realistic sample articles (plus sample apps and datasets), and
-you can click into any of them to edit and preview — all of it without ever saving
-to or touching the live system. Everything described below is something you can do,
-see, or click in that demonstration.
+**How to verify this whole section yourself.** Open the public demo at
+<https://studio-2026.netlify.app> and click **Enter as Author** (to see a writer's
+view) or **Enter as Editor** (to also see publishing) — no account needed, and a
+first-run guided tour walks you through the screens. You are now inside the real
+tool, looking at 210 realistic sample articles (plus 40 sample apps and 40
+datasets, spread across all fourteen article types), and you can click into any of
+them to edit, preview, comment on, and — as Editor — publish, all of it held in
+memory and never touching any live system. Everything described below is something
+you can do, see, or click in that demonstration.
 
 ### (a) Signing in — and who is allowed to do what
 
@@ -498,36 +509,70 @@ Each saved draft also gets a **shareable preview link** that opens for any signe
 staff member — exactly how a reviewer or a manager opens a specific draft and sees
 what will publish.
 
+Two capabilities have joined the preview since this document was first issued:
+
+- **The preview is now its own browser tab.** Every preview button opens the draft
+  in one dedicated, reusable tab per document — so the editor and the preview can
+  sit side by side, repeated clicks refresh the same tab instead of piling up
+  copies, and closing the preview returns you to the editor you came from. The
+  preview page doubles as the **shareable review link**.
+- **Word-style reviewer comments on drafts.** On the preview, any signed-in
+  reviewer can switch on a highlighter, select a passage (four colors), and attach
+  a threaded comment — reply, resolve, reopen — with the comment cards sitting in
+  the margin level with the highlighted text, exactly like margin comments in
+  Microsoft Word. Highlights are anchored to the quoted text (they survive edits
+  elsewhere in the article; if the quoted passage itself changes, the thread is
+  kept and labeled "text changed" rather than lost). A **Clean view** toggle shows
+  the plain article. The article text itself is never modified — comments are a
+  pure overlay, and they never affect what publishes.
+
 *See it:* open the "Preview as published" view on a sample article in the
 demonstration — the sticky Table of Contents, the all-authors byline, the end
-matter, and the Print button are all there.
+matter, and the Print button are all there; turn on **Highlight**, select a
+sentence, and leave a comment to see the review workflow.
 
 ### (f) Finding and managing content
 
-- A **paginated content list** shows every item — **Date · Title · Author(s) ·
-  Draft/Published status** — newest first, so the most recent work is at the top.
-- **One-click "Add sample article / app / dataset"** buttons instantly fill in a
-  complete, realistic draft, so the tool can be demonstrated on demand without
-  typing one out by hand.
+- Content lists open as **visual cards** (the default): each item's artwork with a
+  green **Published** / red **Draft** badge riding the image corner, the title,
+  date, type, authors, and a clean text excerpt — plus the same Edit / Preview /
+  Publish tools as before. A **Cards / List** toggle switches to the original
+  columnar table (Date · Title · Author(s) · Status), and the choice is remembered
+  per browser. Articles also get a **Type filter** that sweeps the whole library,
+  not just the visible page.
+- **One-click "Add sample article / app / dataset"** buttons (local development
+  only) instantly fill in a complete, realistic draft, so the tool can be
+  demonstrated on demand without typing one out by hand.
 - **Light and dark mode** (it defaults to light; dark is opt-in) with the official
-  ICJIA logo in the header. The theme toggle is the last button in the navigation.
+  ICJIA logo in the header — measured **WCAG 2.1 AA accessible in both** (zero
+  automated-checker violations). The theme toggle is the last button in the
+  navigation.
+- A first-run, skippable **guided tour** spotlights the main controls
+  (role-aware: editors also get the Publish-queue step) and can be replayed
+  anytime from **Tour** in the top navigation.
 
 *See it:* all three are visible the moment you sign in to the demonstration — the
 sortable list, the sample buttons, and the theme toggle.
 
-### (g) A self-contained Demo Mode for safe demonstrations
+### (g) A self-contained public demo for safe demonstrations
 
-The temporary `admin` / `admin` login opens a **fully self-contained Demo Mode**:
-**200-plus full-length sample articles** — each with complete sections, figures, and
-working footnote references — held in memory, fully clickable for editing and
-previewing, that **never save anything to the live system**. Every word in the demo
-is fake: lorem ipsum body text and made-up names. No real ICJIA person, topic,
-grant, or finding is ever shown on a demo screen. It exists so the tool can be shown
-to managers, reviewers, or leadership safely, with zero risk to live information and
-no risk of real ICJIA content appearing in a screenshot or a walkthrough.
-(This convenience login is temporary and is removed before the tool goes to
-production — see Section 4, the note at the end of Section 5, and the security note
-in Section 6.)
+The **public demo** (<https://studio-2026.netlify.app>) is a fully self-contained
+build of the real tool: **210 full-length sample articles** — each with complete
+sections, figures, and working footnote references — plus 40 apps and 40 datasets,
+held in memory, fully clickable for editing, previewing, commenting, and (as
+Editor) publishing, that **never save anything to any live system**. A visitor
+enters as an **Author** or an **Editor** to compare both views — the Author never
+even sees a Publish control. Every word in the demo is fake: lorem ipsum body text
+and made-up names. No real ICJIA person, topic, grant, or finding is ever shown on
+a demo screen.
+
+The isolation has been independently audited (twice) and holds **three layers
+deep**: the demo build serves only in-memory content, every write is hard-blocked
+in code before any network call, and the demo's browser security policy makes the
+real backend **unreachable even if every in-page guard were bypassed**. It ships
+no secrets and no real server address. That is why it can sit on a public URL.
+(The separate `admin` / `admin` shortcut remains a local developer convenience;
+in a real production build neither path can activate — see Sections 4–6.)
 
 *See it:* this is the demonstration you have been using to check every other item.
 Open any sample article and you will see full multi-section body text, figures, and
@@ -552,6 +597,12 @@ listed again in Section 4 with the owner of the remaining step:
   Research Hub rebuilds itself with the new content (a one-time configuration that
   connects the content system to the public site's hosting). The trigger is built and
   documented; it is switched on by setting one connection in the content system.
+- **Shared reviewer comments.** The Word-style draft comments work fully today,
+  stored per browser (right for the demo weeks). The **shared** version — where two
+  reviewers on different machines see each other's threads — is also fully built
+  and tested, ships dormant, and switches itself on for real signed-in sessions the
+  moment Research & Analysis installs the ready-made `review-annotation` storage
+  type (a drop-in folder with its own install guide, `deploy/strapi/review-annotation/`).
 
 ### Status at a glance
 
@@ -567,14 +618,18 @@ listed again in Section 4 with the owner of the remaining step:
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
 | "Preview as published" (TOC, end matter, Print) | Exactly what the public will see | **Built** |
-| Shareable per-draft preview link | Reviewers open a specific draft directly | **Built** |
-| Paginated content list (newest first) | Find and track every item | **Built** |
-| One-click sample article / app / dataset | Demonstrate on demand | **Built** |
-| Light/dark mode + ICJIA logo | Comfortable, on-brand | **Built** |
-| Self-contained Demo Mode (`admin`/`admin`) | 200+ full-length phony articles; no live saves | **Built** (temporary) |
+| Tab-only preview + shareable per-draft link | Editor and preview side by side; reviewers open a draft directly | **Built** |
+| Word-style reviewer comments on drafts | Highlight a passage, comment, reply, resolve — a pure overlay | **Built** (per-browser today; shared storage dormant until R&A installs the type) |
+| Card-view content lists (+ table toggle, type filter) | Find and track every item at a glance | **Built** |
+| Guided onboarding tour | First-run walkthrough; replay anytime | **Built** |
+| One-click sample article / app / dataset (local dev) | Demonstrate on demand | **Built** |
+| Light/dark mode + ICJIA logo (WCAG 2.1 AA, both) | Comfortable, on-brand, accessible | **Built** |
+| Public demo with Author/Editor entry | 210 phony articles + 40 apps + 40 datasets; zero live reach — <https://studio-2026.netlify.app> | **Built & audited** |
+| Continuous integration (automated checks per change) | Typecheck + all 661 tests + both builds on every push | **Built** |
 | First-login onboarding | Capture a new author's reviewer & center | **Built; dormant until R&A creates the storage type** |
 | Publish + review-request email (Mailgun) | One-step publish; notify a reviewer | **Built; awaits R&A's email keys & live test** |
 | Auto rebuild of the public site on publish | New content appears publicly | **Built; awaits R&A wiring the trigger** |
+| Shared reviewer comments (cross-device) | Two reviewers see each other's threads | **Built; dormant until R&A installs `review-annotation`** |
 
 ---
 
@@ -589,16 +644,28 @@ services. Each step below names **who does it**.
 | # | Remaining step | Who does it | Why it can't be done yet by the developer |
 |---|---|---|---|
 | 1 | **Create the `studio-profile` storage type** in the content system (this is the one piece that *turns on* first-login onboarding). | **R&A** | Adding a storage type must be done in R&A's own content-system environment; until then the Studio stays fully usable with onboarding dormant. |
-| 2 | **Set the email keys** (Mailgun) so review-request emails can send. | **R&A** | These are secret credentials that belong to ICJIA and live in ICJIA's hosting, not in the code. |
-| 3 | **Wire the "publish → rebuild the public site" trigger** (one connection from the content system to the public site's hosting). | **R&A** | The trigger is a secret URL that, by design, lives only in the content system — never in the Studio's code. |
-| 4 | **Dress rehearsal with real staff accounts:** test the live publish, the review email, and onboarding end-to-end — including confirming a real Author truly cannot publish. | **Developer, with R&A providing a real Author test account** | The team does not create staff accounts itself; an actual Author login is needed to prove the rule under real conditions. |
-| 5 | **Remove the temporary `admin` / `admin` demo login** before the tool goes to production. | **Developer** | It is already inert in any real build (see Section 5), but it is removed entirely as a final cleanup so the record is spotless. |
-| 6 | *Optional, later:* **public (no-login) share links** for previews, if ICJIA wants reviewers outside the staff sign-in to open a draft. | **Developer, if requested** | Not required for launch; today's preview links open for any signed-in staff member, which covers the reviewers. |
+| 2 | **Install the ready-made `review-annotation` storage type** (a drop-in folder shipped in this project, `deploy/strapi/review-annotation/`, with its own install guide) — this switches reviewer comments from per-browser to shared. | **R&A** | Same reason as step 1: content types are created in R&A's content-system environment, not from the Studio. |
+| 3 | **Set the email keys** (Mailgun) so review-request emails can send. | **R&A** | These are secret credentials that belong to ICJIA and live in ICJIA's hosting, not in the code. |
+| 4 | **Wire the "publish → rebuild the public site" trigger** (one connection from the content system to the public site's hosting). | **R&A** | The trigger is a secret URL that, by design, lives only in the content system — never in the Studio's code. |
+| 5 | **Dress rehearsal with real staff accounts** on a staging copy: the full checklist in the cutover runbook (`docs/demo-to-production.md` §2) — live login for both roles, a real edit, a cross-user comment round-trip, a publish round-trip, the review email, and confirming a real Author truly cannot publish. | **Developer, with R&A providing real test accounts** | The team does not create staff accounts itself; an actual Author login is needed to prove the rule under real conditions. |
+| 6 | **The cutover itself** — flip the production build settings and secrets per the runbook (§3–§4); about 30 minutes plus smoke tests, with one-click rollback. | **Developer + whoever owns the hosting** | Needs the production hosting configuration and the go decision. |
+| 7 | *Optional, later:* **public (no-login) share links** for previews, if ICJIA wants reviewers outside the staff sign-in to open a draft. | **Developer, if requested** | Not required for launch; today's preview links open for any signed-in staff member, which covers the reviewers. |
 
-Plainly: steps 1–3 are ICJIA's setup, step 4 is the joint go-live check, and steps
-5–6 are developer cleanup and an optional nicety. The setup steps (1–3) are each
-documented in the project so R&A can follow them directly. Nothing on this list is
-an unknown or a research problem — they are known tasks with named owners.
+One earlier item has changed shape rather than remaining open: the temporary
+`admin` / `admin` convenience login now also powers the public demo's
+**Enter as Author / Enter as Editor** buttons, so it stays in the project as long
+as the demo site runs. In a real production build it cannot activate (both of its
+switches are off, and its credential is a dummy the content system rejects) — a
+posture the independent audits reviewed and accepted — and the project's automated
+pipeline carries a prepared "launch gate" check that will prove production bundles
+ship without it entirely, for the day the demo is retired and the code is deleted.
+
+Plainly: steps 1–4 are ICJIA's setup, step 5 is the joint go-live rehearsal, step 6
+is the switch itself, and step 7 is an optional nicety. Every setup step is
+documented in the project so R&A can follow it directly, and the whole sequence —
+including rollback — is written up as the cutover runbook
+(`docs/demo-to-production.md`). Nothing on this list is an unknown or a research
+problem — they are known tasks with named owners.
 
 ---
 
@@ -647,12 +714,14 @@ switched on for the public.
   > carefully, the switch was small and surgical rather than a do-over.
 
 The evidence that this rigor is real, not aspirational: the project currently
-stands at **375 automated tests, all passing**, across the sign-in and roles, the
+stands at **661 automated tests, all passing**, across the sign-in and roles, the
 content engine for all three content types, the image and file handling, the save
-gate, the editor, the "preview as published" view, the demo mode, and the
-publish/email/onboarding code. The no-bloated-images rule, the accessibility
-requirements, and the security handling of risky files are each backed by their
-own automatic guards. The result the process is aiming at is a tool that is
+gate, the editor, the "preview as published" view, the reviewer-comments engine,
+the demo mode, the security-header sets, and the publish/email/onboarding code —
+and a continuous-integration pipeline re-runs every one of them (plus both
+production and demo builds) automatically on every change. The no-bloated-images
+rule, the accessibility requirements, and the security handling of risky files are
+each backed by their own automatic guards. The result the process is aiming at is a tool that is
 correct, reviewable, safe to change, and maintainable for years — which is the
 entire reason to rebuild on a modern foundation in the first place.
 
@@ -671,11 +740,13 @@ answers.
   mode, and it earns its place by letting anyone verify the rest without risk.
 
 - ***What is the evidence?*** It is built into this document, by design. You can
-  open the running demonstration and use the tool directly; the test suite re-checks
-  375 promises every time the code changes; and every change is an independently
-  reviewed, reversible entry in the official record. The tool has also been through
-  an independent red/blue-team security audit (Section 6), which found zero critical
-  issues. Every claim here points to something that can be examined.
+  open the public demo (<https://studio-2026.netlify.app>) and use the tool
+  directly; the test suite re-checks 661 promises every time the code changes, and
+  a continuous-integration pipeline runs them automatically on every change; and
+  every change is an independently reviewed, reversible entry in the official
+  record. The tool has also been through **four** independent red/blue-team
+  security audits (Section 6), which found zero critical issues. Every claim here
+  points to something that can be examined.
 
 - ***Is it on track?*** Yes, and the remaining work is small and named. The features
   are built. What is left (Section 4) is ICJIA's own setup (three steps), a joint
@@ -684,14 +755,18 @@ answers.
   onboarding flows still need to be exercised against real ICJIA services and a real
   Author account, which is exactly what step 4 of the roadmap is for.
 
-One detail noted for completeness: during development only, there is a temporary
-local convenience login — the `admin` / `admin` demo login referenced throughout
-this document. It lets a person open the tool without a full account so the workflow
-can be shown and checked. It is **inert in any real build** (the code that creates it
-is stripped out when the production version is made, and its credential is a dummy
-the content system will never accept), it grants **no access to live data**, and it
-is **removed entirely before launch** (step 5 of the roadmap). It appears here and in
-the roadmap so the record is complete — it presents no risk to live information.
+One detail noted for completeness: there is a convenience login path — the
+`admin` / `admin` shortcut for local development, whose machinery also powers the
+public demo's **Enter as Author / Enter as Editor** buttons. It lets a person open
+the tool without a full account so the workflow can be shown and checked. It is
+**inert in any real production build** (both of its activation switches are off
+there, and its credential is a dummy the content system will never accept — a
+posture the independent audits reviewed and accepted), and it grants **no access
+to live data** anywhere. It stays in the project while the public demo runs; the
+automated pipeline carries a prepared check that will prove production bundles
+ship without it entirely once the demo is retired and the code deleted (Section 4).
+It appears here and in the roadmap so the record is complete — it presents no risk
+to live information.
 
 ---
 
@@ -705,23 +780,31 @@ content); the Studio itself never makes the final security decision — Strapi
 re-checks every request on the server, so a tampered browser cannot publish or see
 anything it shouldn't.
 
-**Independent red / blue team audit (2026-06-21).** A full adversarial review
-(try-to-break-it *and* verify-the-defenses) found **zero critical issues** and
-nothing exploitable in the production path. The graded findings were hardening
-items, not holes — and **every in-repo finding is now fixed and covered by
-automated tests (405 of them)**. The full report lives in the repository
-(`docs/security-audit.md`), and the README keeps a running log of every audit so
-the review history is visible at a glance.
+The Studio has now been through **four** independent red/blue-team audits —
+2026-06-21 (production), 2026-06-21 (the public demo and its deploy), 2026-06-22
+(demo roles, multiple main files, the guided tour, and a dependency refresh), and
+2026-07-05 (reviewer annotations, the tab-only preview, and the card-view lists).
+Combined verdict across all four: **zero critical issues, and zero open high- or
+medium-severity findings**; every in-repo finding is fixed and covered by
+automated tests (**661** of them, re-run in CI on every change). The full reports
+live in the repository (`docs/security-audit.md`), and the README keeps a running
+log of every audit so the review history is visible at a glance.
+
+**The first audit (2026-06-21, production)** is summarized below; the later three
+are summarized after it.
 
 - **See it:** open `docs/security-audit.md` — each finding names the exact file,
   the attack, the existing defense, and the fix.
-- **The demo login** (`admin / admin`) is a deliberate development/demo convenience
-  that is automatically removed from the production build; it is labeled as such on
-  the sign-in screen and documented in the audit. The live site authenticates
-  **only** through Strapi staff accounts.
-- **Before go-live:** confirm the security headers / CSP on a deploy preview, set
-  the email + publish keys, verify Strapi's role permissions, and remove the demo
-  login — a short, documented checklist.
+- **The demo entry** (the public demo's Author/Editor buttons, and the local
+  `admin / admin` developer shortcut behind them) is a deliberate convenience that
+  **cannot activate in a real production build** — both of its switches are off
+  there and its credential is a dummy the content system rejects, a posture the
+  audits reviewed and accepted. The live site authenticates **only** through
+  Strapi staff accounts.
+- **Before go-live:** the short, documented checklist now lives in the cutover
+  runbook (`docs/demo-to-production.md`) — confirm the security headers / CSP on a
+  deploy preview, set the email + publish keys, verify Strapi's role permissions,
+  install the two storage types, and run the staged dress rehearsal.
 
 **Findings & remediation**
 
@@ -752,7 +835,7 @@ Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachabl
 | Finding | Severity | Remediation | Status |
 |---|---|---|---|
 | D-1 — Dev Strapi URL baked into the public demo bundle | Medium | Blank `strapiBaseUrl` in demo mode (unused — the demo is in-memory) | ✅ Fixed (`cdff530`) |
-| D-2 — `demoMode` flag is runtime-mutable (devtools could flip it) | Medium | Neutralized by the CSP `connect-src 'self'` backstop + the rejected sentinel token; optional freeze + CI guard noted | 🛡️ Mitigated |
+| D-2 — `demoMode` flag is runtime-mutable (devtools could flip it) | Medium | CSP `connect-src 'self'` backstop + rejected sentinel token; **later fully closed** — the flag is deep-frozen on boot and a test guards the demo header set (2026-06-22 audit, F-1/F-2) | ✅ Fixed |
 | D-3 — Icons could fetch `api.iconify.design` at runtime | Medium | `icon.fallbackToApi:false` + all 46 icons bundled locally | ✅ Fixed (`cdff530`) |
 | D-4 — Content reads gated only by the token, not the demo build | Low | `isDemoData()` read-guard (in-memory repo for the whole demo build) | ✅ Fixed (`cdff530`) |
 | D-7 — Icon dependency pinned with a `^` range | Low | Pinned exact (`1.2.114`) | ✅ Fixed (`cdff530`) |
@@ -760,6 +843,27 @@ Strapi rejects, and a CSP `connect-src 'self'` that makes the backend unreachabl
 | D-5, D-6, D-9, D-10 — minor disclosure / prod-scoped | Low | Documented (sentinel creds worthless vs real Strapi; email-domain placeholder; HSTS `preload`; cookie `HttpOnly` = prod H-1) | 📄 Documented |
 
 Full detail in `docs/security-audit.md` §7.
+
+**Third audit (2026-06-22) — demo roles, main files, guided tour, dependencies.**
+Covered everything added for the public demo's Author/Editor entry, the multiple
+report files, the in-app tour, and a full dependency refresh. **Verdict: 0
+Critical / 0 High / 0 Medium.** Every concern examined was already correctly
+defended; two belt-and-suspenders fixes landed with the audit (the deep-freeze
+above, plus a test that locks the demo's network policy so it can never silently
+re-open). Full detail in `docs/security-audit.md` §8.
+
+**Fourth audit (2026-07-05) — reviewer comments, tab-only preview, card view.**
+Covered the entire annotation feature end to end (including the dormant
+shared-storage adapter), the new preview-tab architecture, and the card-view
+lists. **Verdict: 0 Critical / 0 High / 0 Medium.** One belt-and-suspenders fix
+landed with the audit (card artwork addresses now pass through the same URL
+allowlist as every other link); measured color contrast on all the new interface
+pieces runs well above the accessibility floor in both light and dark. Full
+detail in `docs/security-audit.md` §9.
+
+*(A dated maintenance log at the top of `docs/security-audit.md` records
+security-relevant changes between audits — most recently the search-engine
+exclusion headers and the CI bundle guard, 2026-07-11.)*
 
 ---
 
@@ -792,8 +896,8 @@ source of truth for what is live.
 
 ### 7.2 The end-to-end lifecycle
 
-The intended flow, end to end (publishing and review email are planned; drafting,
-the save-gate, and preview are built):
+The flow, end to end — every step below is now built; the email relay and the
+rebuild "doorbell" await their operator-side keys (Section 4):
 
 ```text
   AUTHOR                         EDITOR / SUPER ADMIN            PUBLIC
@@ -825,8 +929,9 @@ the save-gate, and preview are built):
 | Technology | End-of-life stack | Current, supported stack |
 | Images | Stored as bloated embedded text | Shared library, referenced by link |
 | Workflow | Multi-stage approval, three roles | Two roles: draft vs. publish |
-| Editor | Plain text box | Friendly editor (buttons, live preview, image insert) — planned |
-| Publishing | Manual steps | One button that also rebuilds the public site — planned |
+| Editor | Plain text box | Friendly editor (buttons, live preview, image insert) — **built** |
+| Publishing | Manual steps | One button that also rebuilds the public site — **built** (rebuild trigger awaits R&A wiring) |
+| Draft review | Email chains outside the tool | Word-style highlights & threaded comments on the exact preview — **built** |
 | Accessibility | Inconsistent | Required alt-text, optional captions, safe image handling |
 
 The content system itself was modernized ahead of this project to content parity
@@ -874,33 +979,41 @@ codebase is retained only as a reference for what each field means.
   role-aware dashboard and a publisher-only draft queue are in place (the queue
   lists drafts; the publish action itself is planned).
 
-### 7.5 What is planned, in technical terms
+### 7.5 What was planned at first writing — all of it has since shipped
 
-- **Authoring editor.** Adapt the existing ICJIA Markdown Editor as a shared,
-  reusable building block, and add the one capability it lacks: an image-upload
-  hook wired to the built image layer. Markdown-source editing with live preview is
-  retained (rather than a lossy rich-text conversion) so footnotes, mathematical
-  notation, and complex tables round-trip faithfully. The editor slots into the
-  existing body-editing seam without disturbing the surrounding forms.
+Each track below was "planned" in the 2026-06-21 edition of this document and is
+now built, tested, and on `main`:
 
-- **Publish, rebuild & review email.** A publisher-only publish action; a
-  **server-side** proxy that holds the public-site rebuild trigger secret, verifies
-  the caller is actually a publisher, then fires the rebuild; and a server-side
-  email step that holds the email-service credential and sends the reviewer a
-  preview link. Because publishing is two steps in two systems, the awkward middle
-  case — content live but rebuild not triggered — is reported as its own distinct
-  outcome rather than a flat success or failure. The reason these need a sliver of
-  server-side code is that each depends on a secret the browser cannot be trusted
-  to hold.
+- **Authoring editor — shipped.** The ICJIA Markdown Editor (CodeMirror 6,
+  vendored) is integrated with a formatting toolbar, split-pane live preview, and
+  the image-insert hook wired to the media layer. Markdown-source editing was
+  retained as designed, so footnotes, math, and complex tables round-trip
+  faithfully. A body **linter** ("Check" button flagging heading/link/image
+  problems) is implemented and review-approved on a feature branch, awaiting its
+  merge decision.
 
-- **Onboarding.** A first-login profile (reviewer email(s), the staff member's
-  center, and a prefilled author email) stored in a small, approved addition to the
-  content system, with the rest of the tool gated closed until the profile exists.
+- **Publish, rebuild & review email — shipped** (operator keys pending). The
+  publisher-only publish/unpublish actions are live against the content system's
+  own enforcement (a non-publisher gets a server-side refusal); the rebuild
+  trigger is configured as a content-system webhook holding the secret (per the
+  design — the Studio never sees it), documented in
+  `docs/deploy-rebuild-and-email.md`; and the review email is a server-side,
+  sign-in-verified, **rate-limited** relay (5 sends / 10 minutes per user) holding
+  the Mailgun credential server-side only.
 
-- **Polish, accessibility & launch.** An accessibility hardening pass focused on
-  the approver queue and the authoring forms, central error normalization, an
-  end-to-end happy-path test, deployment configuration, removal of the temporary
-  development-only login, and a one-click "sample article" demo.
+- **Onboarding — shipped, dormant.** The first-login profile (reviewers, center)
+  is built end to end and deliberately **fails open** until R&A creates the
+  `studio-profile` storage type — an API error can never lock an author out.
+
+- **Polish, accessibility & launch — shipped and then some.** Full WCAG 2.1 AA
+  sweeps (zero automated-checker violations, light *and* dark), central error
+  handling with a generic production error page, deployment configuration for
+  both the demo and production header sets, the one-click sample-content
+  shortcuts (local dev), the guided tour, and — beyond the original plan —
+  Word-style reviewer annotations, the tab-only preview, card-view lists, the
+  public demo with role entry, and a CI pipeline with the dev-bypass bundle
+  guard. (The "remove the dev login" cleanup became conditional: the demo's role
+  entry depends on it — see Section 4.)
 
 ### 7.6 Open items being tracked
 
@@ -911,7 +1024,7 @@ default or a clear owner.
 |---|---|---|
 | Stronger session hardening | Make the login token invisible even to the page's own scripts | A separate, approval-gated backend task; meanwhile the server enforces all permissions, so this is a hardening step, not a hole |
 | Author test account | A real author login is needed to confirm authors truly cannot publish | Requested from the backend owner; the team does not create accounts itself |
-| Pixel-exact preview styling | The preview already matches published formatting; making it pixel-identical needs the official public-site stylesheet | Built behind one swappable stylesheet; drop in the official styling when provided |
+| ~~Pixel-exact preview styling~~ | **Resolved:** the preview now ships the faithful Hub stylesheet (same fonts, same layout rules) behind the single swappable-stylesheet seam | Done — `assets/css/prose-preview.css` |
 | The real "centers" list | Onboarding asks which center a staff member belongs to; a placeholder list is used for now | Swap in the real list when supplied |
 | Onboarding profile storage | Storing the profile needs a small, approved addition to the content system | Approved; may need the system's development environment to create it |
 | Rebuild trigger & email credential | Publishing-with-rebuild and review-email need two secret values | Supplied at build time; both held server-side, never in the browser |
@@ -945,6 +1058,9 @@ proxy that verifies the caller before firing).
 
 ---
 
-*End of specification. The Studio is feature-complete in the workshop; this document
-will evolve as the remaining setup and go-live steps in Section 4 are completed.
-Nothing described here is live to the public yet.*
+*End of specification. First issued 2026-06-21; revised 2026-07-11 to reflect the
+shipped state (661 tests, four audits, annotations/preview/card-view/tour/demo
+roles/CI). The Studio is feature-complete in the workshop with a public
+demonstration at <https://studio-2026.netlify.app>; this document will evolve as
+the remaining setup and go-live steps in Section 4 are completed. Nothing
+described here publishes to the live system yet.*

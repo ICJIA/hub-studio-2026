@@ -1,0 +1,74 @@
+# CI for the ICJIA Research Hub Studio (roadmap article §5.2-1).
+#
+# Every push to main and every PR (incl. Dependabot's) runs: typecheck + the full Vitest
+# suite, a production build, and the public-demo generate with the dev-bypass positive
+# control. The production-bundle ABSENCE check is the LAUNCH GATE — see the commented step
+# in build-production and the cutover runbook (docs/demo-to-production.md §4).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  build-production:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Real production build (Nitro server routes included; demo flag absent).
+      - run: npm run build
+      # ── LAUNCH GATE (enable at cutover, runbook §4) ─────────────────────────────────
+      # Pre-launch, the dev/demo bypass deliberately ships-but-unreachable in a production
+      # bundle (runbook §0), so this step would fail today BY DESIGN. Uncomment it in the
+      # same PR that deletes app/lib/dev-auth.ts and its call sites:
+      # - name: Dev-bypass launch gate (bundle must not contain the sentinel)
+      #   run: node scripts/check-dev-bypass.mjs .output/public --expect absent
+      # ────────────────────────────────────────────────────────────────────────────────
+
+  build-demo:
+    name: Public-demo build + bypass-guard control
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Same build netlify.toml runs for the public demo (the cp lands on .output/public,
+      # which is what the repo's `dist` symlink points at on Netlify and locally).
+      - run: npm run generate
+        env:
+          NUXT_PUBLIC_DEMO_MODE: 'true'
+      - run: cp deploy/headers-demo.txt .output/public/_headers && test -f .output/public/_headers
+      # Positive control: the demo bundle MUST contain the sentinel — proves the bypass-guard
+      # scan detects the token, so the launch gate above can never rot into a silent pass.
+      - name: Bypass-guard positive control
+        run: node scripts/check-dev-bypass.mjs .output/public --expect present

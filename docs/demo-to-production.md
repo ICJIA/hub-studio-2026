@@ -3,7 +3,8 @@
 How to move the Studio from the public demo (static, in-memory, `admin/admin`) to the live
 production deploy (real Strapi 5 content, real annotations, real admin auth). Written
 2026-07-05, when everything except the Strapi-side install and the deploy switches already
-ships in this repo.
+ships in this repo. Updated 2026-07-11: the §3 noindex hardening has shipped, and CI
+(`.github/workflows/ci.yml`) now carries the dev-bypass **launch gate** (see §6).
 
 **The short version:** production is not a different app — it is the SAME build with
 `NUXT_PUBLIC_DEMO_MODE` unset, built with `npm run build` instead of `nuxt generate`, plus a
@@ -134,9 +135,9 @@ leaving the demo site's TOML untouched — see note below):
 
 No Strapi secret is needed in the Studio: users authenticate with their own admin JWTs.
 
-Optional hardening: the Studio is an internal tool on a public URL — consider adding
-`X-Robots-Tag: noindex` to `public/_headers` (there is no robots.txt today) so the login
-page never gets indexed.
+~~Optional hardening: consider adding `X-Robots-Tag: noindex`~~ **Done (2026-07-11):**
+both header sets now send `X-Robots-Tag: noindex` and `public/robots.txt` disallows all
+crawling (unit-tested in `tests/unit/security-headers.test.ts`) — no action needed here.
 
 ## 4. Cutover day (≈30 minutes once §1–§3 are done)
 
@@ -181,3 +182,11 @@ The demo is unaffected by anything above, so rollback is only about the producti
   list at the end of `.superpowers/sdd/progress.md` (annotation a11y riders: swatch
   radiogroup semantics, roving toolbar tabindex, drawer dialog semantics, document-level
   keyboard-create listener). None block launch; keep them visible.
+- **Dev bypass ships-but-unreachable — and the CI launch gate.** `app/lib/dev-auth.ts`
+  stays in the repo because the public demo's role buttons depend on it; in a production
+  build it is unreachable (both activation switches false) and its sentinel token fails
+  closed — the audited, accepted posture. CI runs a **positive control** on every demo
+  build (`scripts/check-dev-bypass.mjs … --expect present`) so the sentinel scan can never
+  rot. **If the demo site is ever retired** (or pinned to an old deploy) and `dev-auth.ts`
+  is deleted, uncomment the "Dev-bypass launch gate" step in `.github/workflows/ci.yml` in
+  the same PR — from then on CI proves every production bundle ships without the bypass.

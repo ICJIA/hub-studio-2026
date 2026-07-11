@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Document** | Design & Implementation Specification |
-| **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub |
+| **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub (internal program codename: **Copperhead**; this repository: `copperhead-studio-20`, alongside `copperhead-hub-20` for the public site). The codename is internal only — the public never sees it |
 | **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
 | **Status** | **Feature-complete in the workshop** — the full tool is built and a public demo is clickable at <https://studio-2026.netlify.app>; not yet switched on for real publishing |
 | **Date** | 2026-06-21 · **revised 2026-07-11** (test counts, four audits, features shipped since — annotations, tab-only preview, card view, guided tour, public demo roles, CI) |

@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-07-11
+### 2026-07-11 (post-0.3.0)
+
+_Changed_
+
+- **Copperhead program alignment.** The Hub 2.0 modernization now carries the internal codename **Copperhead** (Illinois-native snake; the codename never reaches the public — at launch it simply becomes the ICJIA Research Hub). The GitHub repo was renamed `hub-studio-2026` → **`copperhead-studio-20`** (sibling of `copperhead-hub-20`, the public-site rewrite); `package.json` name and the local git remote follow. Doc filenames now mirror the hub project's pattern: the Design & Implementation Spec is **`docs/ICJIA-Studio-20-rewrite-copperhead.md/.docx`** and the Analysis & Launch Roadmap is **`docs/ICJIA-Studio-20-analysis-roadmap-copperhead.md/.docx`** (git-mv'd; all references updated; both Word editions regenerated). README gains a "Naming: Copperhead" section with the rationale; the spec header and roadmap article carry the naming note. Historical changelog entries keep the old filenames they shipped under.
 
 _Added_
 

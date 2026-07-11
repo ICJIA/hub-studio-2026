@@ -7,6 +7,7 @@
 ## Table of contents
 
 - [TL;DR — the 30-second version](#tldr--the-30-second-version)
+- [Naming: "Copperhead" — the Hub 2.0 program codename](#naming-copperhead--the-hub-20-program-codename)
 - [Why this matters — the audience the Studio serves](#why-this-matters--the-audience-the-studio-serves)
 - [Developer reference](#developer-reference)
 - [Status: built and working in development (pre-launch)](#status-built-and-working-in-development-pre-launch)
@@ -36,6 +37,12 @@
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
+
+## Naming: "Copperhead" — the Hub 2.0 program codename
+
+The Hub 2.0 modernization is internally codenamed **Copperhead** (a snake native to southern Illinois — an Illinois name for an Illinois project, short and memorable). Repositories carry the family prefix: **`copperhead-studio-20`** (this repo — Hub Studio 2.0, the internal writing/publishing tool) and **`copperhead-hub-20`** (the new public website). Within the program: **Strapi 5** (the content database — done), **Hub Studio 2.0** (built, pre-launch), and **Copperhead** (the public site — in planning).
+
+Why a codename? It separates the effort from the product — "Research Hub" means the *live* site for the whole build, while "Copperhead" is always unambiguous in a meeting, ticket, or repo name ("the new hub" and "hub 2" are not, especially since a previous rewrite attempt also called itself Hub 2.0). It keeps internal work internal: **the public never sees the codename** — at launch, Copperhead simply becomes the ICJIA Research Hub, same name, same address, no public rebranding. And it gives every artifact one label — repos, environments, tickets, and status reports carry one word, so the paper trail stays coherent for anyone auditing the work later; when the project ends, the codename retires.
 
 ## Why this matters — the audience the Studio serves
 
@@ -91,7 +98,7 @@ The investment in Hub Studio 2.0 is proportional to the audience it serves: the 
 
 *Sources: Plausible analytics for `icjia.illinois.gov` (page-prefix filters; 6- and 12-month windows ending 2026-06-21) and the live Research Hub Strapi content API.*
 
-**Non-technical readers:** the TL;DR above and the [Design &amp; Implementation Spec](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) are all you need — everything below is developer reference.
+**Non-technical readers:** the TL;DR above and the [Design &amp; Implementation Spec](docs/ICJIA-Studio-20-rewrite-copperhead.md) are all you need — everything below is developer reference.
 
 ---
 
@@ -105,9 +112,9 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), publishing/unpublishing, image handling, multiple Main Files, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **677 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
 
-- 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) ([Word version](docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
+- 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Studio-20-rewrite-copperhead.md) ([Word version](docs/ICJIA-Studio-20-rewrite-copperhead.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
-- 📊 [**Analysis &amp; Launch Roadmap**](docs/ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md) (2026-07-11; the [Word edition](docs/ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.docx) bundles the spec, audit, and runbook as appendices) — current-state assessment, ranked improvement recommendations, demo-vs-live cutover picture, and the phased launch roadmap.
+- 📊 [**Analysis &amp; Launch Roadmap**](docs/ICJIA-Studio-20-analysis-roadmap-copperhead.md) (2026-07-11; the [Word edition](docs/ICJIA-Studio-20-analysis-roadmap-copperhead.docx) bundles the spec, audit, and runbook as appendices) — current-state assessment, ranked improvement recommendations, demo-vs-live cutover picture, and the phased launch roadmap.
 
 ## Workflow
 
@@ -611,10 +618,10 @@ tests/
   fixtures/        # shared test data
 
 docs/
-  ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md
-  ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.docx
-  ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md    # 2026-07-11 assessment + roadmap
-  ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.docx  # Word edition incl. spec/audit/runbook appendices
+  ICJIA-Studio-20-rewrite-copperhead.md
+  ICJIA-Studio-20-rewrite-copperhead.docx
+  ICJIA-Studio-20-analysis-roadmap-copperhead.md    # 2026-07-11 assessment + roadmap
+  ICJIA-Studio-20-analysis-roadmap-copperhead.docx  # Word edition incl. spec/audit/runbook appendices
   security-audit.md
   demo-to-production.md      # the demo → live cutover runbook (Strapi install, staging checklist, launch day)
   deploy-rebuild-and-email.md

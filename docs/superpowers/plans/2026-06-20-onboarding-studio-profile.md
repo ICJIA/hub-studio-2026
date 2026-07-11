@@ -38,7 +38,7 @@
 
 ## Global Constraints
 
-*Every task's requirements implicitly include this section. Values are copied from the design spec (`docs/ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md`, §onboarding/profile) and the public shapes of the already-built data/auth/guard/fields layers, plus the LOCKED decisions the user confirmed for this plan.*
+*Every task's requirements implicitly include this section. Values are copied from the design spec (`docs/ICJIA-Studio-20-rewrite-copperhead.md`, §onboarding/profile) and the public shapes of the already-built data/auth/guard/fields layers, plus the LOCKED decisions the user confirmed for this plan.*
 
 - **Stack:** Nuxt 4 **SPA** (`ssr: false`), **Nuxt UI 4**, Pinia 2.x, **TypeScript**. Pages live in `app/pages/`; the global route middleware (`app/middleware/auth.global.ts`) + `definePageMeta({ public, adminOnly })` + the pure `resolveAuthRedirect` already enforce default-deny. **This plan EXTENDS that one pure guard function + the one middleware that calls it** — it adds no second middleware.
 - **Wire, do NOT recreate** (read their public shapes; never redefine):

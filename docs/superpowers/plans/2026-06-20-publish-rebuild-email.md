@@ -37,7 +37,7 @@
 
 ## Global Constraints
 
-*Every task's requirements implicitly include this section. Values are copied from the design spec (`docs/superpowers/specs/...` and the root `ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md`, §publish/review) and the public shapes of the already-built data/auth/preview layers, plus the LOCKED architecture decisions the user confirmed for this plan.*
+*Every task's requirements implicitly include this section. Values are copied from the design spec (`docs/superpowers/specs/...` and the root `ICJIA-Studio-20-rewrite-copperhead.md`, §publish/review) and the public shapes of the already-built data/auth/preview layers, plus the LOCKED architecture decisions the user confirmed for this plan.*
 
 - **Stack:** Nuxt 4 **SPA** (`ssr: false`), **Nuxt UI 4**, Pinia 2.x, **TypeScript**. **Nitro server routes ARE available under `ssr: false`** — Nuxt always builds the Nitro server; `ssr: false` only disables server-side *rendering of pages*, not API routes. Confirm `nuxt.config.ts` does **not** set `nitro: false` or `ssr` in a way that strips the server (it currently sets only `ssr: false`), and that `server/api/request-review.post.ts` deploys as a Netlify Function (Nuxt's Netlify preset maps `server/api/**` to functions automatically; no extra config needed). **This plan adds NO new auth/guard middleware for pages** — `/manage` is already `adminOnly` via the existing global guard.
 - **Wire, do NOT recreate** (read their public shapes; never redefine):

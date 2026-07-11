@@ -27,10 +27,10 @@ import { execFileSync } from 'node:child_process'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const docs = join(root, 'docs')
 
-const ARTICLE = join(docs, 'ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.md')
-const OUT = join(docs, 'ICJIA-Research-Hub-Studio-2026-Analysis-and-Launch-Roadmap.docx')
+const ARTICLE = join(docs, 'ICJIA-Studio-20-analysis-roadmap-copperhead.md')
+const OUT = join(docs, 'ICJIA-Studio-20-analysis-roadmap-copperhead.docx')
 const APPENDICES = [
-  ['Appendix A — Design & Implementation Specification', join(docs, 'ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md')],
+  ['Appendix A — Design & Implementation Specification', join(docs, 'ICJIA-Studio-20-rewrite-copperhead.md')],
   ['Appendix B — Security Audit (Red Team / Blue Team)', join(docs, 'security-audit.md')],
   ['Appendix C — Demo → Production Cutover Runbook', join(docs, 'demo-to-production.md')],
 ]

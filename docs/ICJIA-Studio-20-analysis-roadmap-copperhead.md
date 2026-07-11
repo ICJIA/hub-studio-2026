@@ -34,13 +34,15 @@
 | A developer joining or reviewing the project | Everything, especially §4 (how quality is evidenced), §5 (recommendations, with file references) |
 | Anyone deciding "is this ready?" | §4 (current state) and §6 (what actually changes at launch) |
 
-This document deliberately does **not** repeat the two big existing references: the [Design & Implementation Spec](ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) (what the Studio is and why it's built this way) and the [Security Audit](security-audit.md) (the full red/blue-team record). It analyzes the application as it stands, recommends improvements, and lays out the path to launch.
+This document deliberately does **not** repeat the two big existing references: the [Design & Implementation Spec](ICJIA-Studio-20-rewrite-copperhead.md) (what the Studio is and why it's built this way) and the [Security Audit](security-audit.md) (the full red/blue-team record). It analyzes the application as it stands, recommends improvements, and lays out the path to launch.
 
 ---
 
 ## 3. What the application is
 
 **Plain English.** The Studio is a private website where ICJIA research staff write and publish content for the public Research Hub. An **Author** signs in, writes in a friendly editor (formatting buttons, live preview — no coding), adds images from a media library, and saves a draft. Reviewers can highlight passages of the draft and leave threaded comments, exactly like margin comments in Microsoft Word. When the draft is ready, an **Editor** clicks **Publish**; the public website rebuilds itself automatically. That is the whole lifecycle: *Authors draft → Editors publish.*
+
+*(Program naming note: the wider Hub 2.0 effort carries the internal codename **Copperhead** — this repository is `copperhead-studio-20`, and the new public website is `copperhead-hub-20`. The codename is internal only; the public-facing product remains the ICJIA Research Hub.)*
 
 **Technical shape.** A Nuxt 4 single-page application (Vue 3, TypeScript, `ssr: false`) talking exclusively to Strapi 5's admin Content-Manager API — no public REST/GraphQL surface in the critical path. Clean layering: pages/components → composables → a pure-TypeScript `app/lib/` core (validators, repositories, markdown pipeline, URL allowlist) → a typed `$api` client. State is one Pinia auth store persisted to a cookie; everything else is composable-local. One Nitro server route (the rate-limited review-email relay) deploys as a Netlify Function in production. Roughly 130 source files, ~60 of them pure logic modules that are unit-testable without a browser — which is exactly where the test suite concentrates.
 
@@ -238,4 +240,4 @@ This is a healthy project in an unusually verifiable state: the demo anyone can 
 
 ---
 
-*Prepared July 11, 2026, against `main` @ `d78a7ab`. Verification commands and results are recorded in §4.1; file paths throughout refer to this repository. Companion documents: [Design & Implementation Spec](ICJIA-Research-Hub-Studio-2026-Design-and-Implementation-Spec.md) · [Security Audit](security-audit.md) · [Demo → Production Runbook](demo-to-production.md).*
+*Prepared July 11, 2026, against `main` @ `d78a7ab`. Verification commands and results are recorded in §4.1; file paths throughout refer to this repository. Companion documents: [Design & Implementation Spec](ICJIA-Studio-20-rewrite-copperhead.md) · [Security Audit](security-audit.md) · [Demo → Production Runbook](demo-to-production.md).*

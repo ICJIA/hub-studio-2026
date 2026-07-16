@@ -13,12 +13,21 @@ import { validateApp } from '~/lib/validators/app'
 import type { FieldError } from '~/lib/validators/article'
 import { CATEGORY_OPTIONS } from '~/lib/field-options'
 import { parseAuthors } from '~/lib/text-import'
+import { useDraftGuard } from '~/composables/useDraftGuard'
 
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: App }>()
 const repo = useApps()
 const toast = useToast()
 
 const model = reactive<App>(props.initial ? { ...props.initial } : blankApp())
+// The unsaved-work guard (spec §5.3-4, same pattern as ArticleForm): dirty tracking, leave
+// warnings, 30s snapshots, and the restore banner below — all keyed to this form's model.
+// create mode has no documentId yet, so its snapshot keys under 'new'.
+const draftGuard = useDraftGuard({
+  type: 'app',
+  documentId: props.mode === 'edit' ? (props.initial?.documentId ?? null) : null,
+  model,
+})
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
 
@@ -40,6 +49,7 @@ async function submit() {
       : (m: App) => repo.update(m.documentId, m)
     const res: SubmitResult<App> = await submitForm(toSave, validateApp, persist)
     if (!res.ok) { errors.value = res.errors; return }
+    draftGuard.markSaved() // clear-on-save invariant: a surviving snapshot always means unsaved work
     toast.add({ title: 'Draft saved', color: 'success' })
     // Tab-only preview (user decision 2026-07-05): save just saves. A first-time create moves
     // to the entry's edit route (it now exists); preview is the Preview link's own named tab.
@@ -58,6 +68,12 @@ defineExpose({ submit, setField, errors, model })
 
 <template>
   <UForm :state="model" class="space-y-6" @submit.prevent="submit">
+    <DraftRestoreBanner
+      v-if="draftGuard.restoreAvailable.value"
+      :saved-at="draftGuard.snapshotSavedAt.value ?? ''"
+      @restore="draftGuard.restore()"
+      @discard="draftGuard.discard()"
+    />
     <div class="flex justify-end">
       <!-- Tab-only preview: the standalone review page in a per-document named tab. -->
       <UButton

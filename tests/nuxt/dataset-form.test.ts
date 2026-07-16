@@ -3,6 +3,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { Dataset } from '~/types/content'
+import { saveSnapshot, loadSnapshot } from '~/lib/draft-backup'
+import { blankDataset } from '~/lib/forms/blank-models'
 
 const createMock = vi.fn(async (m: Dataset): Promise<Dataset> => ({ ...m, documentId: 'dsdocN' }))
 mockNuxtImport('useDatasets', () => () => ({
@@ -54,5 +56,42 @@ describe('DatasetForm', () => {
     expect(createMock).not.toHaveBeenCalled()
     const errs = wrapper.vm.$.exposed!.errors.value
     expect(errs.some((e: { field: string }) => e.field === 'description')).toBe(true)
+  })
+})
+
+describe('unsaved-work guard integration', () => {
+  beforeEach(() => localStorage.clear())
+
+  // Edit-mode fixture: blankDataset() spread with just enough (title/slug/date —
+  // validateDataset requires all three) to clear validateDataset, so submit() reaches persist
+  // without extra setField calls. documentId is overridden per-use, same pattern as
+  // article-form.test.ts's sampleInitial.
+  const sampleInitial: Dataset = {
+    ...blankDataset(),
+    title: 'Crime Data',
+    slug: 'crime-data',
+    date: '2021-01-01',
+  }
+
+  it('shows the restore banner when a snapshot exists for this draft', async () => {
+    saveSnapshot('dataset', 'ds1', { ...blankDataset(), title: 'Recovered title' }, '2026-07-16T09:00:00.000Z')
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'ds1' } } })
+    expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('shows no banner without a snapshot', async () => {
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'ds1' } } })
+    expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('a successful save clears the snapshot (clear-on-save invariant)', async () => {
+    saveSnapshot('dataset', 'ds1', { ...blankDataset(), title: 'Old backup' }, '2026-07-16T09:00:00.000Z')
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'ds1' } } })
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(loadSnapshot('dataset', 'ds1')).toBeNull()
+    wrapper.unmount()
   })
 })

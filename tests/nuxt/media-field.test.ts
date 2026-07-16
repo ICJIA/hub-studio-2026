@@ -33,8 +33,9 @@ import MediaField from '~/components/fields/MediaField.vue'
 /** A promise whose resolution is controlled externally — for exercising in-flight request races. */
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((r) => { resolve = r })
-  return { promise, resolve }
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej })
+  return { promise, resolve, reject }
 }
 
 describe('MediaField', () => {
@@ -325,6 +326,72 @@ describe('MediaField', () => {
         await wrapper.vm.$.exposed!.__persistInfo() // retry — still-unsaved value, no further edit
         expect(updateInfoMock).toHaveBeenCalledTimes(2)
         expect(updateInfoMock).toHaveBeenLastCalledWith(42, { alternativeText: 'New alt', caption: 'Original caption' })
+      })
+    })
+
+    // Residual race found in re-review: the id guard alone protects against a REPLACE (id
+    // change) but not against two overlapping calls on the SAME id resolving out of order —
+    // the older call's late response still passes the id check and clobbers the newer call's
+    // already-applied baseline (or paints a stale error over an edit that already succeeded).
+    describe('same-id overlapping persist calls (out-of-order responses)', () => {
+      it('call 2 resolving before call 1 keeps call 2\'s baseline; call 1\'s late response is ignored entirely', async () => {
+        const call1 = deferred<MediaRef>()
+        const call2 = deferred<MediaRef>()
+        updateInfoMock.mockReturnValueOnce(call1.promise)
+        updateInfoMock.mockReturnValueOnce(call2.promise)
+
+        const wrapper = await mountWithModel(selected) // id 42
+        await wrapper.find('[data-test="selected-alt"]').setValue('V1')
+        const p1 = wrapper.vm.$.exposed!.__persistInfo() // call 1: fires, in flight (slow)
+
+        await wrapper.find('[data-test="selected-alt"]').setValue('V2')
+        const p2 = wrapper.vm.$.exposed!.__persistInfo() // call 2: fires, in flight (same id)
+
+        expect(updateInfoMock).toHaveBeenCalledTimes(2)
+
+        // Call 2 (the newer edit) resolves FIRST and applies its baseline.
+        call2.resolve({ ...selected, alternativeText: 'V2' })
+        await p2
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Call 1 (the older, slower edit) resolves LATE, same id — must be ignored entirely.
+        call1.resolve({ ...selected, alternativeText: 'V1' })
+        await p1
+        await new Promise((r) => setTimeout(r, 0))
+
+        // Baseline must still reflect V2: a no-edit blur (current is still 'V2') fires nothing.
+        updateInfoMock.mockClear()
+        await wrapper.vm.$.exposed!.__persistInfo()
+        expect(updateInfoMock).not.toHaveBeenCalled()
+      })
+
+      it('call 1 failing AFTER call 2 already succeeded does not paint a stale error', async () => {
+        const call1 = deferred<MediaRef>()
+        const call2 = deferred<MediaRef>()
+        updateInfoMock.mockReturnValueOnce(call1.promise)
+        updateInfoMock.mockReturnValueOnce(call2.promise)
+
+        const wrapper = await mountWithModel(selected) // id 42
+        await wrapper.find('[data-test="selected-alt"]').setValue('V1')
+        const p1 = wrapper.vm.$.exposed!.__persistInfo() // call 1: fires, in flight (slow)
+
+        await wrapper.find('[data-test="selected-alt"]').setValue('V2')
+        const p2 = wrapper.vm.$.exposed!.__persistInfo() // call 2: fires, in flight (same id)
+
+        // Call 2 succeeds first.
+        call2.resolve({ ...selected, alternativeText: 'V2' })
+        await p2
+        await new Promise((r) => setTimeout(r, 0))
+        expect(wrapper.vm.$.exposed!.__persistError.value).toBeNull()
+
+        // Call 1 rejects LATE, after call 2 already succeeded — must not paint an error over
+        // an edit that ultimately succeeded, nor touch the now-correct V2 baseline.
+        call1.reject(new Error('403'))
+        await p1
+        await new Promise((r) => setTimeout(r, 0))
+
+        expect(wrapper.vm.$.exposed!.__persistError.value).toBeNull()
+        expect(wrapper.find('[data-test="persist-error"]').exists()).toBe(false)
       })
     })
 

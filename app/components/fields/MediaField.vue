@@ -18,8 +18,9 @@
   owns that state), and no-op edits (compared against the last-persisted baseline for the
   current id, reseeded on every id change). On failure the local (unsaved) value is left in
   place and the baseline is restored so a later blur retries; see persistInfo()'s own doc
-  comment for the optimistic-baseline + id-guard mechanics that keep concurrent/replaced-image
-  write-backs from duplicating or clobbering each other.
+  comment for the optimistic-baseline + sequence/id-guard mechanics that keep concurrent,
+  replaced-image, and same-id-overlapping-edit write-backs from duplicating or clobbering
+  each other.
 -->
 <script setup lang="ts">
 import { ref, computed, watch } from '#imports'
@@ -61,20 +62,31 @@ watch(
   { immediate: true },
 )
 
+// Monotonic per-call sequence guard: each persistInfo() call that actually proceeds (past the
+// no-op check) claims the next sequence number. A response (success or failure) only touches
+// state if its sequence is still the CURRENT one when it settles — this catches the case the
+// id guard alone can't: two overlapping calls on the SAME id resolving out of order, where the
+// older call's late response would otherwise pass the id check and clobber the newer call's
+// already-applied baseline. Mirrors the request-generation guard in MediaLibraryGrid.vue's load().
+let persistSeq = 0
+
 /**
  * Persist alt/caption edits to the media record on commit (blur). Skips display-only refs
  * (id 0 — dev sample content), empty alt (the required-field error owns that state), and
  * no-op edits. Demo/session refs (negative ids) persist through the demo adapter in-memory.
  * On failure the local value is kept so the author can retry.
  *
- * Optimistic baseline + id guard (kills two stale-baseline races around the await):
+ * Optimistic baseline + sequence/id guard (kills stale-baseline races around the await):
  *  - The outgoing values are adopted as the baseline BEFORE the await settles, so a second
  *    blur that fires while this call is still in flight (e.g. tab from alt straight to
  *    caption) compares against the value already in flight and no-ops instead of firing a
  *    duplicate call.
- *  - The response (success) and the restore (failure) are only applied if `current` is still
- *    the media id this call was made for, so a late response for a since-replaced image can
- *    never clobber the new image's own (freshly reseeded) baselines.
+ *  - The response (success) and the restore (failure) are only applied if this call is still
+ *    both the latest one fired (`seq === persistSeq`) AND still for the current media id. The
+ *    id half covers a late response after Replace; the sequence half covers a late response
+ *    from an OLDER overlapping call on the SAME id (e.g. two edits blurred in quick succession
+ *    where the second call's response lands first) — a stale call does nothing at all: no
+ *    baseline write, no error paint over a since-succeeded edit.
  */
 async function persistInfo() {
   const mediaRef = current.value
@@ -84,6 +96,7 @@ async function persistInfo() {
   if (!altValue) return
   if (altValue === persistedAlt.value.trim() && captionValue === persistedCaption.value.trim()) return
   const calledId = mediaRef.id
+  const seq = ++persistSeq
   const previousAlt = persistedAlt.value
   const previousCaption = persistedCaption.value
   persistedAlt.value = altValue
@@ -91,12 +104,12 @@ async function persistInfo() {
   persistError.value = null
   try {
     const updated = await updateInfo(mediaRef.id, { alternativeText: altValue, caption: captionValue })
-    if (current.value?.id === calledId) {
+    if (seq === persistSeq && current.value?.id === calledId) {
       persistedAlt.value = updated.alternativeText ?? ''
       persistedCaption.value = updated.caption ?? ''
     }
   } catch {
-    if (current.value?.id === calledId) {
+    if (seq === persistSeq && current.value?.id === calledId) {
       persistedAlt.value = previousAlt
       persistedCaption.value = previousCaption
       persistError.value = 'Could not save the image details to the library. Retry by editing the field again.'

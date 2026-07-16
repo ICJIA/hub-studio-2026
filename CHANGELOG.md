@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-16
+
+_Added_
+
+- **Manager-docs workflow (hub v0.24.0 parity).** Managers monitoring the project can now
+  always see what's changed, what's in flight, and what's next, without asking a developer:
+  - **`ROADMAP.md`** (repo root) — a living roadmap in the hub's exact format (Done (recent) /
+    In progress / Next (proposed) / Deferred / Blocked on R&A), opening with a
+    `Last updated · Current version` line. Seeded truthfully from the 2026-07-16 planning
+    decision (media-library picker in progress; author-protection items next).
+  - **Version-stamped bottom navs** in the four manager-facing docs (README, Design Spec,
+    Analysis & Roadmap article, ROADMAP) — current version + absolute GitHub `blob/main`
+    links (Spec & status · Changelog · Roadmap · README · Live demo) that always open the
+    latest rendered document, including from the Word editions (plain external hyperlinks —
+    never Word field codes).
+  - **"What's changed recently"** digest section in the Design Spec.
+  - **In-app bottom status bar** (`AppStatusBar.vue`, hub port) — version pill
+    (`runtimeConfig.public.version` ← package.json) + Spec & status / Changelog / Roadmap /
+    Repository links. Pure links, no fetches — the demo CSP is unaffected.
+  - **In-app `/spec` page** (hub port) — renders the Design Spec through the same
+    markdown pipeline as article bodies (build-time `?raw` import; the pipeline's
+    `html:false` + attr-allowlist guarantees carry over; source is this repo's own doc,
+    fixed at build), with `.md`/`.docx` downloads copied to `public/spec/` by
+    `scripts/copy-spec.mjs` on every dev/build/generate (`public/spec/` git-ignored).
+    Marked `public` — readable before sign-in; the sources already live in a public repo.
+  - **Docs-currency guard test** (`tests/unit/docs-nav.test.ts`) — the "always update the
+    roadmap/docs" rule enforced as a failing test: nav markers present, every version stamp
+    equal to package.json. Stale docs now fail the suite and CI.
+
+_Fixed_
+
+- **Vitest no longer scans `.claude/` worktrees.** The first session worktree ever created
+  under `.claude/worktrees/` surfaced 97 phantom file-level failures in the parent
+  checkout's run (worktrees carry `tests/` but no `node_modules`); `vitest.config.ts` now
+  excludes `.claude/**`, and `.claude/worktrees/` is git-ignored.
+
+Suite: **690 tests / 100 files** (677 + 13 new), typecheck clean, demo `generate` verified
+locally with the new `/spec` assets bundled.
+
 ### 2026-07-11 (post-0.3.0)
 
 _Changed_

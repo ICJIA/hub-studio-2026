@@ -154,4 +154,23 @@ describe('MediaLibraryGrid', () => {
     expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
     expect(wrapper.find('[data-test="library-load-more"]').exists()).toBe(true)
   })
+
+  it('a failed Load More does not skip a page — retrying requests the same page and appends on success', async () => {
+    const wrapper = await mountSuspended(MediaLibraryGrid)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+
+    listMock.mockRejectedValueOnce(new Error('page 2 failed'))
+    await wrapper.find('[data-test="library-load-more"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(listMock).toHaveBeenLastCalledWith({ page: 2, pageSize: 20, search: undefined })
+    expect(wrapper.find('[data-test="library-error"]').exists()).toBe(true)
+
+    listMock.mockResolvedValueOnce(page2)
+    await wrapper.find('[data-test="library-load-more"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(listMock).toHaveBeenLastCalledWith({ page: 2, pageSize: 20, search: undefined })
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(22)
+  })
 })

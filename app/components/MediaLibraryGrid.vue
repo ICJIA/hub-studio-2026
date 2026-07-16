@@ -31,8 +31,9 @@ const demoNote = isDemoData()
 // search) can never clobber fresher state, no matter what order the promises settle in.
 let generation = 0
 
-async function load(reset = false) {
+async function load(reset = false, targetPage = page.value) {
   const gen = ++generation
+  const requestPage = reset ? 1 : targetPage
   if (reset) {
     page.value = 1
     exhausted.value = false
@@ -40,8 +41,13 @@ async function load(reset = false) {
   loading.value = true
   error.value = null
   try {
-    const batch = await list({ page: page.value, pageSize: props.pageSize, search: search.value.trim() || undefined })
+    const batch = await list({ page: requestPage, pageSize: props.pageSize, search: search.value.trim() || undefined })
     if (gen !== generation) return
+    // Commit the page number only alongside a successful, still-current batch — an append
+    // (Load more) that fails must NOT advance `page`, or the next click would silently skip
+    // the page that just failed. A stale/superseded response (caught above) commits nothing,
+    // including this, so it can never advance `page` out from under a newer request either.
+    page.value = requestPage
     items.value = reset ? batch : [...items.value, ...batch]
     exhausted.value = batch.length < props.pageSize
   } catch {
@@ -57,8 +63,7 @@ async function load(reset = false) {
 }
 
 function loadMore() {
-  page.value += 1
-  load()
+  load(false, page.value + 1)
 }
 
 function choose(item: MediaRef) {

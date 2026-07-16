@@ -41,6 +41,56 @@ describe('useDraftGuard', () => {
     vi.useRealTimers()
   })
 
+  // Positioned FIRST in this file, and each test below explicitly unmounts its own probe.
+  // Reason: `mountSuspended` does not auto-unmount components between `it()` blocks (only its
+  // own internal Nuxt-root effect scope is torn down on the next mount) — so a `beforeunload`
+  // *listener* registered by an earlier test's still-mounted probe stays live on the shared
+  // `window` for the rest of the file. Several tests below intentionally end dirty and never
+  // unmount (e.g. the interval/demo/restore tests), so a later `window.dispatchEvent(...)`
+  // here would also invoke THEIR stale handlers, making a "preventDefault NOT called"
+  // assertion order-dependent and flaky. Running first + self-unmounting sidesteps that
+  // without touching any of the tests below (confirmed by hand with a throwaway probe before
+  // settling on this ordering).
+  describe('beforeunload dispatch (the dialog-triggering branch)', () => {
+    function dispatchBeforeUnload() {
+      const event = new Event('beforeunload', { cancelable: true })
+      const preventDefault = vi.spyOn(event, 'preventDefault')
+      window.dispatchEvent(event)
+      return { event, preventDefault }
+    }
+
+    it('clean model: no preventDefault, no snapshot written', async () => {
+      const wrapper = await mountSuspended(probe('doc1'))
+      const { preventDefault } = dispatchBeforeUnload()
+      expect(preventDefault).not.toHaveBeenCalled()
+      expect(loadSnapshot('article', 'doc1')).toBeNull()
+      wrapper.unmount()
+    })
+
+    it('dirty model, live mode: preventDefault called AND a best-effort snapshot is written', async () => {
+      const wrapper = await mountSuspended(probe('doc1'))
+      model.title = 'Edited before close'
+      const { event, preventDefault } = dispatchBeforeUnload()
+      expect(preventDefault).toHaveBeenCalled()
+      // Chrome requires returnValue set for the native dialog to show.
+      expect(event.returnValue).toBe('')
+      const snap = loadSnapshot<{ title: string }>('article', 'doc1')
+      expect(snap).not.toBeNull()
+      expect(snap!.model.title).toBe('Edited before close')
+      wrapper.unmount()
+    })
+
+    it('dirty model, demo mode: preventDefault called (warning kept) but NO snapshot written', async () => {
+      demoMode = true
+      const wrapper = await mountSuspended(probe('doc1'))
+      model.title = 'Edited in demo before close'
+      const { preventDefault } = dispatchBeforeUnload()
+      expect(preventDefault).toHaveBeenCalled()
+      expect(loadSnapshot('article', 'doc1')).toBeNull()
+      wrapper.unmount()
+    })
+  })
+
   it('is clean at mount, dirty after an edit, clean again after markSaved', async () => {
     await mountSuspended(probe('doc1'))
     expect(guard.dirty.value).toBe(false)

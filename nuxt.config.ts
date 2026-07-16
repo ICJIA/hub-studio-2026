@@ -2,6 +2,7 @@
 // Single source of truth for non-secret app config (app name, Strapi base URL, demo flag).
 // Secrets (Mailgun, webhook) stay below in PRIVATE runtimeConfig, env-driven — never here.
 import studioConfig from './studio.config'
+import pkg from './package.json'
 
 export default defineNuxtConfig({
   ssr: false,
@@ -79,6 +80,10 @@ export default defineNuxtConfig({
       maxMainFiles: studioConfig.maxMainFiles,
       // The deployed Studio origin the review email links to (absolute /preview/... URL).
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? '',
+      // The deployed build's version, straight from package.json — the manager-facing
+      // status bar and /spec page show it, and the docs-nav guard test keeps the doc
+      // stamps in step with it.
+      version: pkg.version,
     },
   },
   // Force a single light theme. The Studio is a government content tool; the dark/system

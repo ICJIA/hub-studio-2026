@@ -1057,9 +1057,49 @@ proxy that verifies the caller before firing).
 
 ---
 
+## What's changed recently
+
+A short digest for managers, newest first — the complete version-by-version record is the
+[changelog](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md), and the
+living list of what's in flight and what's next is the
+[roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
+
+- **2026-07-16 — Manager-docs workflow (v0.4.0).** This document, the README, the analysis
+  document, and the new roadmap now carry a version-stamped bottom nav; the Studio itself
+  gained a bottom status bar (version + doc links) and an in-app **Spec & status** page
+  rendering this document, so a manager can always read the latest state without asking a
+  developer. Doc currency is enforced by an automated test.
+- **2026-07-16 — Media-library picker: design approved, build underway.** Every image
+  surface will open on the ~20 newest Media Library images (searchable) with
+  upload-from-desktop one tab away; picking an image that lacks alt text requires supplying
+  it, which is written back to the shared library. Works identically in the public demo,
+  where nothing persists.
+- **2026-07-11 — Body markdown linter shipped (v0.3.0).** A "Check" button in the editor
+  flags heading/link/image problems in plain language with jump-to-line results.
+  **677 automated tests / 97 files.**
+- **2026-07-11 — CI pipeline + search-engine exclusion (v0.2.0).** Every push and pull
+  request now re-runs the typecheck, the full test suite, and both builds automatically;
+  the Studio's pages are excluded from search engines.
+
+---
+
 *End of specification. First issued 2026-06-21; revised 2026-07-11 to reflect the
 shipped state (677 tests, four audits, annotations/preview/card-view/tour/demo
-roles/CI). The Studio is feature-complete in the workshop with a public
-demonstration at <https://studio-2026.netlify.app>; this document will evolve as
-the remaining setup and go-live steps in Section 4 are completed. Nothing
-described here publishes to the live system yet.*
+roles/CI), and 2026-07-16 for the manager-docs workflow ("What's changed recently,"
+the roadmap, the bottom navs, and the in-app Spec & status page). The Studio is
+feature-complete in the workshop with a public demonstration at
+<https://studio-2026.netlify.app>; this document will evolve as the remaining setup
+and go-live steps in Section 4 are completed. Nothing described here publishes to
+the live system yet.*
+
+---
+
+<!-- studio-bottom-nav -->
+**Hub Studio 2.0 · Studio build v0.4.0** — for managers monitoring this project:
+[Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
+[What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
+[What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·
+[README](https://github.com/ICJIA/copperhead-studio-20/blob/main/README.md) ·
+[Live demo](https://studio-2026.netlify.app)
+
+*These links always open the latest rendered version of each document.*

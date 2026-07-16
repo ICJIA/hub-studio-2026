@@ -1,14 +1,17 @@
 {
   "name": "copperhead-studio-20",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
+    "predev": "node scripts/copy-spec.mjs",
     "dev": "nuxt dev",
+    "prebuild": "node scripts/copy-spec.mjs",
     "build": "nuxt build",
+    "pregenerate": "node scripts/copy-spec.mjs",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",

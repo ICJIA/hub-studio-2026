@@ -10,6 +10,10 @@
   object URL — NEVER a data: URI (the zero-base64 invariant, design spec §7/§13).
   kind="file" (PDF/docs) is unchanged: upload-only, no tabs, no alt/caption, via
   useUpload().uploadDocument. The native <input type="file"> is always HIDDEN.
+  The [Library|Upload] tab bar is UTabs (@nuxt/ui, built on Reka UI's
+  TabsRoot/TabsList/TabsTrigger/TabsContent) — a spec-correct ARIA Tabs pattern
+  (id/aria-controls/aria-labelledby linking + roving-tabindex/ArrowLeft/ArrowRight/
+  Home/End keyboard model) instead of a hand-rolled tablist that only *looked* like one.
 -->
 <script setup lang="ts">
 import { ref, computed } from '#imports'
@@ -30,9 +34,23 @@ const accept = computed(() =>
     : ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(','),
 )
 
-// --- tabs (images only; kind="file" renders the upload block directly) ---
+// --- tabs (images only; kind="file" renders the upload block directly, no tabs) ---
+// UTabs owns the full ARIA Tabs contract (id/aria-controls/aria-labelledby linking
+// between each tab and its panel, plus the roving-tabindex + arrow-key/Home/End
+// keyboard model) — `tab` stays the single source of truth (and the __tab test seam);
+// `tabItems` only declares identity + which named slot holds each panel's content.
 const tab = ref<'library' | 'upload'>('library')
-const showUploadBlock = computed(() => props.kind === 'file' || tab.value === 'upload')
+const tabItems = [
+  { label: 'Library', value: 'library' as const, slot: 'library' as const },
+  { label: 'Upload', value: 'upload' as const, slot: 'upload' as const },
+]
+// UTabs' modelValue/update:modelValue are typed string|number (Reka's generic Tabs
+// contract, shared with every value type a consumer might use); bridge explicitly so
+// `tab` keeps its narrow 'library'|'upload' type for every other reader (__tab, etc.)
+// instead of widening it to string everywhere.
+function onTabChange(value: string | number) {
+  tab.value = value === 'upload' ? 'upload' : 'library'
+}
 
 // --- upload-new state (unchanged flow) ---
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -139,6 +157,8 @@ async function usePicked() {
 
 function clearPicked() {
   picked.value = null
+  pickedAlt.value = ''
+  pickedCaption.value = ''
   pickError.value = null
 }
 
@@ -157,78 +177,132 @@ defineExpose({
 
 <template>
   <div class="media-picker">
-    <!-- Tabs: images only. -->
-    <div v-if="kind === 'image'" role="tablist" aria-label="Image source" class="mb-3 flex gap-1">
-      <UButton
-        role="tab"
-        :aria-selected="tab === 'library' ? 'true' : 'false'"
-        size="xs"
-        :variant="tab === 'library' ? 'solid' : 'ghost'"
-        data-test="tab-library"
-        @click="tab = 'library'"
-      >
-        Library
-      </UButton>
-      <UButton
-        role="tab"
-        :aria-selected="tab === 'upload' ? 'true' : 'false'"
-        size="xs"
-        :variant="tab === 'upload' ? 'solid' : 'ghost'"
-        data-test="tab-upload"
-        @click="tab = 'upload'"
-      >
-        Upload
-      </UButton>
-    </div>
+    <!-- Tabs: images only. UTabs supplies the full ARIA Tabs relationship (id +
+         aria-controls + aria-labelledby between each tab and its panel) and keyboard
+         model (roving tabindex, ArrowLeft/ArrowRight/Home/End) — see the file-header
+         comment. `items[].slot` routes each tab's panel content to the named slot below. -->
+    <UTabs
+      v-if="kind === 'image'"
+      :model-value="tab"
+      :items="tabItems"
+      size="xs"
+      :ui="{ list: 'mb-3' }"
+      @update:model-value="onTabChange"
+    >
+      <template #library>
+        <div data-test="library-panel">
+          <MediaLibraryGrid @select="onLibrarySelect" />
 
-    <!-- Library tab -->
-    <div v-if="kind === 'image' && tab === 'library'" role="tabpanel" data-test="library-panel">
-      <MediaLibraryGrid @select="onLibrarySelect" />
+          <div v-if="picked" class="mt-3 rounded border border-default p-3" data-test="pick-confirm">
+            <div class="flex items-start gap-3">
+              <img :src="picked.url" :alt="picked.alternativeText ?? ''" width="96" class="rounded border border-default object-cover">
+              <div class="min-w-0 flex-1 text-sm">
+                <p class="truncate font-medium" :title="picked.name">{{ picked.name }}</p>
+                <p v-if="!pickedNeedsAlt" class="mt-1 text-xs text-muted">Alt text: {{ picked.alternativeText }}</p>
+                <p v-else class="mt-1 text-xs text-warning" data-test="pick-needs-alt">
+                  This library image has no alt text.
+                </p>
+              </div>
+              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" aria-label="Cancel selection" @click="clearPicked" />
+            </div>
 
-      <div v-if="picked" class="mt-3 rounded border border-default p-3" data-test="pick-confirm">
-        <div class="flex items-start gap-3">
-          <img :src="picked.url" :alt="picked.alternativeText ?? ''" width="96" class="rounded border border-default object-cover">
-          <div class="min-w-0 flex-1 text-sm">
-            <p class="truncate font-medium" :title="picked.name">{{ picked.name }}</p>
-            <p v-if="!pickedNeedsAlt" class="mt-1 text-xs text-muted">Alt text: {{ picked.alternativeText }}</p>
-            <p v-else class="mt-1 text-xs text-warning" data-test="pick-needs-alt">
-              This library image has no alt text.
-            </p>
+            <template v-if="pickedNeedsAlt">
+              <UFormField label="Alt text (required)" class="mt-3">
+                <UInput
+                  :model-value="pickedAlt"
+                  placeholder="Describe the image for screen readers"
+                  class="w-full"
+                  data-test="picked-alt"
+                  @update:model-value="pickedAlt = $event as string"
+                />
+              </UFormField>
+              <UFormField label="Caption (optional)" class="mt-3">
+                <UInput
+                  :model-value="pickedCaption"
+                  placeholder="Optional caption shown beneath the image"
+                  class="w-full"
+                  data-test="picked-caption"
+                  @update:model-value="pickedCaption = $event as string"
+                />
+              </UFormField>
+            </template>
+
+            <p v-if="pickError" role="alert" class="mt-2 text-sm text-error" data-test="pick-error">{{ pickError }}</p>
+            <UButton class="mt-3" :disabled="!canUsePicked" :loading="pickBusy" data-test="use-picked" @click="usePicked">
+              Use this image
+            </UButton>
           </div>
-          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" aria-label="Cancel selection" @click="clearPicked" />
+        </div>
+      </template>
+
+      <template #upload>
+        <!-- Hidden native file input — never renders "No file chosen" to the user. -->
+        <input
+          ref="fileInputRef"
+          type="file"
+          :accept="accept"
+          class="sr-only"
+          tabindex="-1"
+          aria-hidden="true"
+          @change="onFileInput"
+        >
+
+        <!-- Dropzone (drag-and-drop still works) -->
+        <div
+          class="dropzone border-2 border-dashed border-default rounded-lg p-4 text-center"
+          @dragover.prevent
+          @drop="onDrop"
+        >
+          <template v-if="!file">
+            <p class="text-sm text-muted mb-2">Drag an image here, or choose a file.</p>
+            <UButton size="sm" variant="outline" icon="i-lucide-upload" @click="openFilePicker">
+              Choose file
+            </UButton>
+          </template>
+
+          <template v-else>
+            <div class="flex items-center gap-3 justify-center flex-wrap">
+              <span class="text-sm font-medium truncate max-w-xs" :title="file.name">{{ file.name }}</span>
+              <div class="flex gap-2">
+                <UButton size="xs" variant="outline" icon="i-lucide-refresh-cw" @click="openFilePicker">
+                  Replace
+                </UButton>
+                <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" @click="setFile(null)">
+                  Remove
+                </UButton>
+              </div>
+            </div>
+          </template>
         </div>
 
-        <template v-if="pickedNeedsAlt">
-          <UFormField label="Alt text (required)" class="mt-3">
-            <UInput
-              :model-value="pickedAlt"
-              placeholder="Describe the image for screen readers"
-              class="w-full"
-              data-test="picked-alt"
-              @update:model-value="pickedAlt = $event as string"
-            />
-          </UFormField>
-          <UFormField label="Caption (optional)" class="mt-3">
-            <UInput
-              :model-value="pickedCaption"
-              placeholder="Optional caption shown beneath the image"
-              class="w-full"
-              data-test="picked-caption"
-              @update:model-value="pickedCaption = $event as string"
-            />
-          </UFormField>
-        </template>
+        <UFormField label="Alt text (required)" :error="altError" class="mt-3">
+          <UInput
+            :model-value="alt"
+            placeholder="Describe the image for screen readers"
+            class="w-full"
+            @update:model-value="setAlt($event as string)"
+          />
+        </UFormField>
+        <UFormField label="Caption (optional)" class="mt-3">
+          <UInput
+            :model-value="caption"
+            placeholder="Optional caption shown beneath the image"
+            class="w-full"
+            @update:model-value="setCaption($event as string)"
+          />
+        </UFormField>
 
-        <p v-if="pickError" role="alert" class="mt-2 text-sm text-error" data-test="pick-error">{{ pickError }}</p>
-        <UButton class="mt-3" :disabled="!canUsePicked" :loading="pickBusy" data-test="use-picked" @click="usePicked">
-          Use this image
-        </UButton>
-      </div>
-    </div>
+        <p v-if="error" role="alert" class="text-sm text-error mt-2">{{ error }}</p>
+        <UButton class="mt-3" :disabled="!canSubmit" @click="submit">Upload</UButton>
+      </template>
+    </UTabs>
 
-    <!-- Upload block (Upload tab for images; always for kind="file") -->
-    <div v-if="showUploadBlock">
-      <!-- Hidden native file input — never renders "No file chosen" to the user. -->
+    <!-- kind="file": upload-only, no tabs at all — stays completely outside the tabs.
+         (This duplicates the dropzone/input/submit markup from the #upload slot above
+         rather than sharing it: kind="file" must render with NO tablist/tabpanel in the
+         DOM at all, so this block can never be a UTabs panel — there's no single node
+         Vue can place in two structurally different parents at once.) -->
+    <div v-if="kind === 'file'">
       <input
         ref="fileInputRef"
         type="file"
@@ -239,16 +313,13 @@ defineExpose({
         @change="onFileInput"
       >
 
-      <!-- Dropzone (drag-and-drop still works) -->
       <div
         class="dropzone border-2 border-dashed border-default rounded-lg p-4 text-center"
         @dragover.prevent
         @drop="onDrop"
       >
         <template v-if="!file">
-          <p class="text-sm text-muted mb-2">
-            {{ kind === 'file' ? 'Drag a document here, or choose a file.' : 'Drag an image here, or choose a file.' }}
-          </p>
+          <p class="text-sm text-muted mb-2">Drag a document here, or choose a file.</p>
           <UButton size="sm" variant="outline" icon="i-lucide-upload" @click="openFilePicker">
             Choose file
           </UButton>
@@ -268,26 +339,6 @@ defineExpose({
           </div>
         </template>
       </div>
-
-      <!-- Alt text + caption: only for images -->
-      <template v-if="kind === 'image'">
-        <UFormField label="Alt text (required)" :error="altError" class="mt-3">
-          <UInput
-            :model-value="alt"
-            placeholder="Describe the image for screen readers"
-            class="w-full"
-            @update:model-value="setAlt($event as string)"
-          />
-        </UFormField>
-        <UFormField label="Caption (optional)" class="mt-3">
-          <UInput
-            :model-value="caption"
-            placeholder="Optional caption shown beneath the image"
-            class="w-full"
-            @update:model-value="setCaption($event as string)"
-          />
-        </UFormField>
-      </template>
 
       <p v-if="error" role="alert" class="text-sm text-error mt-2">{{ error }}</p>
       <UButton class="mt-3" :disabled="!canSubmit" @click="submit">Upload</UButton>

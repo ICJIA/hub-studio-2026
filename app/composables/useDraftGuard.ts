@@ -9,7 +9,8 @@
 // markSaved() is called by the form's successful submit path: clears the snapshot + resets
 // the baseline — the clear-on-save invariant that makes "a snapshot exists" mean "unsaved
 // work exists". Restored content is deliberately left DIRTY so the author saves it normally.
-import { computed, ref, onMounted, onBeforeUnmount } from '#imports'
+import { computed, ref, onMounted, onBeforeUnmount, inject } from '#imports'
+import { matchedRouteKey } from 'vue-router'
 import {
   saveSnapshot, loadSnapshot, clearSnapshot, type DraftSnapshot,
 } from '~/lib/draft-backup'
@@ -86,11 +87,30 @@ export function useDraftGuard<T extends object>(opts: {
     window.removeEventListener('beforeunload', onBeforeUnload)
   })
 
-  onBeforeRouteLeave(() => {
-    if (!dirty.value) return true
-    // Native confirm — matches beforeunload's native dialog; no custom-modal a11y surface.
-    return window.confirm('You have unsaved changes. Leave without saving?')
-  })
+  // onBeforeRouteLeave only ever registers a WORKING guard when this component renders as a
+  // child of an active <router-view> — vue-router wires that internally via
+  // `inject(matchedRouteKey)` (registerGuard in its navigationGuards module): a *component-tree*
+  // check. That is NOT the same thing as "does the router have a current route" — useRoute()
+  // .matched can be non-empty (e.g. matched to '/login') even when THIS component was mounted
+  // standalone, outside any <router-view>, as component-level tests do; route.matched reflects
+  // the router's global state, not this component's position in it. Checking the same injection
+  // vue-router checks internally — rather than useRoute().matched — is what actually predicts
+  // (and silences) its "No active route record" dev warning on those standalone mounts. Every
+  // real app page renders forms inside a routed page (NuxtPage, built on <router-view>), so the
+  // guard always registers in production.
+  // The explicit `undefined` 2nd argument matters: Vue's inject() only skips ITS OWN "injection
+  // not found" dev warning when arguments.length > 1 at the call site (checked by inspecting
+  // Vue's source directly) — regardless of whether that default is itself undefined. Calling
+  // inject(matchedRouteKey) with a single argument would silence vue-router's warning (since we
+  // never call onBeforeRouteLeave when ungated) while introducing a NEW, different Vue-core one.
+  const activeRouteRecord = inject(matchedRouteKey, undefined)
+  if (activeRouteRecord?.value) {
+    onBeforeRouteLeave(() => {
+      if (!dirty.value) return true
+      // Native confirm — matches beforeunload's native dialog; no custom-modal a11y surface.
+      return window.confirm('You have unsaved changes. Leave without saving?')
+    })
+  }
 
   return { dirty, restoreAvailable, snapshotSavedAt, restore, discard, markSaved }
 }

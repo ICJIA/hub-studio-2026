@@ -1,25 +1,27 @@
 <!-- app/components/MediaPicker.vue -->
 <!--
-  MediaPicker: upload-new OR pick-existing, backing every media field. Eager-upload yields a
-  Media Library reference whose `url` is shown in the preview — NEVER a client-side data: /
-  object-URL blob (the zero-base64 invariant, design spec §7/§13). Alt-text is REQUIRED before
-  an image upload completes; caption is optional. Both flow to Strapi via useUpload().upload's
-  fileInfo. For `kind="file"` (PDF/docs) alt/caption are hidden and the document upload path
-  is used. The native <input type="file"> is always HIDDEN; the browser "No file chosen" text
-  is never rendered. The selected MediaRef is emitted via `select`.
+  MediaPicker: LIBRARY-FIRST image picking. For kind="image" it renders [Library | Upload]
+  tabs (Library default): the Library tab browses the Media Library (MediaLibraryGrid) with a
+  pick-confirm panel that REQUIRES alt when the chosen image lacks it — the typed alt is
+  written back to the media record (updateInfo; in-memory in demo) so the shared library
+  improves. The Upload tab is the original eager-upload flow (alt REQUIRED before an image
+  upload completes; caption optional), now routed through useMediaLibrary().uploadImage so it
+  is demo-capable. Every emitted `url` is a Media Library URL or (demo sessions only) a blob:
+  object URL — NEVER a data: URI (the zero-base64 invariant, design spec §7/§13).
+  kind="file" (PDF/docs) is unchanged: upload-only, no tabs, no alt/caption, via
+  useUpload().uploadDocument. The native <input type="file"> is always HIDDEN.
 -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from '#imports'
+import { ref, computed } from '#imports'
 import { ALLOWED_IMAGE_EXTENSIONS, ALLOWED_DOCUMENT_EXTENSIONS } from '~/lib/image-types'
+import type { UploadInfo } from '~/lib/upload'
 import type { MediaRef } from '~/types/content'
 
-const props = withDefaults(
-  defineProps<{ mode?: 'upload' | 'browse'; kind?: 'image' | 'file' }>(),
-  { mode: 'upload', kind: 'image' },
-)
+const props = withDefaults(defineProps<{ kind?: 'image' | 'file' }>(), { kind: 'image' })
 const emit = defineEmits<{ select: [ref: MediaRef] }>()
 
-const { upload, uploadDocument, browse } = useUpload()
+const { uploadDocument } = useUpload()
+const { uploadImage, updateInfo } = useMediaLibrary()
 
 // Accept filter: images for kind="image", documents for kind="file".
 const accept = computed(() =>
@@ -28,7 +30,11 @@ const accept = computed(() =>
     : ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(','),
 )
 
-// --- upload-new state ---
+// --- tabs (images only; kind="file" renders the upload block directly) ---
+const tab = ref<'library' | 'upload'>('library')
+const showUploadBlock = computed(() => props.kind === 'file' || tab.value === 'upload')
+
+// --- upload-new state (unchanged flow) ---
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const file = ref<File | null>(null)
 const alt = ref('')
@@ -37,7 +43,6 @@ const busy = ref(false)
 const error = ref<string | null>(null)
 const submitted = ref(false)
 
-// For kind="image": require alt. For kind="file": no alt needed.
 const canSubmit = computed(() =>
   props.kind === 'file'
     ? !!file.value && !busy.value
@@ -50,10 +55,7 @@ const altError = computed(() =>
 function setFile(f: File | null) { file.value = f; error.value = null }
 function setAlt(v: string) { alt.value = v }
 function setCaption(v: string) { caption.value = v }
-
-function openFilePicker() {
-  fileInputRef.value?.click()
-}
+function openFilePicker() { fileInputRef.value?.click() }
 
 function onFileInput(e: Event) {
   const input = e.target as HTMLInputElement
@@ -70,21 +72,20 @@ async function submit() {
   busy.value = true
   error.value = null
   try {
-    let ref: MediaRef
+    let mediaRef: MediaRef
     if (props.kind === 'file') {
-      ref = await uploadDocument(file.value)
+      mediaRef = await uploadDocument(file.value)
     } else {
-      ref = await upload(file.value, {
+      mediaRef = await uploadImage(file.value, {
         alternativeText: alt.value.trim(),
         caption: caption.value.trim() || undefined,
       })
     }
-    emit('select', ref)
+    emit('select', mediaRef)
     file.value = null
     alt.value = ''
     caption.value = ''
     submitted.value = false
-    // Reset the native input so the same file can be re-selected.
     if (fileInputRef.value) fileInputRef.value.value = ''
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Upload failed.'
@@ -93,22 +94,140 @@ async function submit() {
   }
 }
 
-// --- pick-existing state ---
-const items = ref<MediaRef[]>([])
+// --- library pick-confirm state ---
+const picked = ref<MediaRef | null>(null)
+const pickedAlt = ref('')
+const pickedCaption = ref('')
+const pickBusy = ref(false)
+const pickError = ref<string | null>(null)
 
-async function loadLibrary() { items.value = await browse() }
-function choose(ref: MediaRef) { emit('select', ref) }
+const pickedNeedsAlt = computed(() => !!picked.value && !(picked.value.alternativeText ?? '').trim())
+const canUsePicked = computed(() =>
+  !!picked.value && !pickBusy.value && (!pickedNeedsAlt.value || pickedAlt.value.trim().length > 0),
+)
 
-onMounted(() => { if (props.mode === 'browse') loadLibrary() })
+function onLibrarySelect(mediaRef: MediaRef) {
+  picked.value = mediaRef
+  pickedAlt.value = ''
+  pickedCaption.value = mediaRef.caption ?? ''
+  pickError.value = null
+}
 
-// Exposed for component tests (and for parent-driven control in later plans).
-defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError, openFilePicker })
+async function usePicked() {
+  if (!picked.value || !canUsePicked.value) return
+  // Image already has alt → use as-is; existing alt is NEVER silently overwritten here.
+  if (!pickedNeedsAlt.value) {
+    emit('select', picked.value)
+    picked.value = null
+    return
+  }
+  // Missing alt → the typed alt is REQUIRED and written back to the shared record.
+  pickBusy.value = true
+  pickError.value = null
+  try {
+    const info: UploadInfo = { alternativeText: pickedAlt.value.trim() }
+    if (pickedCaption.value.trim()) info.caption = pickedCaption.value.trim()
+    const updated = await updateInfo(picked.value.id, info)
+    emit('select', updated)
+    picked.value = null
+  } catch {
+    pickError.value = 'Could not save the alt text. Please try again.'
+  } finally {
+    pickBusy.value = false
+  }
+}
+
+function clearPicked() {
+  picked.value = null
+  pickError.value = null
+}
+
+// Exposed for component tests (and for parent-driven control).
+defineExpose({
+  setFile, setAlt, setCaption, submit, canSubmit, altError, openFilePicker,
+  __tab: tab,
+  __onLibrarySelect: onLibrarySelect,
+  __usePicked: usePicked,
+  __picked: picked,
+  __pickedAlt: pickedAlt,
+  __pickedCaption: pickedCaption,
+  __pickError: pickError,
+})
 </script>
 
 <template>
   <div class="media-picker">
-    <!-- Upload-new -->
-    <div v-if="mode === 'upload'">
+    <!-- Tabs: images only. -->
+    <div v-if="kind === 'image'" role="tablist" aria-label="Image source" class="mb-3 flex gap-1">
+      <UButton
+        role="tab"
+        :aria-selected="tab === 'library' ? 'true' : 'false'"
+        size="xs"
+        :variant="tab === 'library' ? 'solid' : 'ghost'"
+        data-test="tab-library"
+        @click="tab = 'library'"
+      >
+        Library
+      </UButton>
+      <UButton
+        role="tab"
+        :aria-selected="tab === 'upload' ? 'true' : 'false'"
+        size="xs"
+        :variant="tab === 'upload' ? 'solid' : 'ghost'"
+        data-test="tab-upload"
+        @click="tab = 'upload'"
+      >
+        Upload
+      </UButton>
+    </div>
+
+    <!-- Library tab -->
+    <div v-if="kind === 'image' && tab === 'library'" role="tabpanel" data-test="library-panel">
+      <MediaLibraryGrid @select="onLibrarySelect" />
+
+      <div v-if="picked" class="mt-3 rounded border border-default p-3" data-test="pick-confirm">
+        <div class="flex items-start gap-3">
+          <img :src="picked.url" :alt="picked.alternativeText ?? ''" width="96" class="rounded border border-default object-cover">
+          <div class="min-w-0 flex-1 text-sm">
+            <p class="truncate font-medium" :title="picked.name">{{ picked.name }}</p>
+            <p v-if="!pickedNeedsAlt" class="mt-1 text-xs text-muted">Alt text: {{ picked.alternativeText }}</p>
+            <p v-else class="mt-1 text-xs text-warning" data-test="pick-needs-alt">
+              This library image has no alt text.
+            </p>
+          </div>
+          <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-x" aria-label="Cancel selection" @click="clearPicked" />
+        </div>
+
+        <template v-if="pickedNeedsAlt">
+          <UFormField label="Alt text (required)" class="mt-3">
+            <UInput
+              :model-value="pickedAlt"
+              placeholder="Describe the image for screen readers"
+              class="w-full"
+              data-test="picked-alt"
+              @update:model-value="pickedAlt = $event as string"
+            />
+          </UFormField>
+          <UFormField label="Caption (optional)" class="mt-3">
+            <UInput
+              :model-value="pickedCaption"
+              placeholder="Optional caption shown beneath the image"
+              class="w-full"
+              data-test="picked-caption"
+              @update:model-value="pickedCaption = $event as string"
+            />
+          </UFormField>
+        </template>
+
+        <p v-if="pickError" role="alert" class="mt-2 text-sm text-error" data-test="pick-error">{{ pickError }}</p>
+        <UButton class="mt-3" :disabled="!canUsePicked" :loading="pickBusy" data-test="use-picked" @click="usePicked">
+          Use this image
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Upload block (Upload tab for images; always for kind="file") -->
+    <div v-if="showUploadBlock">
       <!-- Hidden native file input — never renders "No file chosen" to the user. -->
       <input
         ref="fileInputRef"
@@ -126,7 +245,6 @@ defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError,
         @dragover.prevent
         @drop="onDrop"
       >
-        <!-- No file selected yet -->
         <template v-if="!file">
           <p class="text-sm text-muted mb-2">
             {{ kind === 'file' ? 'Drag a document here, or choose a file.' : 'Drag an image here, or choose a file.' }}
@@ -136,7 +254,6 @@ defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError,
           </UButton>
         </template>
 
-        <!-- File selected — show selected state with name + actions -->
         <template v-else>
           <div class="flex items-center gap-3 justify-center flex-wrap">
             <span class="text-sm font-medium truncate max-w-xs" :title="file.name">{{ file.name }}</span>
@@ -159,7 +276,7 @@ defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError,
             :model-value="alt"
             placeholder="Describe the image for screen readers"
             class="w-full"
-            @update:model-value="setAlt($event)"
+            @update:model-value="setAlt($event as string)"
           />
         </UFormField>
         <UFormField label="Caption (optional)" class="mt-3">
@@ -167,25 +284,13 @@ defineExpose({ setFile, setAlt, setCaption, submit, choose, canSubmit, altError,
             :model-value="caption"
             placeholder="Optional caption shown beneath the image"
             class="w-full"
-            @update:model-value="setCaption($event)"
+            @update:model-value="setCaption($event as string)"
           />
         </UFormField>
       </template>
 
       <p v-if="error" role="alert" class="text-sm text-error mt-2">{{ error }}</p>
       <UButton class="mt-3" :disabled="!canSubmit" @click="submit">Upload</UButton>
-    </div>
-
-    <!-- Pick-existing -->
-    <div v-else class="grid">
-      <button
-        v-for="item in items"
-        :key="item.id"
-        type="button"
-        @click="choose(item)"
-      >
-        <img :src="item.url" :alt="item.alternativeText ?? ''" width="120">
-      </button>
     </div>
   </div>
 </template>

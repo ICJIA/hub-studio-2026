@@ -13,11 +13,19 @@ const pickedDoc: MediaRef = {
   id: 20, url: '/uploads/data_xyz.pdf', name: 'data.pdf',
   alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf',
 }
+const uploadMock = vi.fn().mockResolvedValue(picked)
+const updateInfoMock = vi.fn().mockResolvedValue(null)
+
 mockNuxtImport('useUpload', () => () => ({
-  upload: vi.fn().mockResolvedValue(picked),
+  upload: uploadMock,
   uploadDocument: vi.fn().mockResolvedValue(pickedDoc),
   browse: vi.fn().mockResolvedValue([picked]),
   remove: vi.fn(),
+}))
+mockNuxtImport('useMediaLibrary', () => () => ({
+  list: vi.fn().mockResolvedValue([]),
+  uploadImage: uploadMock,       // the file's existing image-upload mock
+  updateInfo: updateInfoMock,
 }))
 
 import MediaField from '~/components/fields/MediaField.vue'

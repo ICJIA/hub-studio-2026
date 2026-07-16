@@ -11,15 +11,21 @@ const uploadedDoc: MediaRef = {
   id: 99, url: '/uploads/report_xyz.pdf', name: 'report.pdf',
   alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf',
 }
-const uploadMock = vi.fn().mockResolvedValue(uploaded)
+const uploadMock = vi.fn().mockResolvedValue(uploaded)          // now = uploadImage
 const uploadDocumentMock = vi.fn().mockResolvedValue(uploadedDoc)
-const browseMock = vi.fn().mockResolvedValue([uploaded])
+const updateInfoMock = vi.fn()
+const listMock = vi.fn().mockResolvedValue([])
 
 mockNuxtImport('useUpload', () => () => ({
-  upload: uploadMock,
+  upload: vi.fn(),
   uploadDocument: uploadDocumentMock,
-  browse: browseMock,
+  browse: vi.fn(),
   remove: vi.fn(),
+}))
+mockNuxtImport('useMediaLibrary', () => () => ({
+  list: listMock,
+  uploadImage: uploadMock,
+  updateInfo: updateInfoMock,
 }))
 
 import MediaPicker from '~/components/MediaPicker.vue'
@@ -28,7 +34,8 @@ describe('MediaPicker', () => {
   beforeEach(() => {
     uploadMock.mockClear()
     uploadDocumentMock.mockClear()
-    browseMock.mockClear()
+    updateInfoMock.mockReset()
+    listMock.mockClear()
   })
 
   it('blocks image upload until alt-text is provided (kind="image", default)', async () => {
@@ -63,6 +70,8 @@ describe('MediaPicker', () => {
 
   it('native file input is hidden (sr-only / aria-hidden) — "No file chosen" is never visible', async () => {
     const wrapper = await mountSuspended(MediaPicker)
+    wrapper.vm.$.exposed!.__tab.value = 'upload'
+    await wrapper.vm.$nextTick()
     const input = wrapper.find('input[type="file"]')
     expect(input.exists()).toBe(true)
     // Must be hidden from assistive tech and visually (sr-only class or aria-hidden).
@@ -71,19 +80,11 @@ describe('MediaPicker', () => {
     expect(classes.includes('sr-only') || ariaHidden === 'true').toBe(true)
   })
 
-  it('in browse mode, selecting a tile emits its (url-based) MediaRef', async () => {
-    const wrapper = await mountSuspended(MediaPicker, { props: { mode: 'browse' } })
-    await new Promise((r) => setTimeout(r, 0))
-    expect(browseMock).toHaveBeenCalled()
-    await wrapper.vm.$.exposed!.choose(uploaded)
-    const ref = wrapper.emitted('select')![0]![0] as MediaRef
-    expect(ref.url.startsWith('data:')).toBe(false)
-    expect(ref.id).toBe(42)
-  })
-
   describe('kind="image" (default)', () => {
     it('renders alt text and caption fields', async () => {
       const wrapper = await mountSuspended(MediaPicker, { props: { kind: 'image' } })
+      wrapper.vm.$.exposed!.__tab.value = 'upload'
+      await wrapper.vm.$nextTick()
       // Alt and caption inputs should be present (identified by placeholder text).
       const inputs = wrapper.findAll('input[type="text"], input:not([type]), input[type="search"]')
       const placeholders = inputs.map((i) => i.attributes('placeholder') ?? '')
@@ -154,5 +155,67 @@ describe('MediaPicker', () => {
       await new Promise((r) => setTimeout(r, 0))
       expect(uploadDocumentMock).toHaveBeenCalledWith(file)
     })
+  })
+})
+
+describe('Library tab (kind="image")', () => {
+  const withAlt: MediaRef = {
+    id: 7, url: '/uploads/photo.jpg', name: 'photo.jpg',
+    alternativeText: 'A good photo', caption: null, width: null, height: null, mime: 'image/jpeg',
+  }
+  const withoutAlt: MediaRef = { ...withAlt, id: 8, name: 'bare.jpg', alternativeText: null }
+
+  it('defaults to the Library tab for images; Upload tab is one click away', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    expect(wrapper.find('[data-test="library-panel"]').exists()).toBe(true)
+    expect(wrapper.find('input[type="file"]').exists()).toBe(false)
+    await wrapper.find('[data-test="tab-upload"]').trigger('click')
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('kind="file" renders NO tabs — upload-only as before', async () => {
+    const wrapper = await mountSuspended(MediaPicker, { props: { kind: 'file' } })
+    expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('picking a library image WITH alt emits select immediately — no write-back', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withAlt)
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateInfoMock).not.toHaveBeenCalled()
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
+    expect(ref.id).toBe(7)
+  })
+
+  it('picking a library image WITHOUT alt gates on alt, then writes it back', async () => {
+    updateInfoMock.mockResolvedValue({ ...withoutAlt, alternativeText: 'Typed alt' })
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+
+    // No alt yet → gated (no emit, no write).
+    await wrapper.vm.$.exposed!.__usePicked()
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(updateInfoMock).not.toHaveBeenCalled()
+
+    // Type alt → write-back runs and select carries the UPDATED ref.
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateInfoMock).toHaveBeenCalledWith(8, { alternativeText: 'Typed alt' })
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
+    expect(ref.alternativeText).toBe('Typed alt')
+  })
+
+  it('a failed write-back keeps the pick open and shows a plain-language error', async () => {
+    updateInfoMock.mockRejectedValue(new Error('403'))
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(wrapper.vm.$.exposed!.__pickError.value).toMatch(/could not save/i)
   })
 })

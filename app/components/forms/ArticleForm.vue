@@ -15,6 +15,7 @@ import { blankArticle } from '~/lib/forms/blank-models'
 import { submitForm, prepareForCreate, type SubmitResult } from '~/lib/forms/submit'
 import { validateArticle, type FieldError } from '~/lib/validators/article'
 import { CATEGORY_OPTIONS, ARTICLE_TYPE_OPTIONS, MAINFILETYPE_OPTIONS } from '~/lib/field-options'
+import { useDraftGuard } from '~/composables/useDraftGuard'
 
 const props = defineProps<{ mode: 'create' | 'edit'; initial?: Article }>()
 // Emitted when the toolbar's Publish/Unpublish toggles the article — lets the parent edit page
@@ -29,6 +30,14 @@ const toast = useToast()
 const { canPublish } = useAuth()
 
 const model = reactive<Article>(props.initial ? { ...props.initial } : blankArticle())
+// The unsaved-work guard (spec §5.3-4, reference integration): dirty tracking, leave warnings,
+// 30s snapshots, and the restore banner below — all keyed to this form's model. create mode has
+// no documentId yet, so its snapshot keys under 'new'.
+const draftGuard = useDraftGuard({
+  type: 'article',
+  documentId: props.mode === 'edit' ? (props.initial?.documentId ?? null) : null,
+  model,
+})
 const errors = ref<FieldError[]>([])
 const saving = ref(false)
 
@@ -53,6 +62,7 @@ async function submit() {
       : (m: Article) => repo.update(m.documentId, m)
     const res: SubmitResult<Article> = await submitForm(toSave, validateArticle, persist)
     if (!res.ok) { errors.value = res.errors; return }
+    draftGuard.markSaved() // clear-on-save invariant: a surviving snapshot always means unsaved work
     toast.add({ title: 'Draft saved', color: 'success' })
     // Tab-only preview (user decision 2026-07-05): save just saves. A first-time create moves
     // to the entry's edit route (it now exists); preview is always the Live preview link,
@@ -79,6 +89,12 @@ defineExpose({ submit, setField, onPublished, errors, model })
 
 <template>
   <UForm :state="model" class="space-y-6" @submit.prevent="submit">
+    <DraftRestoreBanner
+      v-if="draftGuard.restoreAvailable.value"
+      :saved-at="draftGuard.snapshotSavedAt.value ?? ''"
+      @restore="draftGuard.restore()"
+      @discard="draftGuard.discard()"
+    />
     <!--
       Sticky secondary toolbar — pinned directly under the main app nav (which is `sticky top-0
       h-16`), so this sits at `top-16` and stays visible while the author scrolls a long article.

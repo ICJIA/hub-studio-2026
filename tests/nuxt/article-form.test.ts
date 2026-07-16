@@ -2,6 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { Article } from '~/types/content'
+import { saveSnapshot, loadSnapshot } from '~/lib/draft-backup'
+import { blankArticle } from '~/lib/forms/blank-models'
 
 const createMock = vi.fn(async (m: Article): Promise<Article> => ({ ...m, documentId: 'newdoc1' }))
 const updateMock = vi.fn(async (_id: string, m: Article): Promise<Article> => m)
@@ -116,5 +118,46 @@ describe('ArticleForm sticky toolbar (title + live preview + manager publish gat
     // The PublishButton (which would render the capital-P "Publish") is hidden; the hint stands in.
     expect(wrapper.text()).not.toContain('Publish')
     expect(wrapper.text()).toContain('Save the draft first')
+  })
+})
+
+describe('unsaved-work guard integration', () => {
+  beforeEach(() => localStorage.clear())
+
+  // This file has no top-level `sampleInitial` fixture (the sticky-toolbar describe above has
+  // its own local `saved()`); built the same way as that fixture and as
+  // form-preview-links.test.ts's `saved` const — blankArticle() spread with just enough
+  // (title/slug/date) to clear validateArticle, so submit() reaches persist without extra
+  // setField calls. documentId is overridden per-use, same shape as the brief's template.
+  const sampleInitial: Article = {
+    ...blankArticle(),
+    title: 'Crime In Illinois',
+    slug: 'crime-in-illinois',
+    date: '2020-01-01',
+  }
+
+  it('shows the restore banner when a snapshot exists for this draft, and Restore applies it', async () => {
+    saveSnapshot('article', 'a1', { ...blankArticle(), title: 'Recovered title' }, '2026-07-16T09:00:00.000Z')
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'a1' } } })
+    expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(true)
+    await wrapper.find('[data-test="draft-restore"]').trigger('click')
+    const title = wrapper.find('input') // the Title field is the form's first text input
+    expect((title.element as HTMLInputElement).value).toBe('Recovered title')
+    wrapper.unmount()
+  })
+
+  it('shows no banner without a snapshot', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'a1' } } })
+    expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('a successful save clears the snapshot (clear-on-save invariant)', async () => {
+    saveSnapshot('article', 'a1', { ...blankArticle(), title: 'Old backup' }, '2026-07-16T09:00:00.000Z')
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: { ...sampleInitial, documentId: 'a1' } } })
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(loadSnapshot('article', 'a1')).toBeNull()
+    wrapper.unmount()
   })
 })

@@ -82,8 +82,20 @@ const pendingAlt = ref('')
 const pickBusy = ref(false)
 const pickError = ref<string | null>(null)
 
+// Monotonic per-flow generation guard: confirmPendingPick() claims the next generation when it
+// actually starts a write-back; onLibraryPick (a new/second pick) and cancelPendingPick both
+// bump it too, so picking a different image or cancelling invalidates any in-flight confirm. The
+// write-back's settling (success OR failure) only commits — tray add, pendingPick/pendingAlt
+// clear, or error paint — if its generation is still current; a stale settle is a pure no-op.
+// Mirrors MediaLibraryGrid.load()'s `generation` guard and MediaField.persistInfo()'s `persistSeq`
+// guard. `pickBusy`'s reset in confirmPendingPick's `finally` deliberately stays unconditional —
+// only one confirm can ever be in flight at a time (the synchronous `pickBusy.value` guard below
+// prevents overlap), so there's no newer in-flight request a stale settle could stomp on.
+let pickSeq = 0
+
 /** A library pick with alt joins the tray directly; one without alt waits for required alt. */
 function onLibraryPick(mediaRef: MediaRef) {
+  pickSeq++ // a new pick invalidates any in-flight confirm for whatever was pending before
   pickError.value = null
   if ((mediaRef.alternativeText ?? '').trim()) {
     addToTray(mediaRef, mediaRef.name ?? 'library image')
@@ -96,22 +108,30 @@ function onLibraryPick(mediaRef: MediaRef) {
 /** Write the typed alt back to the record (in-memory in demo), then add to the tray. */
 async function confirmPendingPick() {
   if (!pendingPick.value || !pendingAlt.value.trim() || pickBusy.value) return
+  const seq = ++pickSeq
   pickBusy.value = true
   pickError.value = null
   try {
     const info: UploadInfo = { alternativeText: pendingAlt.value.trim(), caption: pendingPick.value.caption ?? '' }
     const updated = await updateInfo(pendingPick.value.id, info)
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — commit nothing
     addToTray(updated, updated.name ?? 'library image')
     pendingPick.value = null
     pendingAlt.value = ''
   } catch {
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — no stale error paint
     pickError.value = 'Could not save the alt text. Please try again.'
   } finally {
     pickBusy.value = false
   }
 }
 
+// Cancel is deliberately left clickable while pickBusy is true (no :disabled here, unlike
+// Confirm) — cancelling a mid-flight write-back is exactly the affordance this generation guard
+// exists for. Bumping pickSeq is what makes that click actually abort the pending commit, not
+// just hide the panel, once confirmPendingPick()'s in-flight call settles.
 function cancelPendingPick() {
+  pickSeq++
   pendingPick.value = null
   pendingAlt.value = ''
   pickError.value = null
@@ -196,7 +216,7 @@ defineExpose({
       <div v-if="libraryOpen" class="mt-2" data-test="library-in-tray">
         <MediaLibraryGrid @select="onLibraryPick" />
         <div v-if="pendingPick" class="mt-2 rounded border border-default p-2" data-test="tray-pick-confirm">
-          <p class="text-xs text-warning">"{{ pendingPick.name }}" has no alt text yet.</p>
+          <p class="text-xs text-warning">"{{ pendingPick.name ?? 'library image' }}" has no alt text yet.</p>
           <UFormField class="mt-1">
             <template #label><span class="text-xs">Alt text (required)</span></template>
             <UInput

@@ -30,6 +30,13 @@ mockNuxtImport('useMediaLibrary', () => () => ({
 
 import MediaPicker from '~/components/MediaPicker.vue'
 
+/** A promise whose resolution is controlled externally — for exercising in-flight request races. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
+
 describe('MediaPicker', () => {
   beforeEach(() => {
     uploadMock.mockClear()
@@ -257,6 +264,72 @@ describe('Library tab (kind="image")', () => {
     await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
     expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('')
     expect(wrapper.vm.$.exposed!.__pickedCaption.value).toBe('')
+  })
+})
+
+// Cross-component pick-flow races (MediaPicker + BodyImagesField, fixed symmetrically): the
+// use flow's completion was never re-validated against the current UI state, so a stale
+// in-flight write-back could still commit (select emit) after the user cancelled or picked a
+// different image. `pickSeq` (a monotonic generation counter, same idiom as
+// MediaLibraryGrid.load()'s `generation` and MediaField.persistInfo()'s `persistSeq`) makes
+// cancelling or superseding a pick invalidate any write-back already in flight for it.
+// Own describe block (with its own beforeEach reset) rather than folding into 'Library tab
+// (kind="image")' above, which has no reset of its own and relies on its tests not caring about
+// updateInfoMock's call count accumulated across the file.
+describe('Library pick-confirm: cancel/supersede mid-flight races (kind="image")', () => {
+  const withoutAlt: MediaRef = {
+    id: 8, url: '/uploads/bare.jpg', name: 'bare.jpg',
+    alternativeText: null, caption: null, width: null, height: null, mime: 'image/jpeg',
+  }
+
+  // Braces (not a single-expression arrow) so this doesn't implicitly return updateInfoMock —
+  // see the identical NOTE in media-field.test.ts / body-images-field.test.ts.
+  beforeEach(() => {
+    updateInfoMock.mockReset()
+  })
+
+  it('cancelling mid-flight aborts the commit: a late write-back resolution emits nothing', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$nextTick()
+
+    const use = wrapper.vm.$.exposed!.__usePicked() // in flight, gate not yet resolved
+    await wrapper.find('[aria-label="Cancel selection"]').trigger('click') // cancel mid-flight
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull()
+
+    gate.resolve({ ...withoutAlt, alternativeText: 'Typed alt' }) // late resolution, after cancel
+    await use
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.emitted('select')).toBeUndefined() // nothing committed
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull() // still cancelled
+    expect(wrapper.vm.$.exposed!.__pickError.value).toBeNull() // no stale error paint
+  })
+
+  it('picking a second image mid-use supersedes the first: its late write-back resolution commits nothing', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt) // pick A
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Alt for A'
+
+    const useA = wrapper.vm.$.exposed!.__usePicked() // A's write-back in flight
+
+    const secondWithoutAlt: MediaRef = { ...withoutAlt, id: 11, name: 'second.jpg' }
+    await wrapper.vm.$.exposed!.__onLibrarySelect(secondWithoutAlt) // pick B while A is in flight
+    expect(wrapper.vm.$.exposed!.__picked.value?.id).toBe(11) // B's pending state intact
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('') // fresh, not A's leftover alt
+
+    gate.resolve({ ...withoutAlt, alternativeText: 'Alt for A' }) // A's late resolution
+    await useA
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.emitted('select')).toBeUndefined() // A never committed
+    expect(wrapper.vm.$.exposed!.__picked.value?.id).toBe(11) // B's pending state still intact
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('')
   })
 })
 

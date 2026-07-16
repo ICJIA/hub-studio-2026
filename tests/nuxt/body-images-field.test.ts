@@ -180,4 +180,71 @@ describe('Add from library', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.vm.$.exposed!.__trayImages.value).toHaveLength(1)
   })
+
+  // Cross-component pick-flow races (BodyImagesField + MediaPicker, fixed symmetrically): the
+  // confirm flow's completion was never re-validated against the current UI state, so a stale
+  // in-flight write-back could still commit (tray add) after the user cancelled or picked a
+  // different image. `pickSeq` (a monotonic generation counter, same idiom as
+  // MediaLibraryGrid.load()'s `generation` and MediaField.persistInfo()'s `persistSeq`) makes
+  // cancelling or superseding a pick invalidate any confirm already in flight for it.
+  it('a happy-path Cancel clears the pending-pick panel with no write-back', async () => {
+    const wrapper = await mountSuspended(BodyImagesField)
+    wrapper.vm.$.exposed!.__libraryOpen.value = true
+    await wrapper.vm.$.exposed!.__onLibraryPick(libNoAlt)
+    wrapper.vm.$.exposed!.__pendingAlt.value = 'Typed alt'
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('[data-test="cancel-pending-pick"]').trigger('click')
+
+    expect(wrapper.find('[data-test="tray-pick-confirm"]').exists()).toBe(false)
+    expect(wrapper.vm.$.exposed!.__pendingPick.value).toBeNull()
+    expect(wrapper.vm.$.exposed!.__pendingAlt.value).toBe('')
+    expect(wrapper.vm.$.exposed!.__pickError.value).toBeNull()
+    expect(updateInfoMock).not.toHaveBeenCalled()
+  })
+
+  it('cancelling mid-flight aborts the commit: a late write-back resolution adds nothing to the tray', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(BodyImagesField)
+    wrapper.vm.$.exposed!.__libraryOpen.value = true
+    await wrapper.vm.$.exposed!.__onLibraryPick(libNoAlt)
+    wrapper.vm.$.exposed!.__pendingAlt.value = 'Typed alt'
+    await wrapper.vm.$nextTick()
+
+    const confirm = wrapper.vm.$.exposed!.__confirmPendingPick() // in flight, gate not yet resolved
+    await wrapper.find('[data-test="cancel-pending-pick"]').trigger('click') // cancel mid-flight
+    expect(wrapper.vm.$.exposed!.__pendingPick.value).toBeNull()
+
+    gate.resolve({ ...libNoAlt, alternativeText: 'Typed alt' }) // late resolution, after cancel
+    await confirm
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.vm.$.exposed!.__trayImages.value).toHaveLength(0) // nothing committed
+    expect(wrapper.vm.$.exposed!.__pendingPick.value).toBeNull() // still cancelled, not resurrected
+    expect(wrapper.vm.$.exposed!.__pickError.value).toBeNull() // no stale error paint either
+  })
+
+  it('picking a second image mid-confirm supersedes the first: its late write-back resolution commits nothing', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(BodyImagesField)
+    await wrapper.vm.$.exposed!.__onLibraryPick(libNoAlt) // pick A
+    wrapper.vm.$.exposed!.__pendingAlt.value = 'Alt for A'
+
+    const confirmA = wrapper.vm.$.exposed!.__confirmPendingPick() // A's write-back in flight
+
+    const secondNoAlt: MediaRef = { ...libNoAlt, id: -5, name: 'second.jpg' }
+    await wrapper.vm.$.exposed!.__onLibraryPick(secondNoAlt) // pick B while A is still in flight
+    expect(wrapper.vm.$.exposed!.__pendingPick.value?.id).toBe(-5) // B's pending state intact
+    expect(wrapper.vm.$.exposed!.__pendingAlt.value).toBe('') // fresh, not A's leftover alt
+
+    gate.resolve({ ...libNoAlt, alternativeText: 'Alt for A' }) // A's late resolution
+    await confirmA
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.vm.$.exposed!.__trayImages.value).toHaveLength(0) // A never committed
+    expect(wrapper.vm.$.exposed!.__pendingPick.value?.id).toBe(-5) // B's pending state still intact
+    expect(wrapper.vm.$.exposed!.__pendingAlt.value).toBe('')
+  })
 })

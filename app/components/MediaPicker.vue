@@ -124,7 +124,20 @@ const canUsePicked = computed(() =>
   !!picked.value && !pickBusy.value && (!pickedNeedsAlt.value || pickedAlt.value.trim().length > 0),
 )
 
+// Monotonic per-flow generation guard: usePicked() claims the next generation when it actually
+// starts a write-back (the "needs alt" path); onLibrarySelect (a new/different pick) and
+// clearPicked both bump it too, so picking a different image or cancelling invalidates any
+// in-flight write-back. The write-back's settling (success OR failure) only commits — select
+// emit, `picked` clear, or error paint — if its generation is still current; a stale settle is a
+// pure no-op. Mirrors MediaLibraryGrid.load()'s `generation` guard and MediaField.persistInfo()'s
+// `persistSeq` guard (and BodyImagesField's identical `pickSeq` guard on its own confirm flow).
+// `pickBusy`'s reset in usePicked's `finally` deliberately stays unconditional — only one
+// write-back can ever be in flight at a time (the synchronous canUsePicked/pickBusy guard
+// prevents overlap), so there's no newer in-flight request a stale settle could stomp on.
+let pickSeq = 0
+
 function onLibrarySelect(mediaRef: MediaRef) {
+  pickSeq++ // a new pick invalidates any in-flight write-back for whatever was picked before
   picked.value = mediaRef
   pickedAlt.value = ''
   pickedCaption.value = mediaRef.caption ?? ''
@@ -140,22 +153,30 @@ async function usePicked() {
     return
   }
   // Missing alt → the typed alt is REQUIRED and written back to the shared record.
+  const seq = ++pickSeq
   pickBusy.value = true
   pickError.value = null
   try {
     const info: UploadInfo = { alternativeText: pickedAlt.value.trim() }
     if (pickedCaption.value.trim()) info.caption = pickedCaption.value.trim()
     const updated = await updateInfo(picked.value.id, info)
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — commit nothing
     emit('select', updated)
     picked.value = null
   } catch {
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — no stale error paint
     pickError.value = 'Could not save the alt text. Please try again.'
   } finally {
     pickBusy.value = false
   }
 }
 
+// clearPicked (the "X" cancel button) is deliberately left clickable while pickBusy is true (no
+// :disabled on that UButton) — cancelling a mid-flight write-back is exactly the affordance this
+// generation guard exists for. Bumping pickSeq is what makes that click actually abort the
+// pending commit, not just hide the panel, once usePicked()'s in-flight call settles.
 function clearPicked() {
+  pickSeq++
   picked.value = null
   pickedAlt.value = ''
   pickedCaption.value = ''

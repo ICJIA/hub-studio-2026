@@ -614,7 +614,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Compact abstract editor | Inline formatting only; no stray footnotes | **Built** |
 | Accessible image uploads (alt-text required) | Accessible by default; optional captions | **Built** |
 | Body-image gallery (thumbnails → insert) | Stage multiple images, click to insert | **Built** |
-| Media-library picker (browse ~20 newest, search, upload tab) | Reuse existing library images; alt write-back for alt-less picks | **Built** |
+| Media-library picker (browse ~20 newest, search, upload tab) | Reuse existing library images; alt write-back for alt-less picks | **Built** (feature branch; merges with the next release) |
 | Document/PDF file upload | Simple report-file attachment | **Built** |
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |

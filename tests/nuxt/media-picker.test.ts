@@ -11,24 +11,38 @@ const uploadedDoc: MediaRef = {
   id: 99, url: '/uploads/report_xyz.pdf', name: 'report.pdf',
   alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf',
 }
-const uploadMock = vi.fn().mockResolvedValue(uploaded)
+const uploadMock = vi.fn().mockResolvedValue(uploaded)          // now = uploadImage
 const uploadDocumentMock = vi.fn().mockResolvedValue(uploadedDoc)
-const browseMock = vi.fn().mockResolvedValue([uploaded])
+const updateInfoMock = vi.fn()
+const listMock = vi.fn().mockResolvedValue([])
 
 mockNuxtImport('useUpload', () => () => ({
-  upload: uploadMock,
+  upload: vi.fn(),
   uploadDocument: uploadDocumentMock,
-  browse: browseMock,
+  browse: vi.fn(),
   remove: vi.fn(),
+}))
+mockNuxtImport('useMediaLibrary', () => () => ({
+  list: listMock,
+  uploadImage: uploadMock,
+  updateInfo: updateInfoMock,
 }))
 
 import MediaPicker from '~/components/MediaPicker.vue'
+
+/** A promise whose resolution is controlled externally — for exercising in-flight request races. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
 
 describe('MediaPicker', () => {
   beforeEach(() => {
     uploadMock.mockClear()
     uploadDocumentMock.mockClear()
-    browseMock.mockClear()
+    updateInfoMock.mockReset()
+    listMock.mockClear()
   })
 
   it('blocks image upload until alt-text is provided (kind="image", default)', async () => {
@@ -63,6 +77,13 @@ describe('MediaPicker', () => {
 
   it('native file input is hidden (sr-only / aria-hidden) — "No file chosen" is never visible', async () => {
     const wrapper = await mountSuspended(MediaPicker)
+    wrapper.vm.$.exposed!.__tab.value = 'upload'
+    // UTabs' panel mount/unmount runs through Reka's Presence, which settles one
+    // microtask turn after a plain nextTick (its internal watcher itself awaits
+    // nextTick before dispatching); flush that too, same as this file's other
+    // async-settle waits.
+    await wrapper.vm.$nextTick()
+    await new Promise((r) => setTimeout(r, 0))
     const input = wrapper.find('input[type="file"]')
     expect(input.exists()).toBe(true)
     // Must be hidden from assistive tech and visually (sr-only class or aria-hidden).
@@ -71,19 +92,14 @@ describe('MediaPicker', () => {
     expect(classes.includes('sr-only') || ariaHidden === 'true').toBe(true)
   })
 
-  it('in browse mode, selecting a tile emits its (url-based) MediaRef', async () => {
-    const wrapper = await mountSuspended(MediaPicker, { props: { mode: 'browse' } })
-    await new Promise((r) => setTimeout(r, 0))
-    expect(browseMock).toHaveBeenCalled()
-    await wrapper.vm.$.exposed!.choose(uploaded)
-    const ref = wrapper.emitted('select')![0]![0] as MediaRef
-    expect(ref.url.startsWith('data:')).toBe(false)
-    expect(ref.id).toBe(42)
-  })
-
   describe('kind="image" (default)', () => {
     it('renders alt text and caption fields', async () => {
       const wrapper = await mountSuspended(MediaPicker, { props: { kind: 'image' } })
+      wrapper.vm.$.exposed!.__tab.value = 'upload'
+      // See the note in the "native file input is hidden" test above: Reka's Presence
+      // needs a flushed macrotask, not just a nextTick, to mount the panel content.
+      await wrapper.vm.$nextTick()
+      await new Promise((r) => setTimeout(r, 0))
       // Alt and caption inputs should be present (identified by placeholder text).
       const inputs = wrapper.findAll('input[type="text"], input:not([type]), input[type="search"]')
       const placeholders = inputs.map((i) => i.attributes('placeholder') ?? '')
@@ -154,5 +170,205 @@ describe('MediaPicker', () => {
       await new Promise((r) => setTimeout(r, 0))
       expect(uploadDocumentMock).toHaveBeenCalledWith(file)
     })
+  })
+})
+
+describe('Library tab (kind="image")', () => {
+  const withAlt: MediaRef = {
+    id: 7, url: '/uploads/photo.jpg', name: 'photo.jpg',
+    alternativeText: 'A good photo', caption: null, width: null, height: null, mime: 'image/jpeg',
+  }
+  const withoutAlt: MediaRef = { ...withAlt, id: 8, name: 'bare.jpg', alternativeText: null }
+
+  it('defaults to the Library tab for images; Upload tab is one click away', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    expect(wrapper.find('[data-test="library-panel"]').exists()).toBe(true)
+    expect(wrapper.find('input[type="file"]').exists()).toBe(false)
+
+    // UTabs' triggers (Reka's TabsTrigger) don't forward arbitrary items[] attributes
+    // to the rendered button — verified against @nuxt/ui 4.9 / reka-ui source, there is
+    // no v-bind="item" spread onto <TabsTrigger>, so a per-item data-test is not
+    // reachable. Select by role+name instead (disclosed fallback). Reka's TabsTrigger
+    // also activates on mousedown, not click (Radix-style, for snappier activation
+    // that doesn't wait for mouseup) — drive that event to match real behavior.
+    const uploadTab = wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Upload')
+    await uploadTab!.trigger('mousedown', { button: 0 })
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('kind="file" renders NO tabs — upload-only as before', async () => {
+    const wrapper = await mountSuspended(MediaPicker, { props: { kind: 'file' } })
+    expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('picking a library image WITH alt emits select immediately — no write-back', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withAlt)
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateInfoMock).not.toHaveBeenCalled()
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
+    expect(ref.id).toBe(7)
+  })
+
+  it('picking a library image WITHOUT alt gates on alt, then writes it back', async () => {
+    updateInfoMock.mockResolvedValue({ ...withoutAlt, alternativeText: 'Typed alt' })
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+
+    // No alt yet → gated (no emit, no write).
+    await wrapper.vm.$.exposed!.__usePicked()
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(updateInfoMock).not.toHaveBeenCalled()
+
+    // Type alt → write-back runs and select carries the UPDATED ref.
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateInfoMock).toHaveBeenCalledWith(8, { alternativeText: 'Typed alt' })
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
+    expect(ref.alternativeText).toBe('Typed alt')
+  })
+
+  it('a failed write-back keeps the pick open and shows a plain-language error', async () => {
+    updateInfoMock.mockRejectedValue(new Error('403'))
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$.exposed!.__usePicked()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(wrapper.vm.$.exposed!.__pickError.value).toMatch(/could not save/i)
+  })
+
+  it('cancel ("X") resets the pick-confirm panel so a fresh pick starts clean', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+
+    // Type into the still-open, alt-required panel.
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    wrapper.vm.$.exposed!.__pickedCaption.value = 'Typed caption'
+    await wrapper.vm.$nextTick()
+
+    // Cancel via the "X" button — the panel must close...
+    await wrapper.find('[aria-label="Cancel selection"]').trigger('click')
+    expect(wrapper.find('[data-test="pick-confirm"]').exists()).toBe(false)
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull()
+    expect(wrapper.vm.$.exposed!.__pickError.value).toBeNull()
+    // ...and clearPicked() must defensively reset the typed draft too, not just `picked`.
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('')
+    expect(wrapper.vm.$.exposed!.__pickedCaption.value).toBe('')
+
+    // A fresh pick starts clean — no leaked alt/caption from the cancelled pick.
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('')
+    expect(wrapper.vm.$.exposed!.__pickedCaption.value).toBe('')
+  })
+})
+
+// Cross-component pick-flow races (MediaPicker + BodyImagesField, fixed symmetrically): the
+// use flow's completion was never re-validated against the current UI state, so a stale
+// in-flight write-back could still commit (select emit) after the user cancelled or picked a
+// different image. `pickSeq` (a monotonic generation counter, same idiom as
+// MediaLibraryGrid.load()'s `generation` and MediaField.persistInfo()'s `persistSeq`) makes
+// cancelling or superseding a pick invalidate any write-back already in flight for it.
+// Own describe block (with its own beforeEach reset) rather than folding into 'Library tab
+// (kind="image")' above, which has no reset of its own and relies on its tests not caring about
+// updateInfoMock's call count accumulated across the file.
+describe('Library pick-confirm: cancel/supersede mid-flight races (kind="image")', () => {
+  const withoutAlt: MediaRef = {
+    id: 8, url: '/uploads/bare.jpg', name: 'bare.jpg',
+    alternativeText: null, caption: null, width: null, height: null, mime: 'image/jpeg',
+  }
+
+  // Braces (not a single-expression arrow) so this doesn't implicitly return updateInfoMock —
+  // see the identical NOTE in media-field.test.ts / body-images-field.test.ts.
+  beforeEach(() => {
+    updateInfoMock.mockReset()
+  })
+
+  it('cancelling mid-flight aborts the commit: a late write-back resolution emits nothing', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Typed alt'
+    await wrapper.vm.$nextTick()
+
+    const use = wrapper.vm.$.exposed!.__usePicked() // in flight, gate not yet resolved
+    await wrapper.find('[aria-label="Cancel selection"]').trigger('click') // cancel mid-flight
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull()
+
+    gate.resolve({ ...withoutAlt, alternativeText: 'Typed alt' }) // late resolution, after cancel
+    await use
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.emitted('select')).toBeUndefined() // nothing committed
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull() // still cancelled
+    expect(wrapper.vm.$.exposed!.__pickError.value).toBeNull() // no stale error paint
+  })
+
+  it('picking a second image mid-use supersedes the first: its late write-back resolution commits nothing', async () => {
+    const gate = deferred<MediaRef>()
+    updateInfoMock.mockReturnValue(gate.promise)
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt) // pick A
+    wrapper.vm.$.exposed!.__pickedAlt.value = 'Alt for A'
+
+    const useA = wrapper.vm.$.exposed!.__usePicked() // A's write-back in flight
+
+    const secondWithoutAlt: MediaRef = { ...withoutAlt, id: 11, name: 'second.jpg' }
+    await wrapper.vm.$.exposed!.__onLibrarySelect(secondWithoutAlt) // pick B while A is in flight
+    expect(wrapper.vm.$.exposed!.__picked.value?.id).toBe(11) // B's pending state intact
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('') // fresh, not A's leftover alt
+
+    gate.resolve({ ...withoutAlt, alternativeText: 'Alt for A' }) // A's late resolution
+    await useA
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.emitted('select')).toBeUndefined() // A never committed
+    expect(wrapper.vm.$.exposed!.__picked.value?.id).toBe(11) // B's pending state still intact
+    expect(wrapper.vm.$.exposed!.__pickedAlt.value).toBe('')
+  })
+})
+
+describe('tabs: accessible ARIA Tabs contract (kind="image")', () => {
+  it('links each tab to its panel: aria-controls on the tab matches the panel id, and the panel is aria-labelledby the tab', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    const tabs = wrapper.findAll('[role="tab"]')
+    const panels = wrapper.findAll('[role="tabpanel"]')
+
+    // A valid ARIA Tabs pattern needs a real tab element AND a real panel element for
+    // both Library and Upload — not just the active one.
+    expect(tabs.length).toBe(2)
+    expect(panels.length).toBe(2)
+
+    for (const tabEl of tabs) {
+      const tabId = tabEl.attributes('id')
+      const controls = tabEl.attributes('aria-controls')
+      expect(tabId).toBeTruthy()
+      expect(controls).toBeTruthy()
+
+      const panel = panels.find((p) => p.attributes('id') === controls)
+      expect(panel).toBeTruthy()
+      expect(panel!.attributes('aria-labelledby')).toBe(tabId)
+    }
+  })
+
+  it('wires up a real roving-tabindex keyboard model — explicit tabindex on the tablist and on every tab, at most one tab at 0', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    const tablist = wrapper.find('[role="tablist"]')
+    const tabs = wrapper.findAll('[role="tab"]')
+
+    // A managed roving-tabindex group, not default browser tab order: the tablist is
+    // a keyboard entry point (Reka seeds the roving stop to a tab once one has been
+    // focused; until then the tablist itself is the single stop), and every tab
+    // carries an explicit tabindex rather than relying on implicit button defaults.
+    expect(tablist.attributes('tabindex')).toBe('0')
+    for (const t of tabs) {
+      expect(['0', '-1']).toContain(t.attributes('tabindex'))
+    }
+    expect(tabs.filter((t) => t.attributes('tabindex') === '0').length).toBeLessThanOrEqual(1)
   })
 })

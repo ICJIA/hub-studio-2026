@@ -1,9 +1,9 @@
 <!-- app/components/forms/BodyImagesField.vue -->
 <!--
   BodyImagesField: the SIDEBAR body-image insert panel (moved out of MarkdownEditor's in-editor tray).
-  It OWNS the body-image tray: the upload button/drop (the existing useUpload path) AND, in demo mode
-  only, the seeding of ~8 bundled sample FIGURES (sampleFigureRef) so authors can click-to-insert sample
-  charts/tables (the demo blocks uploads).
+  It OWNS the body-image tray: upload-from-desktop AND "Add from library" (MediaLibraryGrid →
+  alt-gated pick, write-back for alt-less images). No auto-seeding: new articles start empty;
+  in demo the seeded demo library (photos + figures) is one click away via Add from library.
 
   For EACH tray image the author chooses, per-image, how it lands in the body:
     - Alt   (REQUIRED — Insert is disabled while Alt is empty, with a hint)
@@ -15,13 +15,12 @@
   every tray url is a hosted Media Library url (or a bundled demo SVG), never a data: URI.
 -->
 <script setup lang="ts">
-import { ref, onMounted } from '#imports'
-import { useUpload } from '~/composables/useUpload'
+import { ref } from '#imports'
 import { buildFigureMarkdown, type FigureCaptionPosition, type FigureCaptionAlign } from '~/lib/editor/figure-insert'
 import { provisionalAltFromName } from '~/lib/editor/image-insert'
 import { ALLOWED_IMAGE_EXTENSIONS, hasAllowedImageExtension } from '~/lib/image-types'
-import { isDemoMode } from '~/lib/demo'
-import { sampleFigureRef } from '~/lib/sample-figures'
+import { useMediaLibrary } from '~/composables/useMediaLibrary'
+import type { UploadInfo } from '~/lib/upload'
 import type { MediaRef } from '~/types/content'
 
 /** A tray entry: a hosted (or bundled demo) image plus the per-image insert controls' draft state. */
@@ -37,7 +36,7 @@ interface TrayImage {
 
 const emit = defineEmits<{ insert: [markdown: string] }>()
 
-const { upload } = useUpload()
+const { uploadImage, updateInfo } = useMediaLibrary()
 const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 
 const trayImages = ref<TrayImage[]>([])
@@ -76,6 +75,68 @@ function removeFromTray(id: number) {
   trayImages.value = trayImages.value.filter((e) => e.id !== id)
 }
 
+// --- Add from library ---
+const libraryOpen = ref(false)
+const pendingPick = ref<MediaRef | null>(null) // a library pick that still needs REQUIRED alt
+const pendingAlt = ref('')
+const pickBusy = ref(false)
+const pickError = ref<string | null>(null)
+
+// Monotonic per-flow generation guard: confirmPendingPick() claims the next generation when it
+// actually starts a write-back; onLibraryPick (a new/second pick) and cancelPendingPick both
+// bump it too, so picking a different image or cancelling invalidates any in-flight confirm. The
+// write-back's settling (success OR failure) only commits — tray add, pendingPick/pendingAlt
+// clear, or error paint — if its generation is still current; a stale settle is a pure no-op.
+// Mirrors MediaLibraryGrid.load()'s `generation` guard and MediaField.persistInfo()'s `persistSeq`
+// guard. `pickBusy`'s reset in confirmPendingPick's `finally` deliberately stays unconditional —
+// only one confirm can ever be in flight at a time (the synchronous `pickBusy.value` guard below
+// prevents overlap), so there's no newer in-flight request a stale settle could stomp on.
+let pickSeq = 0
+
+/** A library pick with alt joins the tray directly; one without alt waits for required alt. */
+function onLibraryPick(mediaRef: MediaRef) {
+  pickSeq++ // a new pick invalidates any in-flight confirm for whatever was pending before
+  pickError.value = null
+  if ((mediaRef.alternativeText ?? '').trim()) {
+    addToTray(mediaRef, mediaRef.name ?? 'library image')
+    return
+  }
+  pendingPick.value = mediaRef
+  pendingAlt.value = ''
+}
+
+/** Write the typed alt back to the record (in-memory in demo), then add to the tray. */
+async function confirmPendingPick() {
+  if (!pendingPick.value || !pendingAlt.value.trim() || pickBusy.value) return
+  const seq = ++pickSeq
+  pickBusy.value = true
+  pickError.value = null
+  try {
+    const info: UploadInfo = { alternativeText: pendingAlt.value.trim(), caption: pendingPick.value.caption ?? '' }
+    const updated = await updateInfo(pendingPick.value.id, info)
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — commit nothing
+    addToTray(updated, updated.name ?? 'library image')
+    pendingPick.value = null
+    pendingAlt.value = ''
+  } catch {
+    if (seq !== pickSeq) return // cancelled or superseded while in flight — no stale error paint
+    pickError.value = 'Could not save the alt text. Please try again.'
+  } finally {
+    pickBusy.value = false
+  }
+}
+
+// Cancel is deliberately left clickable while pickBusy is true (no :disabled here, unlike
+// Confirm) — cancelling a mid-flight write-back is exactly the affordance this generation guard
+// exists for. Bumping pickSeq is what makes that click actually abort the pending commit, not
+// just hide the panel, once confirmPendingPick()'s in-flight call settles.
+function cancelPendingPick() {
+  pickSeq++
+  pendingPick.value = null
+  pendingAlt.value = ''
+  pickError.value = null
+}
+
 /** Build the figure markdown from the entry's per-image controls and ask the parent to insert it. */
 function insertEntry(entry: TrayImage) {
   if (!entry.alt.trim()) return
@@ -102,7 +163,7 @@ async function handleFiles(files: File[]) {
   uploadError.value = null
   for (const file of files) {
     try {
-      const mediaRef = await upload(file)
+      const mediaRef = await uploadImage(file)
       addToTray(mediaRef, file.name)
     } catch (err) {
       uploadError.value = err instanceof Error ? err.message : 'Image upload failed. Please try again.'
@@ -122,18 +183,6 @@ function onDrop(e: DragEvent) {
   if (files.length) handleFiles(files)
 }
 
-onMounted(() => {
-  // Demo mode blocks uploads, so the tray would stay empty. Seed it with a deterministic set of bundled
-  // sample FIGURES (charts/tables) so authors can click-to-Insert them into the body. Display-only refs
-  // (id 0) — never written. Non-demo behavior is unchanged (seed runs ONLY in demo mode).
-  if (isDemoMode() && trayImages.value.length === 0) {
-    for (let n = 0; n < 8; n++) {
-      const ref = sampleFigureRef(n)
-      addToTray(ref, ref.name ?? `figure-${n}.svg`)
-    }
-  }
-})
-
 // Test seams: route through the SAME functions the UI uses (not divergent logic).
 defineExpose({
   __trayImages: trayImages,
@@ -142,6 +191,12 @@ defineExpose({
   __removeFromTray: removeFromTray,
   __insertEntry: insertEntry,
   __uploadError: uploadError,
+  __onLibraryPick: onLibraryPick,
+  __confirmPendingPick: confirmPendingPick,
+  __pendingPick: pendingPick,
+  __pendingAlt: pendingAlt,
+  __libraryOpen: libraryOpen,
+  __pickError: pickError,
 })
 </script>
 
@@ -154,6 +209,34 @@ defineExpose({
           Upload images
         </UButton>
         <span class="text-xs text-muted">or drag &amp; drop here</span>
+        <UButton size="xs" variant="outline" icon="i-lucide-images" data-test="add-from-library" @click="libraryOpen = !libraryOpen">
+          Add from library
+        </UButton>
+      </div>
+      <div v-if="libraryOpen" class="mt-2" data-test="library-in-tray">
+        <MediaLibraryGrid @select="onLibraryPick" />
+        <div v-if="pendingPick" class="mt-2 rounded border border-default p-2" data-test="tray-pick-confirm">
+          <p class="text-xs text-warning">"{{ pendingPick.name ?? 'library image' }}" has no alt text yet.</p>
+          <UFormField class="mt-1">
+            <template #label><span class="text-xs">Alt text (required)</span></template>
+            <UInput
+              v-model="pendingAlt"
+              size="xs"
+              placeholder="Describe the image for screen readers"
+              class="w-full"
+              data-test="pending-alt"
+            />
+          </UFormField>
+          <p v-if="pickError" role="alert" class="mt-1 text-xs text-error" data-test="tray-pick-error">{{ pickError }}</p>
+          <div class="mt-2 flex gap-2">
+            <UButton size="xs" :disabled="!pendingAlt.trim() || pickBusy" :loading="pickBusy" data-test="confirm-pending-pick" @click="confirmPendingPick">
+              Add to tray
+            </UButton>
+            <UButton size="xs" color="neutral" variant="ghost" data-test="cancel-pending-pick" @click="cancelPendingPick">
+              Cancel
+            </UButton>
+          </div>
+        </div>
       </div>
       <p class="mt-1 text-xs text-muted">
         Upload to add an image, set its alt + caption, then Insert to place it in the body at the cursor.

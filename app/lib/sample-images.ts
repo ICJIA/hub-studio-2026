@@ -24,6 +24,11 @@ const POOL = [
   '/images/demo/victimization_and_help_seeking_experiences_of_lgbtq_individuals_splash_4256fe7725.jpg',
 ] as const
 
+/** Number of bundled demo photos (the whole POOL, for exhaustive deterministic seeding). */
+export function sampleImagePoolSize(): number {
+  return POOL.length
+}
+
 /**
  * Return a real Research Hub Media Library URL from the verified pool.
  * Deterministic: same seed always returns the same URL. No Math.random.

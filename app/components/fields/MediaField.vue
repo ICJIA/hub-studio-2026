@@ -11,9 +11,19 @@
     - editable Alt text (required, flagged if empty) and Caption (optional) fields,
       pre-filled from the MediaRef; editing them emits an updated MediaRef via v-model.
   kind="file": hides alt/caption, uses document upload path (PDF/office docs), shows file name only.
+
+  Persist-on-blur contract: blurring either selected-state input calls persistInfo(), which
+  writes alt/caption to the media record via useMediaLibrary().updateInfo (updateFileInfo on
+  the Strapi adapter). It skips id 0 (dev sample refs), an empty alt (the required-field error
+  owns that state), and no-op edits (compared against the last-persisted baseline for the
+  current id, reseeded on every id change). On failure the local (unsaved) value is left in
+  place and the baseline is restored so a later blur retries; see persistInfo()'s own doc
+  comment for the optimistic-baseline + sequence/id-guard mechanics that keep concurrent,
+  replaced-image, and same-id-overlapping-edit write-backs from duplicating or clobbering
+  each other.
 -->
 <script setup lang="ts">
-import { ref, computed } from '#imports'
+import { ref, computed, watch } from '#imports'
 import type { MediaRef } from '~/types/content'
 
 const props = defineProps<{ modelValue: MediaRef | null; label: string; kind?: 'image' | 'file' }>()
@@ -35,6 +45,77 @@ const altError = computed(() =>
     ? 'Alt text is required'
     : undefined,
 )
+
+const { updateInfo } = useMediaLibrary()
+
+// Last-persisted alt/caption for the CURRENT media id — persistInfo only fires on a real change.
+const persistError = ref<string | null>(null)
+const persistedAlt = ref('')
+const persistedCaption = ref('')
+watch(
+  () => current.value?.id,
+  () => {
+    persistError.value = null
+    persistedAlt.value = current.value?.alternativeText ?? ''
+    persistedCaption.value = current.value?.caption ?? ''
+  },
+  { immediate: true },
+)
+
+// Monotonic per-call sequence guard: each persistInfo() call that actually proceeds (past the
+// no-op check) claims the next sequence number. A response (success or failure) only touches
+// state if its sequence is still the CURRENT one when it settles — this catches the case the
+// id guard alone can't: two overlapping calls on the SAME id resolving out of order, where the
+// older call's late response would otherwise pass the id check and clobber the newer call's
+// already-applied baseline. Mirrors the request-generation guard in MediaLibraryGrid.vue's load().
+let persistSeq = 0
+
+/**
+ * Persist alt/caption edits to the media record on commit (blur). Skips display-only refs
+ * (id 0 — dev sample content), empty alt (the required-field error owns that state), and
+ * no-op edits. Demo/session refs (negative ids) persist through the demo adapter in-memory.
+ * On failure the local value is kept so the author can retry.
+ *
+ * Optimistic baseline + sequence/id guard (kills stale-baseline races around the await):
+ *  - The outgoing values are adopted as the baseline BEFORE the await settles, so a second
+ *    blur that fires while this call is still in flight (e.g. tab from alt straight to
+ *    caption) compares against the value already in flight and no-ops instead of firing a
+ *    duplicate call.
+ *  - The response (success) and the restore (failure) are only applied if this call is still
+ *    both the latest one fired (`seq === persistSeq`) AND still for the current media id. The
+ *    id half covers a late response after Replace; the sequence half covers a late response
+ *    from an OLDER overlapping call on the SAME id (e.g. two edits blurred in quick succession
+ *    where the second call's response lands first) — a stale call does nothing at all: no
+ *    baseline write, no error paint over a since-succeeded edit.
+ */
+async function persistInfo() {
+  const mediaRef = current.value
+  if (!mediaRef || !isImage.value || mediaRef.id === 0) return
+  const altValue = (mediaRef.alternativeText ?? '').trim()
+  const captionValue = (mediaRef.caption ?? '').trim()
+  if (!altValue) return
+  if (altValue === persistedAlt.value.trim() && captionValue === persistedCaption.value.trim()) return
+  const calledId = mediaRef.id
+  const seq = ++persistSeq
+  const previousAlt = persistedAlt.value
+  const previousCaption = persistedCaption.value
+  persistedAlt.value = altValue
+  persistedCaption.value = captionValue
+  persistError.value = null
+  try {
+    const updated = await updateInfo(mediaRef.id, { alternativeText: altValue, caption: captionValue })
+    if (seq === persistSeq && current.value?.id === calledId) {
+      persistedAlt.value = updated.alternativeText ?? ''
+      persistedCaption.value = updated.caption ?? ''
+    }
+  } catch {
+    if (seq === persistSeq && current.value?.id === calledId) {
+      persistedAlt.value = previousAlt
+      persistedCaption.value = previousCaption
+      persistError.value = 'Could not save the image details to the library. Retry by editing the field again.'
+    }
+  }
+}
 
 function onSelect(mediaRef: MediaRef) {
   emit('update:modelValue', mediaRef)
@@ -61,7 +142,7 @@ function updateCaption(value: string) {
   emit('update:modelValue', { ...current.value, caption: value || null })
 }
 
-defineExpose({ clear })
+defineExpose({ clear, __persistInfo: persistInfo, __persistError: persistError })
 </script>
 
 <template>
@@ -101,6 +182,7 @@ defineExpose({ clear })
             data-test="selected-alt"
             class="w-full"
             @update:model-value="updateAlt($event as string)"
+            @blur="persistInfo"
           />
         </UFormField>
         <UFormField label="Caption (optional)" class="mt-3">
@@ -110,8 +192,12 @@ defineExpose({ clear })
             data-test="selected-caption"
             class="w-full"
             @update:model-value="updateCaption($event as string)"
+            @blur="persistInfo"
           />
         </UFormField>
+        <p v-if="persistError" role="alert" class="mt-2 text-sm text-error" data-test="persist-error">
+          {{ persistError }}
+        </p>
       </template>
     </div>
 

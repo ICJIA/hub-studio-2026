@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { uploadFile, listMediaFiles, deleteMediaFile } from '~/lib/upload'
+import { uploadFile, listMediaFiles, deleteMediaFile, updateFileInfo } from '~/lib/upload'
 import type { $Fetch } from 'ofetch'
 
 // A raw uploaded-file object as returned directly by POST /upload (array) and GET /upload/files.
@@ -93,5 +93,36 @@ describe('deleteMediaFile', () => {
     const api = vi.fn().mockResolvedValue({}) as unknown as $Fetch
     await deleteMediaFile(api, 42)
     expect(api).toHaveBeenCalledWith('/upload/files/42', { method: 'DELETE' })
+  })
+})
+
+describe('updateFileInfo', () => {
+  it('POSTs /upload?id=<id> with a fileInfo FormData part and maps the returned file', async () => {
+    const api = vi.fn().mockResolvedValue(rawFile) as unknown as $Fetch
+    const ref = await updateFileInfo(api, 42, { alternativeText: 'Bar chart of outcomes', caption: 'Figure 1.' })
+
+    const [url, opts] = (api as unknown as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(url).toBe('/upload?id=42')
+    expect(opts.method).toBe('POST')
+    const body = opts.body as FormData
+    expect(body).toBeInstanceOf(FormData)
+    expect(body.has('files')).toBe(false) // metadata-only update — no file part
+    expect(JSON.parse(body.get('fileInfo') as string)).toEqual({
+      alternativeText: 'Bar chart of outcomes', caption: 'Figure 1.',
+    })
+    expect(ref.id).toBe(42)
+    expect(ref.alternativeText).toBe('Bar chart of outcomes')
+    expect(ref.url.startsWith('data:')).toBe(false)
+  })
+
+  it('accepts an array-shaped response (defensive) and still maps the first file', async () => {
+    const api = vi.fn().mockResolvedValue([rawFile]) as unknown as $Fetch
+    const ref = await updateFileInfo(api, 42, { alternativeText: 'X' })
+    expect(ref.id).toBe(42)
+  })
+
+  it('throws when the response carries no file', async () => {
+    const api = vi.fn().mockResolvedValue(null) as unknown as $Fetch
+    await expect(updateFileInfo(api, 42, { alternativeText: 'X' })).rejects.toThrow(/no file/i)
   })
 })

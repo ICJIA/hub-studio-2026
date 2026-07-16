@@ -59,6 +59,22 @@ export async function listMediaFiles(api: $Fetch, opts: BrowseOptions = {}): Pro
   return res.map((m) => mediaFromStrapi(m)).filter((r): r is MediaRef => r !== null)
 }
 
+/**
+ * Update alt/caption (fileInfo) on an EXISTING Media Library file. Strapi 5 upload plugin:
+ * POST /upload?id=<id> with a multipart `fileInfo` part and no `files` part updates metadata
+ * in place. Response is the updated file object (handled defensively as object-or-array).
+ * NOTE: request shape follows the Strapi 5 upload REST contract; verify against the live
+ * sandbox at first staging use (runbook §Strapi checklist carries the permission + check).
+ */
+export async function updateFileInfo(api: $Fetch, id: number, info: UploadInfo): Promise<MediaRef> {
+  const form = new FormData()
+  form.append('fileInfo', JSON.stringify(info))
+  const res = await api<StrapiMedia | StrapiMedia[]>(`/upload?id=${id}`, { method: 'POST', body: form })
+  const ref = mediaFromStrapi(Array.isArray(res) ? res[0] : res)
+  if (!ref) throw new Error('Update succeeded but returned no file.')
+  return ref
+}
+
 /** Remove a file from the Media Library by its numeric id. */
 export async function deleteMediaFile(api: $Fetch, id: number): Promise<void> {
   await api(`/upload/files/${id}`, { method: 'DELETE' })

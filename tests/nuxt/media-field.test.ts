@@ -30,6 +30,13 @@ mockNuxtImport('useMediaLibrary', () => () => ({
 
 import MediaField from '~/components/fields/MediaField.vue'
 
+/** A promise whose resolution is controlled externally — for exercising in-flight request races. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
+
 describe('MediaField', () => {
   it('emits a url-based MediaRef when MediaPicker selects (never data:)', async () => {
     const wrapper = await mountSuspended(MediaField, { props: { modelValue: null, label: 'Splash' } })
@@ -254,6 +261,117 @@ describe('MediaField', () => {
       await new Promise((r) => setTimeout(r, 0))
       expect(wrapper.vm.$.exposed!.__persistError.value).toMatch(/could not save/i)
       expect(wrapper.find('[data-test="persist-error"]').exists()).toBe(true)
+      // The title says "keeping the local value" — prove the input still DISPLAYS the unsaved edit.
+      const altInput = wrapper.find('[data-test="selected-alt"]').element as HTMLInputElement
+      expect(altInput.value).toBe('New alt')
+    })
+
+    // Two reachable defects, one root cause: persistInfo() only updates persistedAlt/persistedCaption
+    // AFTER the await, with no check that the response still belongs to the media id it was fired for.
+    describe('stale-baseline race in the write-back', () => {
+      it('alt-blur then immediate caption-blur before call 1 resolves fires updateInfo exactly once', async () => {
+        const inFlight = deferred<MediaRef>()
+        updateInfoMock.mockReturnValueOnce(inFlight.promise)
+        const wrapper = await mountWithModel(selected)
+        await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+
+        // Blur 1 (alt): fires the persist call, leaves it in flight (unresolved).
+        const call1 = wrapper.vm.$.exposed!.__persistInfo()
+        // Blur 2 (tab straight to caption, no further edit) while call 1 is still unresolved.
+        await wrapper.vm.$.exposed!.__persistInfo()
+
+        expect(updateInfoMock).toHaveBeenCalledTimes(1)
+
+        inFlight.resolve({ ...selected, alternativeText: 'New alt' })
+        await call1
+      })
+
+      it('a stale in-flight response for image A does not stomp a since-replaced image B\'s baselines', async () => {
+        const imageB: MediaRef = {
+          id: 99, url: '/uploads/other.jpg', name: 'other.jpg',
+          alternativeText: 'B alt', caption: 'B caption',
+          width: null, height: null, mime: 'image/jpeg',
+        }
+        const inFlightA = deferred<MediaRef>()
+        updateInfoMock.mockReturnValueOnce(inFlightA.promise)
+
+        const wrapper = await mountWithModel(selected) // image A, id 42
+        await wrapper.find('[data-test="selected-alt"]').setValue('New alt A')
+        const callA = wrapper.vm.$.exposed!.__persistInfo() // fires, left in flight
+
+        // Replace with image B before A's call resolves — reseeds baselines to B's own values.
+        await wrapper.setProps({ modelValue: imageB })
+
+        // A's late response finally resolves. It must be ignored: B is now current.
+        inFlightA.resolve({ ...selected, alternativeText: 'New alt A' })
+        await callA
+        await new Promise((r) => setTimeout(r, 0))
+
+        // A no-edit blur on B is a no-op ONLY if B's baseline is still B's own (untouched by A).
+        await wrapper.vm.$.exposed!.__persistInfo()
+        expect(updateInfoMock).toHaveBeenCalledTimes(1) // A's original call only — no spurious B call
+      })
+
+      it('after a failed persist, blurring again retries because the baseline was restored', async () => {
+        updateInfoMock.mockRejectedValueOnce(new Error('403'))
+        const wrapper = await mountWithModel(selected)
+        await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+        await wrapper.vm.$.exposed!.__persistInfo()
+        await new Promise((r) => setTimeout(r, 0))
+        expect(updateInfoMock).toHaveBeenCalledTimes(1)
+        expect(wrapper.vm.$.exposed!.__persistError.value).toMatch(/could not save/i)
+
+        updateInfoMock.mockResolvedValueOnce({ ...selected, alternativeText: 'New alt' })
+        await wrapper.vm.$.exposed!.__persistInfo() // retry — still-unsaved value, no further edit
+        expect(updateInfoMock).toHaveBeenCalledTimes(2)
+        expect(updateInfoMock).toHaveBeenLastCalledWith(42, { alternativeText: 'New alt', caption: 'Original caption' })
+      })
+    })
+
+    describe('baseline reseed on Replace', () => {
+      it('replacing after a failed persist on A clears persistError and reseeds baselines for B', async () => {
+        updateInfoMock.mockRejectedValueOnce(new Error('403'))
+        const wrapper = await mountWithModel(selected) // image A, id 42
+        await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+        await wrapper.vm.$.exposed!.__persistInfo()
+        await new Promise((r) => setTimeout(r, 0))
+        expect(wrapper.vm.$.exposed!.__persistError.value).toBeTruthy()
+
+        const imageB: MediaRef = {
+          id: 99, url: '/uploads/other.jpg', name: 'other.jpg',
+          alternativeText: 'B alt', caption: 'B caption',
+          width: null, height: null, mime: 'image/jpeg',
+        }
+        await wrapper.setProps({ modelValue: imageB })
+        expect(wrapper.vm.$.exposed!.__persistError.value).toBeNull()
+
+        updateInfoMock.mockClear()
+        await wrapper.vm.$.exposed!.__persistInfo() // no edit on B — must be a no-op
+        expect(updateInfoMock).not.toHaveBeenCalled()
+      })
+    })
+
+    // All the tests above drive persistence via __persistInfo() directly, so deleting
+    // @blur="persistInfo" from the template would fail nothing. These close that gap by
+    // triggering a real native blur event through the rendered input.
+    describe('@blur wiring (regression net)', () => {
+      it('blurring the alt input (native event) triggers updateInfo', async () => {
+        updateInfoMock.mockResolvedValueOnce({ ...selected, alternativeText: 'New alt' })
+        const wrapper = await mountWithModel(selected)
+        const altInput = wrapper.find('[data-test="selected-alt"]')
+        await altInput.setValue('New alt')
+        await altInput.trigger('blur')
+        expect(updateInfoMock).toHaveBeenCalled()
+      })
+
+      it('blurring the caption input (native event) triggers updateInfo', async () => {
+        updateInfoMock.mockResolvedValueOnce({ ...selected, caption: 'New caption' })
+        const wrapper = await mountWithModel(selected)
+        const captionInput = wrapper.find('[data-test="selected-caption"]')
+        await captionInput.setValue('New caption')
+        await captionInput.trigger('blur')
+        expect(updateInfoMock).toHaveBeenCalled()
+      })
     })
   })
 })

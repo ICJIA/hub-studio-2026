@@ -11,6 +11,15 @@
     - editable Alt text (required, flagged if empty) and Caption (optional) fields,
       pre-filled from the MediaRef; editing them emits an updated MediaRef via v-model.
   kind="file": hides alt/caption, uses document upload path (PDF/office docs), shows file name only.
+
+  Persist-on-blur contract: blurring either selected-state input calls persistInfo(), which
+  writes alt/caption to the media record via useMediaLibrary().updateInfo (updateFileInfo on
+  the Strapi adapter). It skips id 0 (dev sample refs), an empty alt (the required-field error
+  owns that state), and no-op edits (compared against the last-persisted baseline for the
+  current id, reseeded on every id change). On failure the local (unsaved) value is left in
+  place and the baseline is restored so a later blur retries; see persistInfo()'s own doc
+  comment for the optimistic-baseline + id-guard mechanics that keep concurrent/replaced-image
+  write-backs from duplicating or clobbering each other.
 -->
 <script setup lang="ts">
 import { ref, computed, watch } from '#imports'
@@ -57,6 +66,15 @@ watch(
  * (id 0 — dev sample content), empty alt (the required-field error owns that state), and
  * no-op edits. Demo/session refs (negative ids) persist through the demo adapter in-memory.
  * On failure the local value is kept so the author can retry.
+ *
+ * Optimistic baseline + id guard (kills two stale-baseline races around the await):
+ *  - The outgoing values are adopted as the baseline BEFORE the await settles, so a second
+ *    blur that fires while this call is still in flight (e.g. tab from alt straight to
+ *    caption) compares against the value already in flight and no-ops instead of firing a
+ *    duplicate call.
+ *  - The response (success) and the restore (failure) are only applied if `current` is still
+ *    the media id this call was made for, so a late response for a since-replaced image can
+ *    never clobber the new image's own (freshly reseeded) baselines.
  */
 async function persistInfo() {
   const mediaRef = current.value
@@ -65,13 +83,24 @@ async function persistInfo() {
   const captionValue = (mediaRef.caption ?? '').trim()
   if (!altValue) return
   if (altValue === persistedAlt.value.trim() && captionValue === persistedCaption.value.trim()) return
+  const calledId = mediaRef.id
+  const previousAlt = persistedAlt.value
+  const previousCaption = persistedCaption.value
+  persistedAlt.value = altValue
+  persistedCaption.value = captionValue
   persistError.value = null
   try {
     const updated = await updateInfo(mediaRef.id, { alternativeText: altValue, caption: captionValue })
-    persistedAlt.value = updated.alternativeText ?? ''
-    persistedCaption.value = updated.caption ?? ''
+    if (current.value?.id === calledId) {
+      persistedAlt.value = updated.alternativeText ?? ''
+      persistedCaption.value = updated.caption ?? ''
+    }
   } catch {
-    persistError.value = 'Could not save the image details to the library. Retry by editing the field again.'
+    if (current.value?.id === calledId) {
+      persistedAlt.value = previousAlt
+      persistedCaption.value = previousCaption
+      persistError.value = 'Could not save the image details to the library. Retry by editing the field again.'
+    }
   }
 }
 

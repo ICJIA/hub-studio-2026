@@ -42,9 +42,10 @@ export function saveSnapshot<T>(
   documentId: string | null,
   model: T,
   savedAt: string,
-  store: BackupStore | null = defaultStore(),
+  store?: BackupStore | null,
 ): boolean {
-  if (!store) return false
+  const resolvedStore = store !== undefined ? store : defaultStore()
+  if (!resolvedStore) return false
   let payload: string
   try {
     payload = JSON.stringify({ model, savedAt, type, documentId: documentId ?? 'new' })
@@ -52,12 +53,12 @@ export function saveSnapshot<T>(
     console.warn('[draft-backup] snapshot not serializable — skipped')
     return false
   }
-  if (payload.length > DRAFT_BACKUP_MAX_BYTES) {
+  if (new TextEncoder().encode(payload).length > DRAFT_BACKUP_MAX_BYTES) {
     console.warn('[draft-backup] snapshot too large — skipped')
     return false
   }
   try {
-    store.setItem(backupKey(type, documentId), payload)
+    resolvedStore.setItem(backupKey(type, documentId), payload)
     return true
   } catch (err) {
     console.warn('[draft-backup] write failed — skipped', err)
@@ -69,19 +70,27 @@ export function saveSnapshot<T>(
 export function loadSnapshot<T>(
   type: string,
   documentId: string | null,
-  store: BackupStore | null = defaultStore(),
+  store?: BackupStore | null,
 ): DraftSnapshot<T> | null {
-  if (!store) return null
+  const resolvedStore = store !== undefined ? store : defaultStore()
+  if (!resolvedStore) return null
   let raw: string | null
   try {
-    raw = store.getItem(backupKey(type, documentId))
+    raw = resolvedStore.getItem(backupKey(type, documentId))
   } catch {
     return null
   }
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as Partial<DraftSnapshot<T>>
-    if (!parsed || typeof parsed !== 'object' || parsed.model === undefined || typeof parsed.savedAt !== 'string') {
+    if (
+      !parsed
+      || typeof parsed !== 'object'
+      || parsed.model === undefined
+      || typeof parsed.savedAt !== 'string'
+      || typeof parsed.type !== 'string'
+      || typeof parsed.documentId !== 'string'
+    ) {
       return null
     }
     return parsed as DraftSnapshot<T>
@@ -94,10 +103,11 @@ export function loadSnapshot<T>(
 export function clearSnapshot(
   type: string,
   documentId: string | null,
-  store: BackupStore | null = defaultStore(),
+  store?: BackupStore | null,
 ): void {
+  const resolvedStore = store !== undefined ? store : defaultStore()
   try {
-    store?.removeItem(backupKey(type, documentId))
+    resolvedStore?.removeItem(backupKey(type, documentId))
   } catch {
     // fail-open
   }

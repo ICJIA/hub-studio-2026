@@ -96,4 +96,110 @@ describe('clearSnapshot', () => {
     expect(loadSnapshot('article', 'abc123', store)).toBeNull()
     expect(loadSnapshot('app', 'abc123', store)).not.toBeNull()
   })
+
+  it('swallows a throwing removeItem — no throw', () => {
+    const store: BackupStore = {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => { throw new Error('access denied') },
+    }
+    expect(() => clearSnapshot('article', 'x', store)).not.toThrow()
+  })
+})
+
+describe('byte-size guard (TextEncoder)', () => {
+  it('measures true byte length, not UTF-16 code units (rejects multibyte overage)', () => {
+    const store = memoryStore()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    // Each em-dash (—) is 1 UTF-16 code unit but 3 bytes in UTF-8.
+    // Build a model that when serialized exceeds 1MB in bytes.
+    // Aim for ~335k em-dashes: 335k * 3 bytes = 1,005,000 bytes
+    const emDashCount = 335_000
+    const hugeModel = { markdown: '—'.repeat(emDashCount) }
+    const serialized = JSON.stringify({ model: hugeModel, savedAt: 'x', type: 't', documentId: 'x' })
+    const byteLength = new TextEncoder().encode(serialized).length
+    const charLength = serialized.length
+
+    // Verify our test setup: byte length exceeds cap
+    expect(byteLength).toBeGreaterThan(DRAFT_BACKUP_MAX_BYTES)
+
+    expect(saveSnapshot('article', 'big', hugeModel, '2026-07-16T10:00:00.000Z', store)).toBe(false)
+    expect(store.map.size).toBe(0) // Nothing written
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})
+
+describe('untested fail-open paths', () => {
+  it('loadSnapshot: throwing getItem is swallowed — returns null, no throw', () => {
+    const store: BackupStore = {
+      getItem: () => { throw new Error('access denied') },
+      setItem: () => {},
+      removeItem: () => {},
+    }
+    expect(loadSnapshot('article', 'x', store)).toBeNull()
+  })
+
+  it('saveSnapshot: non-serializable model (circular ref) returns false, warns, no throw', () => {
+    const store = memoryStore()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const circular: any = { data: 'x' }
+    circular.self = circular // circular reference
+    expect(saveSnapshot('article', 'c', circular, '2026-07-16T10:00:00.000Z', store)).toBe(false)
+    expect(store.map.size).toBe(0)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('defaultStore() privacy-mode guard: localStorage access throws → returns false, no throw', () => {
+    // Stub globalThis.localStorage to throw on access
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', {
+      get() { throw new Error('localStorage access denied') },
+      configurable: true,
+    })
+
+    try {
+      // Call saveSnapshot without passing store argument; it should call defaultStore()
+      // which catches the throw and returns null, then returns false (no warning for absent store)
+      expect(saveSnapshot('article', 'x', model, '2026-07-16T10:00:00.000Z')).toBe(false)
+      // Also test loadSnapshot and clearSnapshot for completeness
+      expect(loadSnapshot('article', 'x')).toBeNull()
+      expect(() => clearSnapshot('article', 'x')).not.toThrow()
+    } finally {
+      // Restore
+      if (original) {
+        Object.defineProperty(globalThis, 'localStorage', original)
+      } else {
+        delete (globalThis as any).localStorage
+      }
+    }
+  })
+})
+
+describe('shape validation', () => {
+  it('rejects envelope missing type field', () => {
+    const store = memoryStore()
+    store.setItem(backupKey('article', 'bad'), JSON.stringify({ model: { x: 1 }, savedAt: 'x', documentId: 'x' }))
+    expect(loadSnapshot('article', 'bad', store)).toBeNull()
+  })
+
+  it('rejects envelope missing documentId field', () => {
+    const store = memoryStore()
+    store.setItem(backupKey('article', 'bad'), JSON.stringify({ model: { x: 1 }, savedAt: 'x', type: 'article' }))
+    expect(loadSnapshot('article', 'bad', store)).toBeNull()
+  })
+
+  it('rejects envelope with non-string type', () => {
+    const store = memoryStore()
+    store.setItem(backupKey('article', 'bad'), JSON.stringify({ model: { x: 1 }, savedAt: 'x', type: 123, documentId: 'x' }))
+    expect(loadSnapshot('article', 'bad', store)).toBeNull()
+  })
+
+  it('rejects envelope with non-string documentId', () => {
+    const store = memoryStore()
+    store.setItem(backupKey('article', 'bad'), JSON.stringify({ model: { x: 1 }, savedAt: 'x', type: 'article', documentId: 123 }))
+    expect(loadSnapshot('article', 'bad', store)).toBeNull()
+  })
 })

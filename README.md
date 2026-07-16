@@ -638,3 +638,15 @@ docs/
 ## License
 
 [MIT](LICENSE) © 2026 Illinois Criminal Justice Information Authority
+
+---
+
+<!-- studio-bottom-nav -->
+**Hub Studio 2.0 · Studio build v0.4.0** — for managers monitoring this project:
+[Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
+[What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
+[What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·
+[README](https://github.com/ICJIA/copperhead-studio-20/blob/main/README.md) ·
+[Live demo](https://studio-2026.netlify.app)
+
+*These links always open the latest rendered version of each document.*

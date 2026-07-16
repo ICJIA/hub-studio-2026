@@ -241,3 +241,15 @@ This is a healthy project in an unusually verifiable state: the demo anyone can 
 ---
 
 *Prepared July 11, 2026, against `main` @ `d78a7ab`. Verification commands and results are recorded in §4.1; file paths throughout refer to this repository. Companion documents: [Design & Implementation Spec](ICJIA-Studio-20-rewrite-copperhead.md) · [Security Audit](security-audit.md) · [Demo → Production Runbook](demo-to-production.md).*
+
+---
+
+<!-- studio-bottom-nav -->
+**Hub Studio 2.0 · Studio build v0.4.0** — for managers monitoring this project:
+[Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
+[What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
+[What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·
+[README](https://github.com/ICJIA/copperhead-studio-20/blob/main/README.md) ·
+[Live demo](https://studio-2026.netlify.app)
+
+*These links always open the latest rendered version of each document. For what has shipped since this analysis was written, see the [changelog](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) and the [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).*

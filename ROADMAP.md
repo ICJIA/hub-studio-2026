@@ -10,10 +10,18 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-16 · Current version: v0.4.0_
+_Last updated: 2026-07-16 · Current version: v0.5.0_
 
 ## Done (recent)
 
+- **Media-library picker (library-first images, demo parity)** (v0.5.0, 2026-07-16) — every
+  image surface opens on the ~20 newest Media Library images (searchable, Load more) with
+  upload-from-desktop one tab away; alt-less library picks require alt text and write it
+  back to the shared record (`updateFileInfo`); the MediaField alt-persistence quirk is
+  fixed; the body-images tray gains Add-from-library (demo auto-seed removed); demo desktop
+  uploads are session-only `blob:` images that structurally cannot reach a Strapi write.
+  Ten tasks, built test-first with per-task adversarial review; verified end-to-end in the
+  running demo. 757 tests / 104 files.
 - **Manager-docs workflow** (v0.4.0, 2026-07-16) — this roadmap; bottom navs with version
   stamps across the manager-facing docs; in-app bottom status bar (version + Spec & status /
   Changelog / Roadmap / Repository); in-app `/spec` page rendering the design spec with
@@ -32,12 +40,8 @@ _Last updated: 2026-07-16 · Current version: v0.4.0_
 
 ## In progress
 
-- **Media-library picker (library-first images, demo parity)** — every image surface opens
-  on the ~20 newest Media Library images (searchable) with upload-from-desktop as the second
-  path; alt-less library picks require alt text and write it back; identical behavior in the
-  demo where nothing persists. Spec: `docs/superpowers/specs/2026-07-16-media-library-picker-design.md`.
-  All 10 implementation tasks are complete and reviewed (built test-first, per-task
-  adversarial review) on a feature branch; pending the whole-branch review and merge.
+- _Nothing in flight at this release. The next queue item — the unsaved-work guard, №1
+  below — begins immediately after v0.5.0._
 
 ## Next (proposed)
 
@@ -89,7 +93,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.4.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.5.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

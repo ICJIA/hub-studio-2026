@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 2026-07-16 — media-library picker
+## [0.5.0] - 2026-07-16
 
 _Added_
 
@@ -35,7 +35,13 @@ _Changed_
   figures now live in the demo media library, one click away via **Add from library** —
   new articles start with an empty tray everywhere.
 
-Suite: **756 tests / 104 files** (690 + 66 new), typecheck clean.
+Built test-first over ten reviewed tasks (fresh implementer + adversarial reviewer per task;
+five review findings fixed and re-verified along the way, including request-race guards now
+shared across all four async media flows and a proper WAI-ARIA tabs primitive). Verified
+end-to-end in the running demo before merge — library pick, alt write-back round trip,
+add-from-library → Insert, and a real desktop upload rendering from its `blob:` URL.
+
+Suite: **757 tests / 104 files** (690 + 67 new), typecheck clean.
 
 ## [0.4.0] - 2026-07-16
 

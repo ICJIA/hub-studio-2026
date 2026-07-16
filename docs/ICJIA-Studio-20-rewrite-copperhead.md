@@ -614,7 +614,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Compact abstract editor | Inline formatting only; no stray footnotes | **Built** |
 | Accessible image uploads (alt-text required) | Accessible by default; optional captions | **Built** |
 | Body-image gallery (thumbnails → insert) | Stage multiple images, click to insert | **Built** |
-| Media-library picker (browse ~20 newest, search, upload tab) | Reuse existing library images; alt write-back for alt-less picks | **Built** (feature branch; merges with the next release) |
+| Media-library picker (browse ~20 newest, search, upload tab) | Reuse existing library images; alt write-back for alt-less picks | **Built** (v0.5.0) |
 | Document/PDF file upload | Simple report-file attachment | **Built** |
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
@@ -1070,12 +1070,13 @@ living list of what's in flight and what's next is the
   gained a bottom status bar (version + doc links) and an in-app **Spec & status** page
   rendering this document, so a manager can always read the latest state without asking a
   developer. Doc currency is enforced by an automated test.
-- **2026-07-16 — Media-library picker: build complete and reviewed, pending merge.** Every
-  image surface now opens on the ~20 newest Media Library images (searchable) with
-  upload-from-desktop one tab away; picking an image that lacks alt text requires supplying
-  it, which is written back to the shared library. Works identically in the public demo,
-  where nothing persists. All 10 implementation tasks are done — built test-first, each task
-  adversarially reviewed — on a feature branch awaiting the whole-branch review and merge.
+- **2026-07-16 — Media-library picker shipped (v0.5.0).** Every image surface now opens on
+  the ~20 newest Media Library images (searchable) with upload-from-desktop one tab away;
+  picking an image that lacks alt text requires supplying it, which is written back to the
+  shared library so it improves for everyone. Works identically in the public demo, where
+  new images live only for the session and nothing persists. Built test-first over ten
+  adversarially-reviewed tasks and verified end-to-end in the running demo before merge.
+  **757 automated tests / 104 files.**
 - **2026-07-11 — Body markdown linter shipped (v0.3.0).** A "Check" button in the editor
   flags heading/link/image problems in plain language with jump-to-line results.
   **677 automated tests / 97 files.**
@@ -1097,7 +1098,7 @@ the live system yet.*
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.4.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.5.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

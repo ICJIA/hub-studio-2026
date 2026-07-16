@@ -24,6 +24,12 @@ function connectSrcOf(text: string): string {
   return (/connect-src([^;]*)/.exec(cspLine)?.[1] ?? '').trim()
 }
 
+/** Extract the bare img-src value from a `_headers`-style CSP line. */
+function imgSrcOf(headerText: string): string {
+  const cspLine = headerText.split('\n').find((l) => l.includes('Content-Security-Policy:')) ?? ''
+  return (/img-src([^;]*)/.exec(cspLine)?.[1] ?? '').trim()
+}
+
 describe('public/_headers (security headers — audit H-1)', () => {
   it('locks connect-src to self + the Strapi admin host + Mailgun', () => {
     expect(headers).toContain('connect-src')
@@ -53,6 +59,11 @@ describe('public/_headers (security headers — audit H-1)', () => {
     const cspLine = headers.split('\n').find((l) => l.includes('Content-Security-Policy:')) ?? ''
     const scriptSrc = /script-src([^;]*)/.exec(cspLine)?.[1] ?? ''
     expect(scriptSrc).not.toContain('unsafe-inline')
+  })
+
+  it('production img-src does NOT permit blob: — live never renders object URLs', () => {
+    expect(imgSrcOf(headers)).not.toContain('blob:')
+    expect(imgSrcOf(headers)).toContain("'self'")
   })
 })
 
@@ -96,5 +107,9 @@ describe('deploy/headers-demo.txt (public-demo backstop — audit §7 D-2/D-3/D-
     expect(demoHeaders).toMatch(/object-src\s+'none'/)
     expect(demoHeaders).toMatch(/base-uri\s+'none'/)
     expect(demoHeaders).toMatch(/frame-ancestors\s+'none'/)
+  })
+
+  it("demo img-src permits blob: — session-only demo uploads render from object URLs (spec 2026-07-16, media-library picker)", () => {
+    expect(imgSrcOf(demoHeaders)).toBe("'self' data: blob:")
   })
 })

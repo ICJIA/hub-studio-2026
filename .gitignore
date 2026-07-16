@@ -47,3 +47,9 @@ Thumbs.db
 
 # Misc local files
 *.local
+
+# Build-time copies of the manager-facing spec (scripts/copy-spec.mjs) — docs/ is the source
+public/spec/
+
+# Claude Code session worktrees (isolated checkouts; never sources)
+.claude/worktrees/

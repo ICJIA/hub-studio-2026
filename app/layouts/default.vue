@@ -112,6 +112,9 @@ function launchTour() {
       <slot />
     </main>
 
+    <!-- Manager-facing bottom status bar: deployed version + living-docs links (hub parity). -->
+    <AppStatusBar />
+
     <!-- Single guided-tour instance (welcome → intro → spotlight). Auto-starts first-run-once on
          the dashboard; the nav "Tour" button replays it via launchTour(). Only meaningful when
          logged in (the dashboard targets require a session). -->

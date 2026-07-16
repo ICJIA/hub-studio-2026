@@ -10,9 +10,8 @@ import { sampleImageUrl, sampleImagePoolSize } from '~/lib/sample-images'
 import { sampleFigureRef, sampleFigurePoolSize } from '~/lib/sample-figures'
 import type { BrowseOptions, UploadInfo } from '~/lib/upload'
 import type { MediaRef } from '~/types/content'
-
-/** Default page size for library listings (matches the picker's "last 20 or so"). */
-export const DEMO_MEDIA_PAGE_SIZE = 20
+import { DEFAULT_MEDIA_PAGE_SIZE } from '~/lib/media-library'
+import type { MediaLibrary } from '~/lib/media-library'
 
 export interface DemoMediaLibraryDeps {
   /** Injectable for tests (unit env has no URL.createObjectURL). Defaults to the real one. */
@@ -66,7 +65,7 @@ function store(): MediaRef[] {
 }
 
 /** In-memory MediaLibrary implementation (Task 3 defines the shared interface it satisfies). */
-export function makeDemoMediaLibrary(deps: DemoMediaLibraryDeps = {}) {
+export function makeDemoMediaLibrary(deps: DemoMediaLibraryDeps = {}): MediaLibrary {
   const createObjectUrl = deps.createObjectUrl ?? ((f: File | Blob) => URL.createObjectURL(f))
   return {
     async list(opts: BrowseOptions = {}): Promise<MediaRef[]> {
@@ -74,7 +73,7 @@ export function makeDemoMediaLibrary(deps: DemoMediaLibraryDeps = {}) {
       const q = opts.search?.trim().toLowerCase()
       const filtered = q ? all.filter((m) => (m.name ?? '').toLowerCase().includes(q)) : all
       const page = opts.page ?? 1
-      const pageSize = opts.pageSize ?? DEMO_MEDIA_PAGE_SIZE
+      const pageSize = opts.pageSize ?? DEFAULT_MEDIA_PAGE_SIZE
       return filtered.slice((page - 1) * pageSize, page * pageSize).map((m) => ({ ...m }))
     },
 

@@ -26,6 +26,22 @@ mockNuxtImport('useApps', () => () => ({ list: vi.fn(), findOne: appFindOneMock,
 let routeParams: { type: string; documentId: string } = { type: 'article', documentId: 'a1' }
 mockNuxtImport('useRoute', () => () => ({ params: routeParams }))
 
+// Annotations: stub INERT. Without this, the mounted preview runs the real composable, whose
+// Strapi adapter fires a live network fetch (401 → an UNHANDLED rejection when the test ends
+// before the promise settles) — the intermittent CI failure of 2026-07-16. This test file is
+// about the preview rendering, not annotations (tests/nuxt/preview-annotations.test.ts owns those).
+import { ref } from 'vue'
+mockNuxtImport('useAnnotations', () => () => ({
+  annotations: ref([]),
+  loading: ref(false),
+  load: vi.fn().mockResolvedValue(undefined),
+  createAnnotation: vi.fn(),
+  reply: vi.fn(),
+  setResolved: vi.fn(),
+  removeAnnotation: vi.fn(),
+  author: ref(''),
+}))
+
 import PreviewPage from '~/pages/preview/[type]/[documentId].vue'
 
 describe('preview page', () => {

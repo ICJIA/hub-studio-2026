@@ -35,9 +35,9 @@ _Last updated: 2026-07-16 · Current version: v0.4.0_
 - **Media-library picker (library-first images, demo parity)** — every image surface opens
   on the ~20 newest Media Library images (searchable) with upload-from-desktop as the second
   path; alt-less library picks require alt text and write it back; identical behavior in the
-  demo where nothing persists. Spec + 10-task implementation plan committed 2026-07-16
-  (`docs/superpowers/specs/2026-07-16-media-library-picker-design.md`); implementation
-  underway on a worktree branch.
+  demo where nothing persists. Spec: `docs/superpowers/specs/2026-07-16-media-library-picker-design.md`.
+  All 10 implementation tasks are complete and reviewed (built test-first, per-task
+  adversarial review) on a feature branch; pending the whole-branch review and merge.
 
 ## Next (proposed)
 

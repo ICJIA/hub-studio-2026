@@ -57,6 +57,11 @@ Do this any time before cutover — it does not affect the running Hub.
    (`app/plugins/api.ts` uses `strapiBaseUrl` directly — no proxy). If the Strapi project
    restricts CORS origins, add the Studio's production origin AND the staging origin used in
    §2. Symptom if missed: login fails with CORS errors in the console, not a 401.
+7. **Media Library update permission.** Grant the Author and Editor roles the upload
+   plugin's *update file info* action — the Studio's library picker writes alt text back to
+   alt-less images (`POST /upload?id=<id>` with `fileInfo`). Verify during the staging
+   rehearsal (§2): pick an alt-less image as an Author, supply alt, confirm the record
+   updates.
 
 > **Order matters:** finish this section on the PRODUCTION Strapi before starting §2 —
 > the staging Studio talks to the production instance (see the warning below).

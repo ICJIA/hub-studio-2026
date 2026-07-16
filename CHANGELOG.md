@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-16 — media-library picker
+
+_Added_
+
+- **Media-library picker (library-first images, demo parity).** Every image surface — main
+  image, thumbnail, and the body-images tray — now opens on a **Library** tab showing the ~20
+  newest Media Library images (whole-library name search, Load more), with **Upload** as the
+  second tab. Picking a library image that lacks alt text requires typing it, and the typed
+  alt is **written back to the media record** (new `updateFileInfo`; in-memory in demo) so the
+  shared library improves. Works identically in the public demo: the demo library is seeded
+  from the bundled sample photos + figures, and desktop adds are session-only `blob:` object
+  URLs with negative ids that `mediaIdForWrite` structurally drops (never persisted, never
+  networked). The demo CSP `img-src` deliberately gains `blob:` (guard-tested in both
+  directions). Spec: `docs/superpowers/specs/2026-07-16-media-library-picker-design.md`.
+
+_Fixed_
+
+- **Alt/caption edits after upload now persist.** `MediaField`'s selected-state alt/caption
+  edits previously updated only the local form model and were silently dropped on save (only
+  the numeric media id is written); they now persist to the media record on commit via
+  `updateFileInfo`.
+
+_Changed_
+
+- **Body-images tray no longer auto-seeds sample figures in demo.** The demo's 11 sample
+  figures now live in the demo media library, one click away via **Add from library** —
+  new articles start with an empty tray everywhere.
+
+Suite: **756 tests / 104 files** (690 + 66 new), typecheck clean.
+
 ## [0.4.0] - 2026-07-16
 
 _Added_

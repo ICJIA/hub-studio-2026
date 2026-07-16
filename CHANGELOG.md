@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-16 — unsaved-work guard
+
+_Added_
+
+- **Unsaved-work guard (local draft backup).** Authors can no longer silently lose
+  in-progress work. Three protections now wrap all three content forms — Article, App,
+  Dataset, both create and edit: (1) a native **leave-page warning** (`beforeunload`),
+  plus a native `confirm` on in-app navigation away from a dirty form (a route-leave
+  guard registered through the router's own active-route mechanism — no custom modal, no
+  new a11y surface); (2) a **30-second local snapshot** of the in-progress draft while
+  dirty, written to `localStorage` under a per-draft key, plus a best-effort final
+  snapshot on `beforeunload` — snapshots are byte-capped (~1 MB, measured with
+  `TextEncoder`) and **fail open** on any storage problem (full, blocked, or absent
+  `localStorage` never breaks editing; the write is skipped with a console warning); (3) a
+  non-blocking **restore banner** (`role="status"`) shown whenever a surviving snapshot is
+  found — "Unsaved changes from ⟨time⟩ found — Restore / Discard." Every successful save
+  clears the snapshot, so a surviving one always means real unsaved work; Restore applies
+  the backup (leaving the form still unsaved, saved normally afterward); Discard drops it.
+  **Live builds only take snapshots — the public demo deliberately takes none** (user
+  decision: the demo's "nothing is saved / resets each session" promise stays literally
+  true; the demo still gets both warnings). Spec:
+  `docs/superpowers/specs/2026-07-16-unsaved-work-guard-design.md`.
+
+Built test-first over six reviewed tasks (per-task adversarial review). Suite: **800
+tests / 107 files** (757 + 43 new), typecheck clean. Shipped on the `unsaved-work-guard`
+feature branch — pending the whole-branch review and merge with the next release.
+
 ## [0.5.0] - 2026-07-16
 
 _Added_

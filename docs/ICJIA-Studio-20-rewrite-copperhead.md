@@ -618,6 +618,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Document/PDF file upload | Simple report-file attachment | **Built** |
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
+| Unsaved-work guard (leave warning, 30 s local backup, restore banner) | Authors can't silently lose in-progress work | **Built** (feature branch; merges with the next release) |
 | "Preview as published" (TOC, end matter, Print) | Exactly what the public will see | **Built** |
 | Tab-only preview + shareable per-draft link | Editor and preview side by side; reviewers open a draft directly | **Built** |
 | Word-style reviewer comments on drafts | Highlight a passage, comment, reply, resolve — a pure overlay | **Built** (per-browser today; shared storage dormant until R&A installs the type) |
@@ -1065,6 +1066,15 @@ A short digest for managers, newest first — the complete version-by-version re
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-16 — Unsaved-work guard built (feature branch, pending merge).** Authors can no
+  longer silently lose in-progress work: a native leave-page warning, a 30-second local
+  draft snapshot while a form is dirty, and a non-blocking restore banner
+  ("Restore" / "Discard") when a surviving snapshot is found. **Live builds only** — the
+  public demo deliberately takes no snapshots, so its "nothing is saved / resets each
+  session" promise stays literally true; the demo still shows both warnings. Built
+  test-first over six reviewed tasks with per-task adversarial review; **800 automated
+  tests / 107 files** on the branch. Pending the whole-branch review and merge with the
+  next release.
 - **2026-07-16 — Manager-docs workflow (v0.4.0).** This document, the README, the analysis
   document, and the new roadmap now carry a version-stamped bottom nav; the Studio itself
   gained a bottom status bar (version + doc links) and an in-app **Spec & status** page

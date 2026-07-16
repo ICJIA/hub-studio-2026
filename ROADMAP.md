@@ -40,25 +40,27 @@ _Last updated: 2026-07-16 · Current version: v0.5.0_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — the unsaved-work guard, №1
-  below — begins immediately after v0.5.0._
+- **Unsaved-work guard + local draft backup** — complete on the feature branch — all six
+  tasks built test-first with per-task adversarial review; pending the whole-branch review
+  and merge. A native leave-page warning (`beforeunload` + a route-leave `confirm`), a
+  30-second local snapshot of the in-progress draft while dirty (live builds only — the
+  demo deliberately takes none, keeping its "resets each session" promise literally true),
+  and a non-blocking restore banner. The highest-trust author protection (analysis-roadmap
+  §5.3-4). 800 tests / 107 files on the branch.
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Unsaved-work guard + local draft backup** — warn on navigating away with unsaved
-   changes; ~30 s draft snapshots with a "restore unsaved draft?" prompt. The highest-trust
-   author protection (analysis-roadmap §5.3-4).
-2. **Title search on content lists** — server-side search beside the type filter; launch
+1. **Title search on content lists** — server-side search beside the type filter; launch
    imports 236 real articles (§5.3-6).
-3. **Edit-conflict detection** — send `updatedAt` with saves; warn instead of silently
+2. **Edit-conflict detection** — send `updatedAt` with saves; warn instead of silently
    overwriting a colleague's changes (§5.3-5).
-4. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
+3. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
    can never touch production data (§5.4-8).
-5. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
+4. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
    alerting before authors report breakage (§5.4-7).
-6. **Smalls** — relation-write support (or document the read-only limitation), merge the
+5. **Smalls** — relation-write support (or document the read-only limitation), merge the
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)

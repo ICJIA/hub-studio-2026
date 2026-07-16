@@ -33,8 +33,9 @@ and wires the existing `MediaField` alt/caption editing to it.
 - Demo parity: the demo library is seeded from the 24 bundled assets (16 photos + 8 figures);
   demo "uploads" add session-only entries rendered from `blob:` object URLs. Demo CSP
   `img-src` gains `blob:`.
-- The demo-only "Load sample figures" button in `BodyImagesField` is **removed** — superseded
-  by Add-from-library (the demo library contains those same figures).
+- The demo-only sample-figure auto-seed in `BodyImagesField` (`onMounted` + `isDemoMode()`)
+  is **removed** — superseded by Add-from-library (the demo library contains those same
+  figures, offered on demand instead of pre-loaded onto every article).
 
 **Out of scope (v1)**
 
@@ -170,8 +171,8 @@ sidebar panel. A picked image goes through the same alt gate (missing alt → re
 → write-back) and then joins the tray exactly like an uploaded image — the per-image
 Alt/Caption/Position/Alignment insert controls are unchanged (tray alt stays locally
 editable; it lands in the figure markdown, which is the body-image contract). The
-demo-only **Load sample figures** button is removed; the demo library's seeded figures
-serve that purpose through the grid.
+demo-only sample-figure auto-seed at mount is removed; the demo library's seeded figures
+serve that purpose through the grid, on demand.
 
 ## 5. Demo behavior (the one difference: nothing persists)
 
@@ -237,7 +238,7 @@ TDD throughout; roughly 25–35 new tests.
 - `MediaField`: alt edit on commit calls `updateInfo` once (unchanged value → no call);
   id ≤ 0 → no Strapi call.
 - `BodyImagesField`: Add from library → grid → picked image joins tray with library
-  alt/caption; Load-sample-figures button gone; insert controls unchanged.
+  alt/caption; demo auto-seed gone (tray starts empty in demo); insert controls unchanged.
 
 ## 9. Documentation
 

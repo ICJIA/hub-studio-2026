@@ -25,7 +25,14 @@ const error = ref<string | null>(null)
 const exhausted = ref(false)
 const demoNote = isDemoData()
 
+// Monotonic request-generation guard: each load() call claims the next generation. A response
+// (success or failure) only touches state if its generation is still current when it settles —
+// this way a slow, superseded request (e.g. a "Load more" that resolves after a newer reset
+// search) can never clobber fresher state, no matter what order the promises settle in.
+let generation = 0
+
 async function load(reset = false) {
+  const gen = ++generation
   if (reset) {
     page.value = 1
     exhausted.value = false
@@ -34,12 +41,18 @@ async function load(reset = false) {
   error.value = null
   try {
     const batch = await list({ page: page.value, pageSize: props.pageSize, search: search.value.trim() || undefined })
+    if (gen !== generation) return
     items.value = reset ? batch : [...items.value, ...batch]
     exhausted.value = batch.length < props.pageSize
   } catch {
+    if (gen !== generation) return
     error.value = 'Could not load the media library.'
+    // A failed reset (e.g. a search) leaves nothing trustworthy on screen — clear the grid so
+    // the error + Retry stand alone instead of floating stale items and an active Load more
+    // under the error banner. A failed append (Load more) keeps the page you already have.
+    if (reset) items.value = []
   } finally {
-    loading.value = false
+    if (gen === generation) loading.value = false
   }
 }
 
@@ -71,6 +84,7 @@ defineExpose({ __load: load, __loadMore: loadMore, __choose: choose, __items: it
       size="sm"
       icon="i-lucide-search"
       placeholder="Search library by file name"
+      aria-label="Search library by file name"
       class="w-full"
       data-test="library-search"
     />

@@ -18,6 +18,13 @@ mockNuxtImport('useMediaLibrary', () => () => ({
 
 import MediaLibraryGrid from '~/components/MediaLibraryGrid.vue'
 
+/** A promise whose resolution is controlled externally — for exercising in-flight request races. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
+
 describe('MediaLibraryGrid', () => {
   beforeEach(() => {
     listMock.mockReset()
@@ -29,6 +36,12 @@ describe('MediaLibraryGrid', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(listMock).toHaveBeenCalledWith({ page: 1, pageSize: 20, search: undefined })
     expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+  })
+
+  it('search input has an accessible name', async () => {
+    const wrapper = await mountSuspended(MediaLibraryGrid)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="library-search"]').attributes('aria-label')).toBe('Search library by file name')
   })
 
   it('clicking a thumbnail emits select with that MediaRef', async () => {
@@ -61,6 +74,33 @@ describe('MediaLibraryGrid', () => {
     expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(1)
   })
 
+  it('ignores a stale Load More response that resolves after a newer reset search', async () => {
+    const wrapper = await mountSuspended(MediaLibraryGrid)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+
+    // Start a slow "Load more" (page 2) that will not resolve until we force it to, below.
+    const slow = deferred<MediaRef[]>()
+    listMock.mockReturnValueOnce(slow.promise)
+    await wrapper.find('[data-test="library-load-more"]').trigger('click')
+
+    // A fresh reset search fires and resolves BEFORE the slow load-more does.
+    const fresh = [page1[0]!]
+    listMock.mockResolvedValueOnce(fresh)
+    wrapper.vm.$.exposed!.__search.value = 'img-1'
+    await wrapper.vm.$.exposed!.__load(true)
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(1)
+    expect(wrapper.find('[data-test="library-item-21"]').exists()).toBe(false)
+
+    // Now the stale load-more finally resolves — it must be ignored entirely.
+    slow.resolve(page2)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(1)
+    expect(wrapper.find('[data-test="library-item-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="library-item-21"]').exists()).toBe(false)
+  })
+
   it('marks images that lack alt text with a "no alt text" badge', async () => {
     listMock.mockResolvedValue(page2)
     const wrapper = await mountSuspended(MediaLibraryGrid)
@@ -85,5 +125,33 @@ describe('MediaLibraryGrid', () => {
     await wrapper.find('[data-test="library-retry"]').trigger('click')
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+  })
+
+  it('a failing reset (search) load clears existing items so only the error remains', async () => {
+    const wrapper = await mountSuspended(MediaLibraryGrid)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+
+    listMock.mockRejectedValueOnce(new Error('search failed'))
+    wrapper.vm.$.exposed!.__search.value = 'boom'
+    await wrapper.vm.$.exposed!.__load(true)
+
+    expect(wrapper.find('[data-test="library-error"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(0)
+    expect(wrapper.find('[data-test="library-load-more"]').exists()).toBe(false)
+  })
+
+  it('a failing Load More (append) keeps existing items and still shows the error', async () => {
+    const wrapper = await mountSuspended(MediaLibraryGrid)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+
+    listMock.mockRejectedValueOnce(new Error('page 2 failed'))
+    await wrapper.find('[data-test="library-load-more"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.find('[data-test="library-error"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-test^="library-item-"]')).toHaveLength(20)
+    expect(wrapper.find('[data-test="library-load-more"]').exists()).toBe(true)
   })
 })

@@ -15,8 +15,12 @@ snapshot of the in-progress draft, and a restore banner when a newer snapshot is
 - **`app/lib/draft-backup.ts`** (pure): snapshot envelope `{ model, savedAt, type,
   documentId | 'new' }` under localStorage key
   `icjia-studio-draft-backup:<type>:<documentId|'new'>`; `saveSnapshot` / `loadSnapshot` /
-  `clearSnapshot` / `snapshotIsNewerThan(serverUpdatedAt)`; storage injectable for tests;
-  a size guard skips (never throws) when a model exceeds the storage budget.
+  `clearSnapshot`; storage injectable for tests; a size guard skips (never throws) when a
+  model exceeds the storage budget. *(The domain models carry no `updatedAt`, so the banner
+  triggers on snapshot EXISTENCE — valid because every successful save clears the snapshot,
+  so a surviving one always represents unsaved work. The banner shows the snapshot's own
+  timestamp; a stale cross-machine snapshot is the author's call, and the roadmap's
+  edit-conflict item later adds the server-timestamp plumbing.)*
 - **`useDraftGuard()`** composable: dirty tracking (serialize-compare the reactive model vs
   a baseline captured at load and reset on save); `beforeunload` warning while dirty;
   `onBeforeRouteLeave` guard while dirty (**native `confirm`** — deliberately not a custom

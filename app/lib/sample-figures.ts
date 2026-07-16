@@ -23,6 +23,11 @@ const FIGURE_POOL = [
   '/images/demo/figures/figure-table-02.svg',
 ] as const
 
+/** Number of bundled synthetic figures (the whole FIGURE_POOL, for deterministic seeding). */
+export function sampleFigurePoolSize(): number {
+  return FIGURE_POOL.length
+}
+
 /**
  * Return a bundled synthetic-figure SVG URL from the pool.
  * Deterministic: same seed always returns the same URL. No Math.random.

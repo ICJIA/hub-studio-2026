@@ -22,7 +22,7 @@ _Added_
   `TextEncoder`) and **fail open** on any storage problem (full, blocked, or absent
   `localStorage` never breaks editing; the write is skipped with a console warning); (3) a
   non-blocking **restore banner** (`role="status"`) shown whenever a surviving snapshot is
-  found — "Unsaved changes from ⟨time⟩ found — Restore / Discard." Every successful save
+  found — "Unsaved changes from ⟨time⟩ found," with "Restore" / "Discard" buttons. Every successful save
   clears the snapshot, so a surviving one always means real unsaved work; Restore applies
   the backup (leaving the form still unsaved, saved normally afterward); Discard drops it.
   **Live builds only take snapshots — the public demo deliberately takes none** (user
@@ -31,7 +31,7 @@ _Added_
   `docs/superpowers/specs/2026-07-16-unsaved-work-guard-design.md`.
 
 Built test-first over six reviewed tasks (per-task adversarial review). Suite: **800
-tests / 107 files** (757 + 43 new), typecheck clean. Shipped on the `unsaved-work-guard`
+tests / 107 files** (757 + 43 new), typecheck clean. Built on the `unsaved-work-guard`
 feature branch — pending the whole-branch review and merge with the next release.
 
 ## [0.5.0] - 2026-07-16

@@ -1,6 +1,6 @@
 // tests/nuxt/media-field.test.ts
 // @vitest-environment nuxt
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { MediaRef } from '~/types/content'
 
@@ -178,6 +178,82 @@ describe('MediaField', () => {
       const wrapper = await mountSuspended(MediaField, { props: { modelValue: pickedDoc, label: 'Data file', kind: 'file' } })
       expect(wrapper.find('[data-test="selected-alt"]').exists()).toBe(false)
       expect(wrapper.find('[data-test="selected-caption"]').exists()).toBe(false)
+    })
+  })
+
+  describe('alt/caption persistence (quirk fix)', () => {
+    const selected: MediaRef = {
+      id: 42, url: '/uploads/pic.jpg', name: 'pic.jpg',
+      alternativeText: 'Original alt', caption: 'Original caption',
+      width: null, height: null, mime: 'image/jpeg',
+    }
+
+    /**
+     * Mount with a v-model bridge: emitted update:modelValue is fed back as the prop, mirroring
+     * the mountWithModel helper in tests/nuxt/main-files-field.test.ts. MediaField is mounted at
+     * the wrapper root here (no parent template driving v-model), and vue-test-utils does not
+     * sync root props from emitted events on its own, so __persistInfo (which reads current
+     * props) would otherwise never see a post-edit alt/caption.
+     */
+    async function mountWithModel(initial: MediaRef) {
+      const wrapper = await mountSuspended(MediaField, {
+        props: {
+          modelValue: initial,
+          label: 'Main image',
+          'onUpdate:modelValue': async (v: MediaRef | null) => {
+            await wrapper.setProps({ modelValue: v })
+          },
+        },
+      })
+      return wrapper
+    }
+
+    // NOTE: `beforeEach(() => updateInfoMock.mockReset())` would be a footgun here — mockReset()
+    // returns the mock itself for chaining, and Vitest treats a function RETURNED from beforeEach
+    // as an auto-registered post-test cleanup callback. That would silently re-invoke
+    // updateInfoMock after every test in this block, which is harmless against a resolved mock
+    // but produces a genuine unhandled rejection in the "persistence fails" test below (which
+    // configures a rejecting mock). Braces avoid the implicit return.
+    beforeEach(() => {
+      updateInfoMock.mockReset()
+    })
+
+    it('persists changed alt via updateInfo on commit (blur)', async () => {
+      updateInfoMock.mockResolvedValue({ ...selected, alternativeText: 'New alt' })
+      const wrapper = await mountWithModel(selected)
+      await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+      await wrapper.vm.$.exposed!.__persistInfo()
+      expect(updateInfoMock).toHaveBeenCalledWith(42, { alternativeText: 'New alt', caption: 'Original caption' })
+    })
+
+    it('does NOT call updateInfo when nothing changed', async () => {
+      const wrapper = await mountWithModel(selected)
+      await wrapper.vm.$.exposed!.__persistInfo()
+      expect(updateInfoMock).not.toHaveBeenCalled()
+    })
+
+    it('does NOT call updateInfo for display-only refs (id 0)', async () => {
+      const wrapper = await mountWithModel({ ...selected, id: 0 })
+      await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+      await wrapper.vm.$.exposed!.__persistInfo()
+      expect(updateInfoMock).not.toHaveBeenCalled()
+    })
+
+    it('never persists an EMPTY alt (the required-field error owns that state)', async () => {
+      const wrapper = await mountWithModel(selected)
+      await wrapper.find('[data-test="selected-alt"]').setValue('')
+      await wrapper.vm.$.exposed!.__persistInfo()
+      expect(updateInfoMock).not.toHaveBeenCalled()
+    })
+
+    it('shows a field-level error when persistence fails, keeping the local value', async () => {
+      updateInfoMock.mockRejectedValue(new Error('403'))
+      const wrapper = await mountWithModel(selected)
+      await wrapper.find('[data-test="selected-alt"]').setValue('New alt')
+      await wrapper.vm.$.exposed!.__persistInfo()
+      await new Promise((r) => setTimeout(r, 0))
+      expect(wrapper.vm.$.exposed!.__persistError.value).toMatch(/could not save/i)
+      expect(wrapper.find('[data-test="persist-error"]').exists()).toBe(true)
     })
   })
 })

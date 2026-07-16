@@ -13,7 +13,7 @@
   kind="file": hides alt/caption, uses document upload path (PDF/office docs), shows file name only.
 -->
 <script setup lang="ts">
-import { ref, computed } from '#imports'
+import { ref, computed, watch } from '#imports'
 import type { MediaRef } from '~/types/content'
 
 const props = defineProps<{ modelValue: MediaRef | null; label: string; kind?: 'image' | 'file' }>()
@@ -35,6 +35,45 @@ const altError = computed(() =>
     ? 'Alt text is required'
     : undefined,
 )
+
+const { updateInfo } = useMediaLibrary()
+
+// Last-persisted alt/caption for the CURRENT media id — persistInfo only fires on a real change.
+const persistError = ref<string | null>(null)
+const persistedAlt = ref('')
+const persistedCaption = ref('')
+watch(
+  () => current.value?.id,
+  () => {
+    persistError.value = null
+    persistedAlt.value = current.value?.alternativeText ?? ''
+    persistedCaption.value = current.value?.caption ?? ''
+  },
+  { immediate: true },
+)
+
+/**
+ * Persist alt/caption edits to the media record on commit (blur). Skips display-only refs
+ * (id 0 — dev sample content), empty alt (the required-field error owns that state), and
+ * no-op edits. Demo/session refs (negative ids) persist through the demo adapter in-memory.
+ * On failure the local value is kept so the author can retry.
+ */
+async function persistInfo() {
+  const mediaRef = current.value
+  if (!mediaRef || !isImage.value || mediaRef.id === 0) return
+  const altValue = (mediaRef.alternativeText ?? '').trim()
+  const captionValue = (mediaRef.caption ?? '').trim()
+  if (!altValue) return
+  if (altValue === persistedAlt.value.trim() && captionValue === persistedCaption.value.trim()) return
+  persistError.value = null
+  try {
+    const updated = await updateInfo(mediaRef.id, { alternativeText: altValue, caption: captionValue })
+    persistedAlt.value = updated.alternativeText ?? ''
+    persistedCaption.value = updated.caption ?? ''
+  } catch {
+    persistError.value = 'Could not save the image details to the library. Retry by editing the field again.'
+  }
+}
 
 function onSelect(mediaRef: MediaRef) {
   emit('update:modelValue', mediaRef)
@@ -61,7 +100,7 @@ function updateCaption(value: string) {
   emit('update:modelValue', { ...current.value, caption: value || null })
 }
 
-defineExpose({ clear })
+defineExpose({ clear, __persistInfo: persistInfo, __persistError: persistError })
 </script>
 
 <template>
@@ -101,6 +140,7 @@ defineExpose({ clear })
             data-test="selected-alt"
             class="w-full"
             @update:model-value="updateAlt($event as string)"
+            @blur="persistInfo"
           />
         </UFormField>
         <UFormField label="Caption (optional)" class="mt-3">
@@ -110,8 +150,12 @@ defineExpose({ clear })
             data-test="selected-caption"
             class="w-full"
             @update:model-value="updateCaption($event as string)"
+            @blur="persistInfo"
           />
         </UFormField>
+        <p v-if="persistError" role="alert" class="mt-2 text-sm text-error" data-test="persist-error">
+          {{ persistError }}
+        </p>
       </template>
     </div>
 

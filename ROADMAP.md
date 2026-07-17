@@ -10,10 +10,18 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.1_
+_Last updated: 2026-07-17 · Current version: v0.8.2_
 
 ## Done (recent)
 
+- **Uptime monitoring runbook'd; error reporter formally deferred** (v0.8.2, 2026-07-17) —
+  the operations half of analysis-roadmap §5.4-7, docs-only: runbook §4a instructs the
+  UptimeRobot free-tier setup (Studio URL monitor + Strapi `/_health` monitor — the
+  endpoint returns 204 unauthenticated, verified against the production host; alerts to a
+  shared inbox; optional staging monitor during the rehearsal), and the cutover checklist
+  gains "monitors live and alerting." The client error reporter (Sentry) is **deferred by
+  the 2026-07-17 decision** — to be built in at a later date; design notes recorded below
+  under Deferred so the future build-in starts warm. No code, dependency, or CSP change.
 - **Staging Strapi-host override — verified and guarded** (v0.8.1, 2026-07-17) — the
   sharpest edge in the launch plan (a rehearsal that could touch production data,
   analysis-roadmap §5.4-8) is closed without a code change: `NUXT_PUBLIC_STRAPI_BASE_URL`
@@ -74,19 +82,31 @@ _Last updated: 2026-07-17 · Current version: v0.8.1_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — error monitoring, №1 below —
-  begins after v0.8.1._
+- _Nothing in flight at this release. The next queue item — the smalls, №1 below — begins
+  after v0.8.2._
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
-   alerting before authors report breakage (§5.4-7).
-2. **Smalls** — relation-write support (or document the read-only limitation), merge the
+1. **Smalls** — relation-write support (or document the read-only limitation), merge the
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)
+
+- **Sentry client error reporter** (§5.4-7's other half) — deferred by the 2026-07-17
+  decision: management will build it in at a later date; the uptime half shipped in
+  v0.8.2. Design notes for the future build-in (so it starts warm): a client-only
+  `@sentry/vue` plugin following the `app/plugins/` pattern, DSN-gated and fail-open
+  (no `NUXT_PUBLIC_SENTRY_DSN` → structurally a no-op, so the app never depends on the
+  account existing); demo builds fully excluded, preserving the demo CSP's documented
+  zero-third-party-requests promise; release tag from the existing
+  `runtimeConfig.public.version`; `environment` from an env var so staging and production
+  separate; one production-CSP `connect-src` addition (the org's Sentry ingest host) in
+  `public/_headers` when it lands, demo headers untouched; source-map upload optional via
+  an `SENTRY_AUTH_TOKEN`-gated build step (absent token = silently skipped); server-side
+  (Nitro) capture deliberately out of scope — the lone email route fails loud to the
+  client and logs to Netlify function logs.
 
 - **Unsaved-work-guard follow-ups** (from the v0.6.0 whole-branch review — none affect
   correctness for launch; the cross-machine stale-restore risk flagged at the time — a
@@ -135,7 +155,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.1** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.2** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

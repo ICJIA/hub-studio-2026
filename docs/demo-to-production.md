@@ -203,6 +203,28 @@ crawling (unit-tested in `tests/unit/security-headers.test.ts`) — no action ne
 6. Point people at the production URL. The demo site can keep running as long as it's useful —
    it is isolated by design (own site, own flag, zero backend reach).
 7. Tag the release: version + date in `CHANGELOG.md` (per repo convention), `git tag`.
+8. Turn on the uptime monitors (§4a) and confirm the test alert reaches a real inbox.
+
+### 4a. Uptime monitors (UptimeRobot — turn on at cutover)
+
+Outside-in "is it actually up" probes, so downtime is known before an author reports it
+(analysis-roadmap §5.4-7). UptimeRobot's free tier (50 monitors, 5-minute interval, email
+alerts) is sufficient; no code or CSP changes are involved.
+
+1. Create a free UptimeRobot account owned by a shared R&A/dev identity, not an individual.
+2. **Monitor 1 — the Studio:** HTTPS monitor on the production Studio URL. Any 2xx counts
+   as up.
+3. **Monitor 2 — the Strapi API:** HTTPS monitor on
+   `https://v2.hub.icjia-api.cloud/_health` — Strapi's built-in health endpoint, which
+   returns **HTTP 204 No Content** unauthenticated (verified 2026-07-17); 204 is 2xx, so
+   the default monitor treats it as up.
+4. Point alert contacts at a shared inbox R&A and the developer both read.
+5. *(Optional, during the §2 rehearsal window)* a third monitor on the staging site;
+   delete it when staging is retired.
+
+The client-side **error reporter** half of §5.4-7 (Sentry) is deliberately deferred — see
+`ROADMAP.md` (Deferred) for the decision and the recorded design notes for building it in
+later.
 
 ## 5. Rollback
 

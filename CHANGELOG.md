@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-17
+
+_Added / decided (docs-only — no code, dependency, or CSP change)_
+
+- **Uptime monitoring runbook'd** (the operations half of analysis-roadmap §5.4-7): runbook
+  §4a instructs the UptimeRobot free-tier setup — an HTTPS monitor on the production Studio
+  URL and one on Strapi's `/_health` endpoint (returns **204 No Content** unauthenticated;
+  verified against the production host 2026-07-17), alert contacts on a shared R&A/dev
+  inbox, an optional staging monitor during the rehearsal window — and the §4 cutover
+  checklist gains "turn on the uptime monitors and confirm the test alert."
+- **Client error reporter (Sentry) formally deferred** by the 2026-07-17 decision — to be
+  built in at a later date. The design notes for the future build-in (DSN-gated fail-open
+  client plugin, demo fully excluded, single CSP ingest-host addition, token-gated source
+  maps) are recorded in `ROADMAP.md` under Deferred, and analysis-roadmap §5.4-7 is
+  annotated half-done/half-deferred accordingly.
+
 ## [0.8.1] - 2026-07-17
 
 _Fixed / verified_

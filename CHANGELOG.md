@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-16 — edit-conflict detection
+
+_Added_
+
+- **Edit-conflict detection (save-time check, warn and choose).** Two authors can no
+  longer silently overwrite each other's work. Every content type (Article, App, Dataset)
+  now carries its Strapi `updatedAt` stamp read-only through the mappers; before every
+  edit-mode save (create has nothing to conflict with), a fields-limited read
+  (`getUpdatedAt`, scoped to the same DRAFT version the edit page loaded) compares that
+  stamp against the one the form loaded when it opened — a check failure (network blip,
+  404) **fails open**, so a transient problem never blocks a save. On a genuine conflict, a
+  `role="alert"` banner interrupts the save — "This draft was changed by someone else
+  while you were editing (their save: ⟨time⟩)." — with two choices: **Save anyway** (a
+  one-shot bypass that overwrites the other edit) or **Load their version**, which first
+  snapshots the author's own in-progress edits to the local draft backup, then loads the
+  colleague's version — so the existing restore banner (the v0.6.0 unsaved-work guard) can
+  offer the author's own edits back afterward, a direct synergy between the two features.
+  Both flows are race-guarded — a `saving`-gate on every entry point plus busy-disabled
+  banner buttons — closing a reviewer-found Critical where an impatient Save-anyway click
+  mid-Load-theirs could silently persist stale content while destroying the just-taken
+  snapshot in the same stroke. Works identically in the public demo: its in-memory store
+  stamps `updatedAt` on every write too, so two demo tabs editing the same draft can
+  genuinely reproduce a collision — a real training aid, not just a description of one.
+  **Honest caveat:** a small check-then-write window remains between the pre-save read and
+  the save itself — Strapi has no native compare-and-set to close it completely; the
+  design deliberately accepts warn-and-choose over a hard lock. Spec:
+  `docs/superpowers/specs/2026-07-16-edit-conflict-design.md`.
+
+Built test-first over five reviewed tasks (per-task adversarial review, incl. one
+reviewer-found Critical race closed with layered tests). Suite: **860 tests / 109 files**
+(822 + 38 new, +2 new test files), typecheck clean. Built on the `edit-conflict` feature
+branch — pending the whole-branch review and merge with the next release.
+
 ## [0.7.0] - 2026-07-16
 
 _Added_

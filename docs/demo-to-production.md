@@ -89,6 +89,13 @@ Checklist — every line exercised with a real Strapi account, none with admin/a
       FAIL-OPEN by design: an API error must never lock anyone out.)
 - [ ] Content list shows REAL articles; open one in the editor; edit + save a draft; confirm
       the change in the Strapi admin.
+- [ ] **Edit-conflict round-trip (two browsers):** open the SAME draft for edit as user A
+      (one browser) and user B (a second browser or machine). Save as A first, then save as
+      B — confirm B's save is stopped by the conflict banner ("This draft was changed by
+      someone else while you were editing…") showing A's save time. Exercise both choices
+      from B's side on repeat attempts: **Save anyway** (confirm A's edit is overwritten in
+      Strapi) and **Load their version** (confirm B's own in-progress edits reappear via the
+      restore banner afterward, and A's content is now in B's form).
 - [ ] **Filters wire format:** use the Type filter and the title search box and confirm each
       returns real (filtered) results, not an error toast/blank list. These — plus
       `studio-profile`'s first-login author-email lookup — are the first live-mode calls to

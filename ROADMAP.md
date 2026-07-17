@@ -54,33 +54,40 @@ _Last updated: 2026-07-16 · Current version: v0.7.0_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — edit-conflict detection,
-  №1 below — begins after v0.7.0._
+- **Edit-conflict detection (save-time check, warn and choose)** — complete on the feature
+  branch — all five tasks built test-first with per-task adversarial review; pending the
+  whole-branch review and merge. Next on the launch queue (analysis-roadmap §5.3-5): a
+  fields-limited `updatedAt` read before every edit-mode save catches a colleague's
+  concurrent change (fails open on any check error) and raises a `role="alert"` banner
+  offering **Save anyway** or **Load their version** — the latter snapshots the author's
+  own edits first, so the v0.6.0 restore banner can offer them back afterward. Race-guarded
+  end to end; works identically in the public demo. 860 tests / 109 files on the branch.
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Edit-conflict detection** — send `updatedAt` with saves; warn instead of silently
-   overwriting a colleague's changes (§5.3-5).
-2. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
+1. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
    can never touch production data (§5.4-8).
-3. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
+2. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
    alerting before authors report breakage (§5.4-7).
-4. **Smalls** — relation-write support (or document the read-only limitation), merge the
+3. **Smalls** — relation-write support (or document the read-only limitation), merge the
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)
 
 - **Unsaved-work-guard follow-ups** (from the v0.6.0 whole-branch review — none affect
-  correctness for launch): reseed MediaField's alt/caption persist-baseline after a
-  banner Restore (a stale restore can otherwise re-arm one redundant media-record
-  write-back); decide whether explicit logout should clear draft snapshots (shared-machine
-  courtesy — must NOT hook the 401/403 session-clear paths, which would destroy the
-  feature's headline crash-recovery scenario); guard the dirty-check serialization against
-  non-JSON-serializable models (latent — no current model shape can trigger it); two small
-  test riders (30 s default-interval path; banner invalid-date fallback); boot-time sweep
-  of aged snapshot keys (no GC today, ≤1 MB each).
+  correctness for launch; the cross-machine stale-restore risk flagged at the time — a
+  restore trusting local-snapshot existence over a possibly-newer server version — is now
+  MITIGATED by edit-conflict detection, which catches it at the next save): reseed
+  MediaField's alt/caption persist-baseline after a banner Restore (a stale restore can
+  otherwise re-arm one redundant media-record write-back); decide whether explicit logout
+  should clear draft snapshots (shared-machine courtesy — must NOT hook the 401/403
+  session-clear paths, which would destroy the feature's headline crash-recovery
+  scenario); guard the dirty-check serialization against non-JSON-serializable models
+  (latent — no current model shape can trigger it); two small test riders (30 s
+  default-interval path; banner invalid-date fallback); boot-time sweep of aged snapshot
+  keys (no GC today, ≤1 MB each).
 
 - **Playwright end-to-end suite** — post-launch per the analysis roadmap; automates the
   cutover smoke checklist against deploy previews (§5.5).

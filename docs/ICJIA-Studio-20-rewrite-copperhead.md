@@ -619,6 +619,7 @@ listed again in Section 4 with the owner of the remaining step:
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
 | Unsaved-work guard (leave warning, 30 s local backup, restore banner) | Authors can't silently lose in-progress work | **Built** (v0.6.0) |
+| Edit-conflict detection (save-time check, warn and choose) | Two editors can no longer silently overwrite each other | **Built** (feature branch; merges with the next release) |
 | "Preview as published" (TOC, end matter, Print) | Exactly what the public will see | **Built** |
 | Tab-only preview + shareable per-draft link | Editor and preview side by side; reviewers open a draft directly | **Built** |
 | Word-style reviewer comments on drafts | Highlight a passage, comment, reply, resolve — a pure overlay | **Built** (per-browser today; shared storage dormant until R&A installs the type) |
@@ -1067,6 +1068,18 @@ A short digest for managers, newest first — the complete version-by-version re
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-16 — Edit-conflict detection built (feature branch, pending merge).** A
+  fields-limited `updatedAt` check now runs before every edit-mode save on all three
+  content forms; a genuine conflict raises a `role="alert"` banner — "This draft was
+  changed by someone else while you were editing (their save: ⟨time⟩)." — offering
+  **Save anyway** or **Load their version**. Load-theirs snapshots the author's own edits
+  to the local draft backup *first*, so the v0.6.0 restore banner can hand them back
+  afterward — the two features now work as one system. Fails open on any check error;
+  works identically in the public demo (two demo tabs can genuinely reproduce a
+  collision). Built test-first over five reviewed tasks with per-task adversarial review
+  (one reviewer-found Critical race closed with layered tests); **860 automated tests /
+  109 files** on the branch. Pending the whole-branch review and merge with the next
+  release.
 - **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
   now sits beside the Type filter on every content list — Articles, Apps, and Datasets
   alike — filtering by title, case-insensitive, across the **whole library**, server-side,

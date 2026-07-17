@@ -53,7 +53,7 @@ _Last updated: 2026-07-16 · Current version: v0.6.0_
   filter on all three content types, filtering by title across the whole library
   server-side (identical semantics in live and demo), re-paging to page 1 on change, with a
   distinct "No matches" empty state. Launch imports 236 real articles (analysis-roadmap
-  §5.3-6). 812 tests / 107 files on the branch.
+  §5.3-6). 822 tests / 107 files on the branch.
 
 ## Next (proposed)
 

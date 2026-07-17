@@ -55,9 +55,10 @@ _Fixed_
   the same `createRepository()`. Final live confirmation is a staging-rehearsal curl check
   (`docs/demo-to-production.md` §2).
 
-Built test-first over three reviewed tasks (per-task adversarial review). Suite: **812
-tests / 107 files** (800 + 12 new), typecheck clean. Built on the `title-search` feature
-branch — pending the whole-branch review and merge with the next release.
+Built test-first over three reviewed tasks (per-task adversarial review). Suite: **822
+tests / 107 files** (800 + 12 new, + 10 in the wire-format fix round), typecheck clean.
+Built on the `title-search` feature branch — pending the whole-branch review and merge
+with the next release.
 
 ## [0.6.0] - 2026-07-16
 

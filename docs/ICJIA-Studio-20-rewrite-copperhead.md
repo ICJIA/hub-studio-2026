@@ -1073,7 +1073,7 @@ living list of what's in flight and what's next is the
   **whole library**, server-side, identically in live and demo modes; a search change
   re-pages to 1, and a distinct "No matches" message replaces the generic empty state.
   Ahead of launch's 236 real articles (analysis-roadmap §5.3-6). Built test-first over
-  three reviewed tasks with per-task adversarial review; **812 automated tests / 107
+  three reviewed tasks with per-task adversarial review; **822 automated tests / 107
   files** on the branch. Pending the whole-branch review and merge with the next release.
 - **2026-07-16 — Unsaved-work guard shipped (v0.6.0).** Authors can no longer silently
   lose in-progress work: a native leave-page warning, a 30-second local draft snapshot

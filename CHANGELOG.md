@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Changed_
+
+- **Spec digest moved to the top of the document** (standing manager-docs rule,
+  2026-07-17): `docs/ICJIA-Studio-20-rewrite-copperhead.md` now opens with
+  **"What's changed recently"** (dated, newest first) directly after the header block —
+  managers see the latest state the moment they open the doc (or its emailed Word copy)
+  without visiting the repo. Entries re-ordered strictly newest-first (0.5.0 before
+  0.4.0), the header **Date** row now reads *revised 2026-07-17 (v0.8.4)*, and the
+  opening blockquote's stale "677 automated tests" claim is corrected to 879. Both Word
+  editions regenerated and verified (0 field codes).
+
 ## [0.8.4] - 2026-07-17
 
 _Added_

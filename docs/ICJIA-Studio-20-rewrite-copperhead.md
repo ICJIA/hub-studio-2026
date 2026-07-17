@@ -10,7 +10,7 @@
 | **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub (internal program codename: **Copperhead**; this repository: `copperhead-studio-20`, alongside `copperhead-hub-20` for the public site). The codename is internal only — the public never sees it |
 | **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
 | **Status** | **Feature-complete in the workshop** — the full tool is built and a public demo is clickable at <https://studio-2026.netlify.app>; not yet switched on for real publishing |
-| **Date** | 2026-06-21 · **revised 2026-07-11** (test counts, four audits, features shipped since — annotations, tab-only preview, card view, guided tour, public demo roles, CI) |
+| **Date** | 2026-06-21 · **revised 2026-07-17 (v0.8.4)** — see **What's changed recently**, immediately below, for the dated digest (kept at the top of this document, newest first) |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
 | **Audience** | Two readers, addressed separately: a **manager** (Sections 1–6) and a **developer** (Section 7) |
 
@@ -18,7 +18,7 @@
 > a researcher will touch — signing in, writing, previewing exactly what will
 > publish, Word-style reviewer comments on drafts, and publishing — exists today,
 > runs on the team's shared, official copy of the project, and is checked by
-> **677 automated tests, all passing**, re-run automatically on every change (CI).
+> **879 automated tests, all passing**, re-run automatically on every change (CI).
 > Anyone can click through the real tool in the **public demo**
 > (<https://studio-2026.netlify.app>) as an Author or an Editor. What is *not* done
 > is the set of setup steps that only ICJIA's own Research & Analysis staff can do
@@ -29,6 +29,84 @@
 > (it exists, it's been checked, you can see it) or **still ahead** (a named,
 > owned next step). Nothing here is live to the public yet — and where it isn't, it
 > says so.
+
+---
+
+## What's changed recently
+
+A short digest for managers, **newest first, kept at the top of this document** so the
+latest state is the first thing you see — the complete version-by-version record is the
+[changelog](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md), and the
+living list of what's in flight and what's next is the
+[roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
+
+- **2026-07-17 — Accessibility riders shipped; social card added (v0.8.4).** The four
+  screen-reader/keyboard refinements from the annotations review are in: the highlight
+  color swatches are a true radio group, the reviewer toolbar is a single Tab stop with
+  arrow-key movement, the phone-size comments drawer behaves as a proper dialog (focus
+  moves in, Escape closes and puts focus back), and starting a comment from the keyboard
+  (select text, press Enter) now works reliably — and never hijacks Enter on links,
+  buttons, or reply boxes. The repository and app also gained a dark social-preview
+  card with the official ICJIA logo (the image shown when a Studio link is shared), and
+  the security audit's between-passes delta log was brought current with a fresh
+  dependency-vulnerability re-check (still 0 critical / high / moderate).
+- **2026-07-16 — Edit-conflict detection shipped (v0.8.0).** A
+  fields-limited `updatedAt` check now runs before every edit-mode save on all three
+  content forms; a genuine conflict raises a `role="alert"` banner — "This draft was
+  changed by someone else while you were editing (their save: ⟨time⟩)." — offering
+  **Save anyway** or **Load their version**. Load-theirs snapshots the author's own edits
+  to the local draft backup *first*, so the v0.6.0 restore banner can hand them back
+  afterward — the two features now work as one system, including a restore-vs-Load-theirs
+  race the whole-branch final review found and closed the same way as the original
+  Save-anyway race, plus a stamp reseed on Restore and a publish/unpublish refresh that
+  close two more false-conflict gaps. Fails open on any check error; the check runs the
+  same logic in the public demo against its in-memory store's stamps (the demo store is
+  per-tab, so reproducing a genuine collision is a two-browser staging-rehearsal exercise,
+  not a two-demo-tab one). Built test-first over five reviewed tasks with per-task
+  adversarial review plus a whole-branch final review (two reviewer-found Critical races
+  closed with layered tests), then verified live in the running app (clean saves,
+  no false conflict after unpublish, restore-then-save with the reseeded stamp).
+  **879 automated tests / 109 files.**
+- **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
+  now sits beside the Type filter on every content list — Articles, Apps, and Datasets
+  alike — filtering by title, case-insensitive, across the **whole library**, server-side,
+  identically in live and demo modes; a search change re-pages to 1, and a distinct "No
+  matches" message replaces the generic empty state. Ahead of launch's 236 real articles
+  (analysis-roadmap §5.3-6). The release also fixes a **latent live-mode defect the
+  whole-branch review uncovered**: filter parameters (including the existing type filter)
+  were serialized in a form the live content system would reject — invisible until now
+  because the demo and dev sessions run in-memory. The wire format now matches the
+  sandbox-validated pattern, with a final confirmation step added to the staging
+  rehearsal checklist. Verified live in the demo (whole-library filtering, no-matches
+  state, and the unsaved-work guard's leave warning intercepting a real navigation).
+  **822 automated tests / 107 files.**
+- **2026-07-16 — Unsaved-work guard shipped (v0.6.0).** Authors can no longer silently
+  lose in-progress work: a native leave-page warning, a 30-second local draft snapshot
+  while a form is dirty, and a non-blocking restore banner ("Restore" / "Discard") when a
+  surviving snapshot is found; every successful save clears the backup. **Live builds
+  only** — the public demo deliberately takes no snapshots, so its "nothing is saved /
+  resets each session" promise stays literally true; the demo still shows both warnings.
+  Built test-first over six reviewed tasks with per-task adversarial review, then verified
+  end-to-end in the running app (snapshot, restore, clear-on-save, and the demo's
+  zero-write policy all observed live). **800 automated tests / 107 files.**
+- **2026-07-16 — Media-library picker shipped (v0.5.0).** Every image surface now opens on
+  the ~20 newest Media Library images (searchable) with upload-from-desktop one tab away;
+  picking an image that lacks alt text requires supplying it, which is written back to the
+  shared library so it improves for everyone. Works identically in the public demo, where
+  new images live only for the session and nothing persists. Built test-first over ten
+  adversarially-reviewed tasks and verified end-to-end in the running demo before merge.
+  **757 automated tests / 104 files.**
+- **2026-07-16 — Manager-docs workflow (v0.4.0).** This document, the README, the analysis
+  document, and the new roadmap now carry a version-stamped bottom nav; the Studio itself
+  gained a bottom status bar (version + doc links) and an in-app **Spec & status** page
+  rendering this document, so a manager can always read the latest state without asking a
+  developer. Doc currency is enforced by an automated test.
+- **2026-07-11 — Body markdown linter shipped (v0.3.0).** A "Check" button in the editor
+  flags heading/link/image problems in plain language with jump-to-line results.
+  **677 automated tests / 97 files.**
+- **2026-07-11 — CI pipeline + search-engine exclusion (v0.2.0).** Every push and pull
+  request now re-runs the typecheck, the full test suite, and both builds automatically;
+  the Studio's pages are excluded from search engines.
 
 ---
 
@@ -1058,83 +1136,6 @@ proxy that verifies the caller before firing).
 | **Build hook / "doorbell"** | A private trigger that tells the public website to rebuild itself with new content. |
 | **Author / Editor / Super Admin** | The roles in the content system. Authors draft; Editors and Super Admins publish. |
 | **Feature-complete in the workshop** | This stage: every feature is built and on the team's shared project, checked by automated tests, but not yet switched on for the public. |
-
----
-
-## What's changed recently
-
-A short digest for managers, newest first — the complete version-by-version record is the
-[changelog](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md), and the
-living list of what's in flight and what's next is the
-[roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
-
-- **2026-07-17 — Accessibility riders shipped; social card added (v0.8.4).** The four
-  screen-reader/keyboard refinements from the annotations review are in: the highlight
-  color swatches are a true radio group, the reviewer toolbar is a single Tab stop with
-  arrow-key movement, the phone-size comments drawer behaves as a proper dialog (focus
-  moves in, Escape closes and puts focus back), and starting a comment from the keyboard
-  (select text, press Enter) now works reliably — and never hijacks Enter on links,
-  buttons, or reply boxes. The repository and app also gained a dark social-preview
-  card (the image shown when a Studio link is shared), and the security audit's
-  between-passes delta log was brought current with a fresh dependency-vulnerability
-  re-check (still 0 critical / high / moderate).
-- **2026-07-16 — Edit-conflict detection shipped (v0.8.0).** A
-  fields-limited `updatedAt` check now runs before every edit-mode save on all three
-  content forms; a genuine conflict raises a `role="alert"` banner — "This draft was
-  changed by someone else while you were editing (their save: ⟨time⟩)." — offering
-  **Save anyway** or **Load their version**. Load-theirs snapshots the author's own edits
-  to the local draft backup *first*, so the v0.6.0 restore banner can hand them back
-  afterward — the two features now work as one system, including a restore-vs-Load-theirs
-  race the whole-branch final review found and closed the same way as the original
-  Save-anyway race, plus a stamp reseed on Restore and a publish/unpublish refresh that
-  close two more false-conflict gaps. Fails open on any check error; the check runs the
-  same logic in the public demo against its in-memory store's stamps (the demo store is
-  per-tab, so reproducing a genuine collision is a two-browser staging-rehearsal exercise,
-  not a two-demo-tab one). Built test-first over five reviewed tasks with per-task
-  adversarial review plus a whole-branch final review (two reviewer-found Critical races
-  closed with layered tests), then verified live in the running app (clean saves,
-  no false conflict after unpublish, restore-then-save with the reseeded stamp).
-  **879 automated tests / 109 files.**
-- **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
-  now sits beside the Type filter on every content list — Articles, Apps, and Datasets
-  alike — filtering by title, case-insensitive, across the **whole library**, server-side,
-  identically in live and demo modes; a search change re-pages to 1, and a distinct "No
-  matches" message replaces the generic empty state. Ahead of launch's 236 real articles
-  (analysis-roadmap §5.3-6). The release also fixes a **latent live-mode defect the
-  whole-branch review uncovered**: filter parameters (including the existing type filter)
-  were serialized in a form the live content system would reject — invisible until now
-  because the demo and dev sessions run in-memory. The wire format now matches the
-  sandbox-validated pattern, with a final confirmation step added to the staging
-  rehearsal checklist. Verified live in the demo (whole-library filtering, no-matches
-  state, and the unsaved-work guard's leave warning intercepting a real navigation).
-  **822 automated tests / 107 files.**
-- **2026-07-16 — Unsaved-work guard shipped (v0.6.0).** Authors can no longer silently
-  lose in-progress work: a native leave-page warning, a 30-second local draft snapshot
-  while a form is dirty, and a non-blocking restore banner ("Restore" / "Discard") when a
-  surviving snapshot is found; every successful save clears the backup. **Live builds
-  only** — the public demo deliberately takes no snapshots, so its "nothing is saved /
-  resets each session" promise stays literally true; the demo still shows both warnings.
-  Built test-first over six reviewed tasks with per-task adversarial review, then verified
-  end-to-end in the running app (snapshot, restore, clear-on-save, and the demo's
-  zero-write policy all observed live). **800 automated tests / 107 files.**
-- **2026-07-16 — Manager-docs workflow (v0.4.0).** This document, the README, the analysis
-  document, and the new roadmap now carry a version-stamped bottom nav; the Studio itself
-  gained a bottom status bar (version + doc links) and an in-app **Spec & status** page
-  rendering this document, so a manager can always read the latest state without asking a
-  developer. Doc currency is enforced by an automated test.
-- **2026-07-16 — Media-library picker shipped (v0.5.0).** Every image surface now opens on
-  the ~20 newest Media Library images (searchable) with upload-from-desktop one tab away;
-  picking an image that lacks alt text requires supplying it, which is written back to the
-  shared library so it improves for everyone. Works identically in the public demo, where
-  new images live only for the session and nothing persists. Built test-first over ten
-  adversarially-reviewed tasks and verified end-to-end in the running demo before merge.
-  **757 automated tests / 104 files.**
-- **2026-07-11 — Body markdown linter shipped (v0.3.0).** A "Check" button in the editor
-  flags heading/link/image problems in plain language with jump-to-line results.
-  **677 automated tests / 97 files.**
-- **2026-07-11 — CI pipeline + search-engine exclusion (v0.2.0).** Every push and pull
-  request now re-runs the typecheck, the full test suite, and both builds automatically;
-  the Studio's pages are excluded from search engines.
 
 ---
 

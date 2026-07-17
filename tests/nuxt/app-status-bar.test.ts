@@ -21,19 +21,20 @@ describe('AppStatusBar', () => {
     expect(link.text()).toContain('Spec & status')
   })
 
-  it('links to the ALWAYS-CURRENT rendered Changelog and Roadmap on GitHub (blob/main)', async () => {
+  it('links to the IN-APP rendered Changelog and Roadmap (the repo is private — GitHub links would 404 for managers)', async () => {
     const wrapper = await mountSuspended(AppStatusBar)
-    expect(wrapper.find('[data-test="link-changelog"]').attributes('href')).toBe(`${REPO}/blob/main/CHANGELOG.md`)
-    expect(wrapper.find('[data-test="link-roadmap"]').attributes('href')).toBe(`${REPO}/blob/main/ROADMAP.md`)
+    expect(wrapper.find('[data-test="link-changelog"]').attributes('href')).toBe('/changelog')
+    expect(wrapper.find('[data-test="link-roadmap"]').attributes('href')).toBe('/roadmap')
     expect(wrapper.find('[data-test="link-repo"]').attributes('href')).toBe(REPO)
   })
 
-  it('external links open in a new tab with rel=noopener', async () => {
+  it('only the Repository link is external (new tab + rel=noopener); doc links stay in-app', async () => {
     const wrapper = await mountSuspended(AppStatusBar)
-    for (const sel of ['link-changelog', 'link-roadmap', 'link-repo']) {
-      const link = wrapper.find(`[data-test="${sel}"]`)
-      expect(link.attributes('target')).toBe('_blank')
-      expect(link.attributes('rel')).toBe('noopener')
+    const repo = wrapper.find('[data-test="link-repo"]')
+    expect(repo.attributes('target')).toBe('_blank')
+    expect(repo.attributes('rel')).toBe('noopener')
+    for (const sel of ['link-changelog', 'link-roadmap', 'link-spec']) {
+      expect(wrapper.find(`[data-test="${sel}"]`).attributes('target')).toBeUndefined()
     }
   })
 })

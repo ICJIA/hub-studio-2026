@@ -10,10 +10,21 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.4_
+_Last updated: 2026-07-17 · Current version: v0.8.5_
 
 ## Done (recent)
 
+- **In-app Changelog & Roadmap pages; spec digest moved to the top** (v0.8.5,
+  2026-07-17) — the bottom status bar's Changelog and Roadmap links no longer point at
+  the **private** GitHub repo (managers got 404s): new `/changelog` and `/roadmap` pages
+  render `CHANGELOG.md` and `ROADMAP.md` inside the Studio via the `/spec` seam
+  (build-time `?raw` import through the `html:false` + attr-allowlist article pipeline;
+  public like `/spec`; re-imported on every deploy so they always match the running
+  build). Only the Repository link stays external. Also per the standing manager-docs
+  rule: the rewrite spec's dated **"What's changed recently" digest now sits at the TOP
+  of the document** (stale header date/test-count fixed, entries strictly newest-first),
+  and both Word editions ship regenerated with the `.md`s in the same commit.
+  **885 tests / 111 files** (6 new), typecheck clean.
 - **Accessibility riders shipped + social card + audit-trail refresh** (v0.8.4,
   2026-07-17) — the four screen-reader/keyboard refinements from the annotations review,
   built test-first as the scheduled Next №1: color swatches are now a real
@@ -196,7 +207,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.4** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.5** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

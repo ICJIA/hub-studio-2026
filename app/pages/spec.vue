@@ -36,8 +36,8 @@ useHead({ title: 'Spec & status — ICJIA Research Hub Studio' })
         </h1>
         <p class="mt-2 text-sm text-muted">
           The living design spec for Hub Studio 2.0, rendered from the repository — kept
-          current with every change. See "What's changed recently" near the end for the
-          latest, and the roadmap for what's next.
+          current with every change. "What's changed recently" sits at the top of the
+          document, and the <NuxtLink to="/roadmap" class="underline hover:text-highlighted">roadmap</NuxtLink> lists what's next.
         </p>
       </div>
       <div class="flex flex-wrap gap-2">

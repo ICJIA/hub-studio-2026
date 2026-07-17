@@ -9,6 +9,37 @@ import pkg from './package.json'
 // with zero per-site config; local builds fall back to a relative path (harmless — crawlers
 // only ever see deployed HTML).
 const siteUrl = (process.env.URL ?? '').replace(/\/+$/, '')
+// Build date — stamps JSON-LD dateModified so link-preview/AI tools see freshness. Evaluated
+// once per build (nuxt.config runs at build time), matching "every deploy re-renders the docs".
+const buildDate = new Date().toISOString().slice(0, 10)
+// Schema.org identity for share-preview and AI tools (MetaPeek AI-readiness items 2026-07-17:
+// JSON-LD + authorship + freshness). Inert data — a type="application/ld+json" script is never
+// executed, so the demo CSP is unaffected. NOTE the deliberate non-goals: robots.txt keeps its
+// deny-all (incl. AI bots) and there is no llms.txt — the Studio is an internal tool whose
+// search/AI exclusion is an audited hardening item (runbook §3, guard-tested); metadata here
+// exists for the humans a shared link reaches, not to invite indexing.
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  'name': 'ICJIA Research Hub Studio',
+  'alternateName': 'Hub Studio 2.0',
+  'description': 'The ICJIA Research Hub authoring studio — write in plain language, preview exactly as published, and ship with built-in editorial review.',
+  ...(siteUrl ? { url: `${siteUrl}/` } : {}),
+  'image': `${siteUrl}/og-image.png`,
+  'applicationCategory': 'BusinessApplication',
+  'operatingSystem': 'Web',
+  'datePublished': '2026-06-21',
+  'dateModified': buildDate,
+  'publisher': {
+    '@type': 'GovernmentOrganization',
+    'name': 'Illinois Criminal Justice Information Authority',
+    'url': 'https://icjia.illinois.gov',
+  },
+  'author': {
+    '@type': 'GovernmentOrganization',
+    'name': 'Illinois Criminal Justice Information Authority — Research & Analysis',
+  },
+})
 
 export default defineNuxtConfig({
   ssr: false,
@@ -103,8 +134,14 @@ export default defineNuxtConfig({
       // SEO / social cards. The og:image ships in public/ (source: public/og-image.svg —
       // regen recipe in the SVG header comment). Meta tags are inert markup: no CSP impact,
       // and the image is same-origin, so the demo's zero-third-party-requests posture holds.
+      // Canonical: the deploy's own root (Netlify URL env — absent locally, so no bogus
+      // localhost canonical). ssr:false means one shell head serves every route; the root
+      // canonical is the truthful "this app" URL that share/AI preview tools resolve.
+      link: siteUrl ? [{ rel: 'canonical', href: `${siteUrl}/` }] : [],
+      script: [{ type: 'application/ld+json', innerHTML: jsonLd }],
       meta: [
         { name: 'description', content: 'The ICJIA Research Hub authoring studio — write in plain language, preview exactly as published, and ship with built-in editorial review.' },
+        { name: 'author', content: 'Illinois Criminal Justice Information Authority (ICJIA)' },
         { property: 'og:site_name', content: 'ICJIA Research Hub Studio' },
         { property: 'og:title', content: 'ICJIA Research Hub Studio' },
         { property: 'og:description', content: 'Write, preview, and publish Research Hub content — with built-in editorial review.' },

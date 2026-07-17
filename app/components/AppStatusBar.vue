@@ -1,16 +1,16 @@
 <!-- app/components/AppStatusBar.vue -->
 <!--
   Bottom status bar for managers/reviewers: the deployed version plus links to the living
-  project docs — the in-app Spec & status page, and the Changelog / Roadmap / Repository on
-  GitHub (blob/main, so they always open the LATEST rendered version). Ported from
-  copperhead-20's AppStatusBar (hub v0.24.0) so both Copperhead repos read the same way.
-  Pure links — no fetches — so the demo CSP (connect-src 'self') is unaffected.
+  project docs. Spec & status, Changelog, and Roadmap are IN-APP pages rendering the
+  repo's own markdown (build-time ?raw imports, article pipeline) — the repository is
+  private for now, so GitHub blob links would 404 for every manager; only the Repository
+  link itself stays external (developers with access). Ported from copperhead-20's
+  AppStatusBar (hub v0.24.0). Pure links — no fetches — so the demo CSP (connect-src
+  'self') is unaffected.
 -->
 <script setup lang="ts">
 const version = useRuntimeConfig().public.version
 const repoUrl = 'https://github.com/ICJIA/copperhead-studio-20'
-const changelogUrl = `${repoUrl}/blob/main/CHANGELOG.md`
-const roadmapUrl = `${repoUrl}/blob/main/ROADMAP.md`
 </script>
 
 <template>
@@ -27,24 +27,12 @@ const roadmapUrl = `${repoUrl}/blob/main/ROADMAP.md`
         <NuxtLink to="/spec" class="hover:text-highlighted hover:underline" data-test="link-spec">
           Spec &amp; status
         </NuxtLink>
-        <a
-          :href="changelogUrl"
-          target="_blank"
-          rel="noopener"
-          class="hover:text-highlighted hover:underline"
-          data-test="link-changelog"
-        >
+        <NuxtLink to="/changelog" class="hover:text-highlighted hover:underline" data-test="link-changelog">
           Changelog
-        </a>
-        <a
-          :href="roadmapUrl"
-          target="_blank"
-          rel="noopener"
-          class="hover:text-highlighted hover:underline"
-          data-test="link-roadmap"
-        >
+        </NuxtLink>
+        <NuxtLink to="/roadmap" class="hover:text-highlighted hover:underline" data-test="link-roadmap">
           Roadmap
-        </a>
+        </NuxtLink>
         <a
           :href="repoUrl"
           target="_blank"

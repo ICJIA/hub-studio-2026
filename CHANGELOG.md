@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-07-17
+
+_Added_
+
+- **In-app Changelog and Roadmap pages** (`/changelog`, `/roadmap`). The bottom status
+  bar's Changelog and Roadmap links now open pages that render `CHANGELOG.md` and
+  `ROADMAP.md` **inside the Studio** — the repository is **private for now**, so the
+  previous GitHub `blob/main` links produced 404s for every manager without repo access.
+  Built on the `/spec` seam: build-time `?raw` imports rendered through the article
+  pipeline (`html:false`, attr allowlist — the v-html sink carries the pipeline's
+  guarantees; the source is this repo's own doc, fixed at build), marked `public` like
+  `/spec`, and re-imported on every deploy so they always show the state of the running
+  build. Pure page renders — no fetches, demo CSP untouched. The two pages cross-link,
+  `/spec`'s header links the roadmap, and only the **Repository** link in the status bar
+  remains external.
+
+- **Share-preview / AI-readability metadata** (MetaPeek assessment of the deployed demo,
+  90/100 → the flagged gaps closed): a **canonical URL** (`<link rel="canonical">`, the
+  deploy's own root via Netlify's build-time `URL` env — omitted in local builds), a
+  **`meta author`** (ICJIA), and a **JSON-LD** `WebApplication` block (Schema.org:
+  name, description, publisher/author = ICJIA GovernmentOrganization, og image,
+  `datePublished` 2026-06-21, `dateModified` stamped per build). All inert head markup —
+  JSON-LD scripts are never executed, so the demo CSP is untouched. **Deliberately NOT
+  done** (they would reverse the audited runbook-§3 search-exclusion posture, guard-tested
+  in `security-headers.test.ts`): unblocking AI bots in `robots.txt` and adding
+  `llms.txt` — the Studio is an internal tool; its demo is shared by link, not meant to
+  be indexed or cited. Revisit only as an explicit posture decision.
+
 _Changed_
 
 - **Spec digest moved to the top of the document** (standing manager-docs rule,
@@ -14,9 +42,13 @@ _Changed_
   **"What's changed recently"** (dated, newest first) directly after the header block —
   managers see the latest state the moment they open the doc (or its emailed Word copy)
   without visiting the repo. Entries re-ordered strictly newest-first (0.5.0 before
-  0.4.0), the header **Date** row now reads *revised 2026-07-17 (v0.8.4)*, and the
-  opening blockquote's stale "677 automated tests" claim is corrected to 879. Both Word
-  editions regenerated and verified (0 field codes).
+  0.4.0), the header **Date** row now reads *revised 2026-07-17*, and the opening
+  blockquote's stale "677 automated tests" claim is corrected. Both Word editions
+  regenerated and verified (0 field codes); `/spec`'s own header no longer says the
+  digest is "near the end."
+
+Suite: **885 tests / 111 files** (879 + 6 new: 3 changelog page, 3 roadmap page; the two
+status-bar link tests rewritten for the in-app targets), typecheck clean.
 
 ## [0.8.4] - 2026-07-17
 

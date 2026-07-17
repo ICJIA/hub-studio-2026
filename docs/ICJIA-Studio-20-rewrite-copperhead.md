@@ -10,7 +10,7 @@
 | **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub (internal program codename: **Copperhead**; this repository: `copperhead-studio-20`, alongside `copperhead-hub-20` for the public site). The codename is internal only — the public never sees it |
 | **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
 | **Status** | **Feature-complete in the workshop** — the full tool is built and a public demo is clickable at <https://studio-2026.netlify.app>; not yet switched on for real publishing |
-| **Date** | 2026-06-21 · **revised 2026-07-17 (v0.8.4)** — see **What's changed recently**, immediately below, for the dated digest (kept at the top of this document, newest first) |
+| **Date** | 2026-06-21 · **revised 2026-07-17 (v0.8.5)** — see **What's changed recently**, immediately below, for the dated digest (kept at the top of this document, newest first) |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
 | **Audience** | Two readers, addressed separately: a **manager** (Sections 1–6) and a **developer** (Section 7) |
 
@@ -40,6 +40,14 @@ latest state is the first thing you see — the complete version-by-version reco
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-17 — Changelog & Roadmap now readable inside the Studio (v0.8.5).** The
+  bottom status bar's Changelog and Roadmap links open in-app pages rendering the
+  repository's own records — no GitHub account or repository access needed (the
+  repository is private while in development; the old links produced "not found" errors
+  for managers). Like this document's own Spec & status page, they re-render from the
+  repository on every deploy, so they always match the running build. This document's
+  dated digest also moved here, to the top, so the latest changes are the first thing a
+  reader sees.
 - **2026-07-17 — Accessibility riders shipped; social card added (v0.8.4).** The four
   screen-reader/keyboard refinements from the annotations review are in: the highlight
   color swatches are a true radio group, the reviewer toolbar is a single Tab stop with
@@ -1151,7 +1159,7 @@ the live system yet.*
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.4** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.5** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

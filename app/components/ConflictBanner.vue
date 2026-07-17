@@ -17,12 +17,26 @@
   person's edits, so it's tinted error/solid to flag that risk; "Load their version" is the
   non-destructive path (the author's own edits are preserved via the draft-backup snapshot before
   the model is replaced), so it gets the quieter neutral/outline treatment — mirroring
-  DraftRestoreBanner's solid-primary + outline-secondary pairing.
+  DraftRestoreBanner's OWN button colors (warning/solid for its primary action, neutral/outline
+  for its secondary one — not "primary"/"secondary" as color names, Nuxt UI has no such tokens
+  here; corrected after an earlier draft of this comment misnamed them).
+
+  `busy` (Fix round 1, reviewer-found Critical): this banner deliberately stays MOUNTED across
+  ArticleForm's loadTheirs() await (so a failed fetch can be retried from the same prompt) —
+  which means, without this prop, its buttons stay clickable for that entire window. An
+  impatient Save-anyway click while Load-theirs was still fetching could persist a STALE
+  pre-replace model and, if that persist won the race, clear the very snapshot Load-theirs had
+  just written to protect the author's edits — the silent-overwrite this feature exists to
+  prevent. ArticleForm's `saving` ref is the single source of truth for "some save-ish operation
+  is in flight" across submit()/saveAnyway()/loadTheirs(); this prop is that same signal wired
+  through to disable BOTH buttons here. (The `saving`-checked early-returns added to submit() and
+  saveAnyway() in ArticleForm are the actual race-closing fix; `busy` here is the complementary
+  UI-level defense — real users shouldn't see a clickable button that will secretly no-op.)
 -->
 <script setup lang="ts">
 import { computed } from '#imports'
 
-const props = defineProps<{ theirSavedAt: string }>()
+const props = defineProps<{ theirSavedAt: string; busy?: boolean }>()
 const emit = defineEmits<{ saveAnyway: []; loadTheirs: [] }>()
 
 // Mirrors DraftRestoreBanner's savedAtLabel computed exactly, including the fallback-to-raw-
@@ -49,10 +63,16 @@ const theirSavedAtLabel = computed(() => {
       This draft was changed by someone else while you were editing (their save: {{ theirSavedAtLabel }}).
     </p>
     <div class="flex gap-2">
-      <UButton size="xs" color="error" variant="solid" data-test="conflict-save-anyway" @click="emit('saveAnyway')">
+      <UButton
+        size="xs" color="error" variant="solid" :disabled="busy" :loading="busy"
+        data-test="conflict-save-anyway" @click="emit('saveAnyway')"
+      >
         Save anyway
       </UButton>
-      <UButton size="xs" color="neutral" variant="outline" data-test="conflict-load-theirs" @click="emit('loadTheirs')">
+      <UButton
+        size="xs" color="neutral" variant="outline" :disabled="busy" :loading="busy"
+        data-test="conflict-load-theirs" @click="emit('loadTheirs')"
+      >
         Load their version
       </UButton>
     </div>

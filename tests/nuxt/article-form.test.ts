@@ -169,6 +169,14 @@ describe('unsaved-work guard integration', () => {
   })
 })
 
+/** A promise whose resolution is controlled externally — for exercising in-flight request races
+ *  (content-list.test.ts precedent: its stale-response-guard describe uses the same helper). */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
+
 // The save-time edit-conflict check (design §1-2; ArticleForm is the reference integration Task
 // 4 copies for App/Dataset). getUpdatedAtMock/findOneMock default to "no conflict" / a same-shape
 // refetch (declared at module scope above) so every describe block ABOVE this one — none of which
@@ -262,6 +270,85 @@ describe('edit-conflict save-flow', () => {
     // the composition the design doc calls out explicitly.
     expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  // Fix round 1 (Critical, reviewer-found): ConflictBanner stays mounted across loadTheirs()'s
+  // own findOne await (by design — a failed fetch should be retryable from the same prompt), so
+  // WITHOUT a guard, its Save-anyway button is still clickable during that window. An impatient
+  // click there would bypass the conflict check (bypassConflictOnce) and persist the STALE
+  // pre-replace model — then, if the persist wins the race, its success path calls markSaved(),
+  // which clears the very snapshot snapshotNow() just wrote to protect the author's edits. That's
+  // the silent-overwrite-plus-lost-backup outcome this whole feature exists to prevent.
+  it("CRITICAL: an impatient Save-anyway click while Load-theirs is still fetching does not persist the stale model, and the author's snapshot survives", async () => {
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T12:00:00.000Z') // provoke the conflict
+    const slow = deferred<Article>()
+    findOneMock.mockReturnValueOnce(slow.promise) // Load-theirs' fetch — held open on purpose
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+    wrapper.vm.$.exposed!.setField('title', 'My Unsaved Local Edit')
+
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+
+    // Click Load-theirs: snapshotNow() fires synchronously; the refetch is now in flight and
+    // deliberately never resolves until this test says so.
+    await wrapper.find('[data-test="conflict-load-theirs"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+
+    // Impatient click on Save-anyway WHILE the fetch above is still pending.
+    await wrapper.find('[data-test="conflict-save-anyway"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).not.toHaveBeenCalled() // must NOT persist the stale pre-replace model
+    // The snapshot Load-theirs just wrote must survive — a stray markSaved() would clear it.
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+
+    // Let the held-open fetch resolve and confirm Load-theirs still completes cleanly afterward.
+    slow.resolve({ ...loaded, title: 'Their Refetched Title', updatedAt: '2026-07-16T12:00:00.000Z' })
+    await new Promise((r) => setTimeout(r, 0))
+    const titleInput = wrapper.find('input')
+    expect((titleInput.element as HTMLInputElement).value).toBe('Their Refetched Title')
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  // The DOM-level test above goes through ConflictBanner's `busy`-disabled button, which alone
+  // is enough to stop a `.trigger('click')` from reaching saveAnyway() at all — verified by hand
+  // (temporarily strip just the two `if (saving.value) return` guards and this suite still
+  // passes on the `busy` disable alone). That leaves the OTHER fix — the guards themselves,
+  // explicitly asked for to cover "every entry point, present and future," not only this one
+  // button — unverified by that test alone. This one calls the exposed saveAnyway() directly,
+  // bypassing the DOM/disabled attribute entirely, to prove the guard holds on its own.
+  it('the saving-guard alone (independent of any disabled DOM button) blocks a direct saveAnyway() call while Load-theirs is in flight', async () => {
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T12:00:00.000Z')
+    const slow = deferred<Article>()
+    findOneMock.mockReturnValueOnce(slow.promise)
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+    wrapper.vm.$.exposed!.setField('title', 'My Unsaved Local Edit')
+
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="conflict-load-theirs"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+
+    // Direct call — no DOM, no disabled attribute involved.
+    wrapper.vm.$.exposed!.saveAnyway()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+    // A blocked call must be a TRUE no-op, not just short of persisting: without saveAnyway()'s
+    // OWN guard (relying only on submit()'s), it would still have cleared conflictTheirAt before
+    // handing off to submit() — closing the banner on a click that actually did nothing, and
+    // leaving bypassConflictOnce stuck armed (submit() bails before its finally resets it) to
+    // silently skip the NEXT legitimate save's conflict check. The banner must still be up.
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+
+    slow.resolve({ ...loaded, title: 'Their Refetched Title', updatedAt: '2026-07-16T12:00:00.000Z' })
+    await new Promise((r) => setTimeout(r, 0))
     wrapper.unmount()
   })
 

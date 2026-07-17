@@ -66,15 +66,30 @@ const authorColumns = [
 function setField<K extends keyof Article>(key: K, value: Article[K]) { model[key] = value }
 
 async function submit() {
+  // Fix round 1 (Critical, reviewer-found): re-entrancy guard for the WHOLE flow, covering every
+  // entry point — the primary Save button, Save-anyway, and any future caller. The gap this
+  // closes: ConflictBanner deliberately stays MOUNTED across loadTheirs()'s own await (see its
+  // comment below), and — before this fix — nothing here or in saveAnyway() ever READ `saving`,
+  // only wrote it. So while loadTheirs() had `saving` true and its findOne() in flight, an
+  // impatient Save-anyway click sailed straight through: it persisted the STALE, pre-replace
+  // model (bypassing the conflict check entirely, since Save-anyway's whole point is to bypass
+  // it), and if that persist won the race, its success path called markSaved() — clearing the
+  // very snapshot snapshotNow() had just written to protect the author's edits. Silent overwrite
+  // of a colleague's save, backup destroyed in the same stroke: exactly what this feature exists
+  // to prevent. Placed BEFORE `saving.value = true` and outside the try/finally on purpose: a
+  // pure no-op bail-out that must never touch `saving` or `bypassConflictOnce` — whatever
+  // operation is ALREADY in flight owns that state, not this blocked call.
+  if (saving.value) return
   saving.value = true
   errors.value = []
   try {
     // EDIT mode only (create has no prior server state to conflict with) — skipped when the
     // one-shot bypass is armed (Save-anyway). This await is the async gap a stale-settlement bug
-    // could hide in, but it's already covered by the busy-gate above: `saving` is set to true
-    // BEFORE this line runs, and the submit button's `:loading="saving"` binding disables it
-    // (UButton ties disabled to loading) for the WHOLE round trip, including this check — so a
-    // second UI-triggered submit() can't start mid-check. Edits the author types while this
+    // could hide in: `saving` is true from the line above, and the submit button's
+    // `:loading="saving"` binding disables it (UButton ties disabled to loading) for the whole
+    // round trip — so a second PRIMARY-button submit() can't start mid-check. (ConflictBanner's
+    // OWN buttons needed the separate fixes above and on ConflictBanner's `busy` prop — a
+    // disabled PRIMARY button was never the whole story.) Edits the author types while this
     // await is pending are safe too, by construction: `model` isn't snapshotted into `toSave`
     // until AFTER this block, so a slow check can never cause a stale, pre-edit save.
     if (props.mode === 'edit' && !bypassConflictOnce) {
@@ -107,12 +122,19 @@ async function submit() {
   }
 }
 
-/** Save anyway: arm the one-shot bypass and re-invoke submit(). Clearing conflictTheirAt here —
- *  synchronously, before submit()'s first await — closes ConflictBanner immediately, so its own
- *  buttons are gone from the DOM before a second click could ever land on them. That makes this
- *  path self-guarding against re-entrancy; contrast with loadTheirs() below, which deliberately
- *  keeps the banner up across its own await and so needs an explicit guard. */
+/** Save anyway: arm the one-shot bypass and re-invoke submit(). Guarded by the same `if
+ *  (saving.value) return` check submit() now makes internally — added here TOO (Fix round 1),
+ *  because without it a click here would still mutate bypassConflictOnce/conflictTheirAt before
+ *  submit()'s own guard bailed out, corrupting state out from under whichever operation IS
+ *  actually in flight (e.g. loadTheirs()). An earlier version of this comment argued
+ *  conflictTheirAt's synchronous clear made this "self-guarding" — true only for a SECOND
+ *  Save-anyway click, never for a click arriving while a DIFFERENT flow (loadTheirs) is running;
+ *  that gap is exactly what let the stale-model race through. ConflictBanner's `busy` prop
+ *  (wired below) is the complementary UI-level defense — real users shouldn't see a clickable
+ *  button that would now silently no-op — but this function-level guard is what actually makes
+ *  it safe regardless of what the DOM allows. */
 function saveAnyway() {
+  if (saving.value) return
   bypassConflictOnce = true
   conflictTheirAt.value = null
   void submit()
@@ -127,12 +149,12 @@ function saveAnyway() {
  *  carrying every Article key, so every key on `model` gets freshly overwritten and nothing can
  *  linger — the same reasoning useDraftGuard.restore() already relies on.
  *
- *  This banner intentionally stays rendered across the await (unlike saveAnyway, which closes
- *  its trigger synchronously) — so a failed fetch can be retried from the same prompt instead of
- *  the banner vanishing on a transient error. That means this path needs its OWN busy guard:
- *  reusing `saving` both blocks a re-click while the fetch is in flight and disables the primary
- *  Save button for the same window — matching submit()'s existing busy-gate rather than adding a
- *  second, different mechanism. */
+ *  This banner intentionally stays rendered (conflictTheirAt untouched) across the await below —
+ *  so a failed fetch can be retried from the same prompt instead of the banner vanishing on a
+ *  transient error. Fix round 1: that design choice is exactly what let a stale-model race
+ *  through ConflictBanner's OTHER button (Save-anyway) while this await was pending — the guard
+ *  is `saving` itself (checked at top, reused across submit()/saveAnyway() too) plus
+ *  ConflictBanner's `busy` prop passed below; neither existed when this comment first shipped. */
 async function loadTheirs() {
   if (saving.value) return
   saving.value = true
@@ -157,7 +179,7 @@ function onPublished(entity: Article) {
   emit('published', entity)
 }
 
-defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, draftGuard })
+defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, draftGuard, saveAnyway })
 </script>
 
 <template>
@@ -165,10 +187,14 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
     <!-- ConflictBanner first: the two CAN render together — a pre-existing snapshot makes the
          restore banner visible even before Load-theirs runs, and loadTheirs()'s own snapshotNow()
          call flips it on mid-flight, before conflictTheirAt clears on success. Conflict takes the
-         top slot: it's the more urgent, save-blocking decision of the two. -->
+         top slot: it's the more urgent, save-blocking decision of the two.
+         :busy="saving" (Fix round 1): this banner stays mounted across loadTheirs()'s own await,
+         so its buttons must reflect the SAME busy state the primary Save button already does —
+         see ConflictBanner's and submit()'s comments for the race this closes. -->
     <ConflictBanner
       v-if="conflictTheirAt"
       :their-saved-at="conflictTheirAt ?? ''"
+      :busy="saving"
       @save-anyway="saveAnyway"
       @load-theirs="loadTheirs"
     />

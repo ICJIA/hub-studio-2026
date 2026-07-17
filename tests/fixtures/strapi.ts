@@ -13,7 +13,7 @@ export const rawArticle = {
   images: [{ title: 'figure1', src: '/uploads/figure1_fdafcd09e1.png', alt: 'Bar chart of outcomes', caption: 'Figure 1.' }],
   abstract: 'An abstract.', markdown: '# Body\n\n![figure1](/uploads/figure1_fdafcd09e1.png)',
   mainfiletype: 'full report', doi: null, citation: null, funding: null,
-  publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  publishedAt: '2026-03-16T18:45:02.898Z', updatedAt: '2026-06-20T14:30:00.000Z', locale: 'en',
   splash: { id: 10, documentId: 'splashdoc', name: 'splash.png', alternativeText: 'Splash alt', caption: null, url: '/uploads/splash_abc.png', width: 1200, height: 630, mime: 'image/png' },
   thumbnail: null,
   mainfile: [
@@ -32,7 +32,7 @@ export const rawApp = {
   contributors: [{ title: 'ICJIA R&A staff' }],
   image: { id: 1046, documentId: 'imgdoc', name: 'app-image.png', alternativeText: 'App screenshot', caption: null, url: '/uploads/app_image_22cc0163e1.png', width: 720, height: 342, mime: 'image/png' },
   description: 'Explore UCR data.', url: 'https://example.org/app', citation: null, funding: null,
-  publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  publishedAt: '2026-03-16T18:45:02.898Z', updatedAt: '2026-06-20T14:31:00.000Z', locale: 'en',
   datasets: { count: 1 },
   articles: { count: 0 },
 }
@@ -49,7 +49,8 @@ export const rawDataset = {
     { name: 'Year', type: 'integer', definition: 'The year events occurred.' },
     { name: 'id', type: 'int', definition: 'Location identifier.' },
   ],
-  citation: null, funding: null, publishedAt: '2026-03-16T18:45:02.898Z', locale: 'en',
+  citation: null, funding: null, publishedAt: '2026-03-16T18:45:02.898Z',
+  updatedAt: '2026-06-20T14:32:00.000Z', locale: 'en',
   datafile: { id: 99, documentId: 'dfdoc', name: 'crime.csv', alternativeText: null, caption: null, url: '/uploads/crime_abc.csv', mime: 'text/csv' },
   apps: { count: 1 },
   articles: { count: 0 },

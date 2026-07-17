@@ -14,11 +14,15 @@ describe('datasetFromStrapi / datasetToWrite', () => {
     expect(ds.apps).toEqual([{ documentId: 'appdoc1', title: 'UCR Index Offense Explorer' }])
     expect(ds.articles).toEqual([]) // not supplied → []
   })
+  it('surfaces updatedAt read-only from the CM response', () => {
+    expect(ds.updatedAt).toBe('2026-06-20T14:32:00.000Z')
+  })
   it('writes datafile id, keeps timeperiod, and omits relation fields (relation-write deferred)', () => {
     const w = datasetToWrite(ds)
     expect(w.datafile).toBe(99)
     expect(w.timeperiod).toEqual({ yeartype: 'calendar', yearmin: 1982, yearmax: 2020 })
     expect(w).not.toHaveProperty('apps')
     expect(w).not.toHaveProperty('articles')
+    expect(w).not.toHaveProperty('updatedAt')
   })
 })

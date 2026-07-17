@@ -55,6 +55,12 @@ export interface Repository<TDomain> {
   publish(documentId: string): Promise<TDomain>
   /** Unpublish an entry via the Content-Manager unpublish action; returns the now-draft entity. */
   unpublish(documentId: string): Promise<TDomain>
+  /**
+   * Cheapest correct read of the server's current `updatedAt`, for the save-time edit-conflict
+   * check (see `~/lib/edit-conflict`'s `hasConflict`). Never throws: a missing record or a
+   * response without the field both resolve to null.
+   */
+  getUpdatedAt(documentId: string): Promise<string | null>
 }
 
 export interface RepositoryConfig<TRaw, TDomain, TWrite> {
@@ -200,6 +206,24 @@ export function createRepository<TRaw, TDomain, TWrite>(
         method: 'POST',
       })
       return cfg.fromStrapi(unwrapOne(res))
+    },
+
+    async getUpdatedAt(documentId) {
+      // Fields-limited findOne (edit-conflict check — cheapest correct read). The `fields`
+      // query param is sent as the flat bracket-key 'fields[0]': 'updatedAt', NOT a
+      // `fields: ['updatedAt']` array value — same v0.7.0 wire-format lesson as
+      // buildFilters/flattenFilters above: this ofetch client has no custom query serializer,
+      // so a non-scalar query value is JSON.stringified/repeated by ufo instead of reaching
+      // Strapi's qs-based parser in the bracket-index shape it expects (mirrors
+      // flattenFilters's path[i]-for-arrays convention in strapi-rest.ts).
+      try {
+        const res = await cfg.api<StrapiSingleResponse<{ updatedAt?: string | null }>>(`${base}/${documentId}`, {
+          query: { 'fields[0]': 'updatedAt' },
+        })
+        return unwrapOne(res)?.updatedAt ?? null
+      } catch {
+        return null // missing record (404) or any transport error — fail open, never throw
+      }
     },
   }
 }

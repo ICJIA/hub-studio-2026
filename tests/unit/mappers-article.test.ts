@@ -13,6 +13,9 @@ describe('articleFromStrapi', () => {
     expect(a).not.toHaveProperty('status')
     expect(a.publishedAt).toBe('2026-03-16T18:45:02.898Z')
   })
+  it('surfaces updatedAt read-only from the CM response', () => {
+    expect(a.updatedAt).toBe('2026-06-20T14:30:00.000Z')
+  })
   it('flattens inline media (with caption) to MediaRef', () => {
     expect(a.splash).toEqual({ id: 10, url: '/uploads/splash_abc.png', name: 'splash.png', alternativeText: 'Splash alt', caption: null, width: 1200, height: 630, mime: 'image/png' })
     expect(a.thumbnail).toBeNull()
@@ -42,6 +45,7 @@ describe('articleToWrite', () => {
     expect(w).not.toHaveProperty('datasets')
     expect(w).not.toHaveProperty('documentId')
     expect(w).not.toHaveProperty('publishedAt')
+    expect(w).not.toHaveProperty('updatedAt')
   })
   it('round-trips mainfiles to an array of numeric ids (mainfiles: number[])', () => {
     const w = articleToWrite(articleFromStrapi(rawArticle as never))

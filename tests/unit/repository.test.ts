@@ -135,3 +135,36 @@ describe('title search (ListOptions.search)', () => {
     expect(noFiltersKeys((whitespace as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].query)).toBe(false)
   })
 })
+
+describe('getUpdatedAt (edit-conflict fields-limited read)', () => {
+  // Same v0.7.0 wire-format lesson as title search: an array value (`fields: ['updatedAt']`)
+  // is NOT the bracket-key shape Strapi 5's qs-based parser expects for a single field, so the
+  // param is sent as the flat key 'fields[0]': 'updatedAt' — mirrors flattenFilters's
+  // path[i]-for-arrays convention (strapi-rest.ts) — never a nested array/object on the wire.
+  it('GETs the entity with a flat fields[0]=updatedAt bracket-key param and returns the stamp', async () => {
+    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', updatedAt: '2026-07-16T10:00:00.000Z' } }) as unknown as $Fetch
+    const out = await makeRepo(api).getUpdatedAt('a')
+    expect(api).toHaveBeenCalledWith(`${BASE}/a`, expect.objectContaining({
+      query: expect.objectContaining({ 'fields[0]': 'updatedAt' }),
+    }))
+    expect(out).toBe('2026-07-16T10:00:00.000Z')
+  })
+
+  it('never sends a raw fields array on the wire — only the flat bracket key', async () => {
+    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', updatedAt: 'x' } }) as unknown as $Fetch
+    await makeRepo(api).getUpdatedAt('a')
+    const query = (api as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].query as Record<string, unknown>
+    expect(query.fields).toBeUndefined()
+  })
+
+  it('returns null when the response has no updatedAt (missing field, no throw)', async () => {
+    const api = vi.fn().mockResolvedValue({ data: { documentId: 'a' } }) as unknown as $Fetch
+    const out = await makeRepo(api).getUpdatedAt('a')
+    expect(out).toBeNull()
+  })
+
+  it('returns null (never throws) when the record is missing', async () => {
+    const api = vi.fn().mockRejectedValue(new Error('404 Not Found')) as unknown as $Fetch
+    await expect(makeRepo(api).getUpdatedAt('nope')).resolves.toBeNull()
+  })
+})

@@ -9,6 +9,7 @@ export interface StrapiApp {
   image?: StrapiMedia | null; description?: string | null; url?: string | null
   citation?: string | null; funding?: string | null
   publishedAt?: string | null
+  updatedAt?: string | null
 }
 
 /** Relation arrays hydrated from the Content-Manager relations endpoint. */
@@ -32,6 +33,7 @@ export function appFromStrapi(raw: StrapiApp, relations: AppRelations = {}): App
     datasets: relations.datasets ?? [],
     articles: relations.articles ?? [],
     publishedAt: raw.publishedAt ?? null,
+    updatedAt: raw.updatedAt ?? null,
   }
 }
 

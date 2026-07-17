@@ -11,10 +11,14 @@ describe('appFromStrapi / appToWrite', () => {
     expect(app.datasets).toEqual([{ documentId: 'dsdoc1', title: 'Crime Data' }])
     expect(app.articles).toEqual([]) // not supplied → []
   })
+  it('surfaces updatedAt read-only from the CM response', () => {
+    expect(app.updatedAt).toBe('2026-06-20T14:31:00.000Z')
+  })
   it('writes image id and omits relation fields (relation-write deferred)', () => {
     const w = appToWrite(app)
     expect(w.image).toBe(1046)
     expect(w).not.toHaveProperty('datasets')
     expect(w).not.toHaveProperty('articles')
+    expect(w).not.toHaveProperty('updatedAt')
   })
 })

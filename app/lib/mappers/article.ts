@@ -15,6 +15,7 @@ export interface StrapiArticle {
   mainfiletype?: string | null; mainfile?: (StrapiMedia | null)[] | null; extrafile?: StrapiMedia | null
   doi?: string | null; citation?: string | null; funding?: string | null
   publishedAt?: string | null
+  updatedAt?: string | null
 }
 
 /** Relation arrays hydrated from the Content-Manager relations endpoint. */
@@ -46,6 +47,7 @@ export function articleFromStrapi(raw: StrapiArticle, relations: ArticleRelation
     apps: relations.apps ?? [],
     datasets: relations.datasets ?? [],
     publishedAt: raw.publishedAt ?? null,
+    updatedAt: raw.updatedAt ?? null,
   }
 }
 

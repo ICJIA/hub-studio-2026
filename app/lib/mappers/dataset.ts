@@ -11,6 +11,7 @@ export interface StrapiDataset {
   citation?: string | null; funding?: string | null
   datafile?: StrapiMedia | null
   publishedAt?: string | null
+  updatedAt?: string | null
 }
 
 /** Relation arrays hydrated from the Content-Manager relations endpoint. */
@@ -38,6 +39,7 @@ export function datasetFromStrapi(raw: StrapiDataset, relations: DatasetRelation
     apps: relations.apps ?? [],
     articles: relations.articles ?? [],
     publishedAt: raw.publishedAt ?? null,
+    updatedAt: raw.updatedAt ?? null,
   }
 }
 

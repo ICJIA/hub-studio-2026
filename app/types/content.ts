@@ -42,6 +42,14 @@ export interface BaseContent {
   funding: string | null
   /** null = draft. Source of truth for Draft & Publish. */
   publishedAt: string | null
+  /**
+   * Server-side last-modified stamp (Content-Manager `updatedAt`). READ-ONLY: the read
+   * mappers surface it for edit-conflict detection (see `~/lib/edit-conflict`'s
+   * `hasConflict`); the `*Write` payload types below intentionally do NOT include it, so a
+   * save can never write this field back to Strapi. Optional/nullable because legacy or
+   * demo-seeded records may lack it — `hasConflict` fails open (no conflict) when missing.
+   */
+  updatedAt?: string | null
 }
 
 export interface Article extends BaseContent {

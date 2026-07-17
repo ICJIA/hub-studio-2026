@@ -91,6 +91,14 @@ export function makeDemoRepository<T extends {
       return { ...item }
     },
 
+    // Edit-conflict check (see ~/lib/edit-conflict's hasConflict): the store already stamps
+    // every item on create/update/publish/unpublish, so this is a plain read — unknown id →
+    // null (mirrors the live repo's fail-open contract; unlike findOne, never throws).
+    async getUpdatedAt(documentId) {
+      const item = store.find((i) => i.documentId === documentId)
+      return item?.updatedAt ?? null
+    },
+
     async create(model) {
       const id = `demo-new-${++_counter}`
       const now = new Date().toISOString()

@@ -133,6 +133,17 @@ describe('makeDemoRepository', () => {
     await expect(repo.findOne('nope')).rejects.toThrow()
   })
 
+  it('getUpdatedAt returns the stored item\'s stamp (edit-conflict check)', async () => {
+    const repo = makeDemoRepository([...seed], 'k-getupdatedat')
+    const stamp = await repo.getUpdatedAt('test-5')
+    expect(stamp).toBe('2026-01-06T10:00:00.000Z') // makeItem(5, ...) → i+1 = 6
+  })
+
+  it('getUpdatedAt returns null for an unknown documentId (no throw)', async () => {
+    const repo = makeDemoRepository([...seed], 'k-getupdatedat-miss')
+    await expect(repo.getUpdatedAt('nope')).resolves.toBeNull()
+  })
+
   it('create adds an item in-memory without touching network', async () => {
     const repo = makeDemoRepository([...seed], 'k-create')
     const newItem = makeItem(99, false)

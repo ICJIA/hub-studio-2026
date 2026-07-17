@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Added_
+
+- **Env-sample sync guard.** `.env.example` was missing both keys developers actually set
+  (`NUXT_PUBLIC_DEMO_MODE`, `STRAPI_API_TOKEN` — names only, values stay in the gitignored
+  `.env`); it now documents all of them with sanitized comments, and a new guard test
+  (`tests/unit/env-example.test.ts`) fails any local run where `.env` gains a key the
+  example doesn't document (CI skips that half — `.env` isn't committed — but still
+  asserts the example exists). Same rules-as-failing-tests philosophy as the docs-nav and
+  security-header guards.
+
 ## [0.8.5] - 2026-07-17
 
 _Added_

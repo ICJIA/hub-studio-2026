@@ -238,6 +238,14 @@ The demo is unaffected by anything above, so rollback is only about the producti
 
 ## 6. Known launch-posture decisions (documented, deliberate)
 
+- **Relation editing is read-only in the Studio (decided 2026-07-17):** the forms SHOW
+  related content (article ↔ apps ↔ datasets, hydrated from the Content-Manager relations
+  endpoint) but linking/unlinking happens in the Strapi admin. Saves are safe by
+  construction — write payloads omit relation fields entirely, and Strapi leaves omitted
+  fields untouched — so an author editing an article can never destroy links R&A curated.
+  The forms say so honestly ("Linking related content is not editable here"). Build-in
+  sketch recorded in `ROADMAP.md` (Deferred); revisit once real usage shows whether
+  authors need it or R&A keeps curating links in the admin.
 - **Annotation freshness:** refetch on preview open and after every write. No polling, no
   websockets. Two reviewers replying to the *same thread* in the same instant is
   last-write-wins (`addComment` re-fetches then PUTs the whole row). Fine at ICJIA review

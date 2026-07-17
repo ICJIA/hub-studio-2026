@@ -10,10 +10,20 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.2_
+_Last updated: 2026-07-17 · Current version: v0.8.3_
 
 ## Done (recent)
 
+- **The smalls — §5 closeout: relation posture, a11y riders scheduled, dependency
+  currency** (v0.8.3, 2026-07-17) — the last item of the 2026-07-16 priority queue.
+  Relation editing stays read-only by decision (runbook §6 records the posture — saves
+  structurally cannot destroy admin-curated links; build-in sketch under Deferred below).
+  The four accessibility riders are scheduled as Next №1. Dependencies brought current:
+  CI actions checkout v7 / setup-node v7, plus the 13-update minor-and-patch group
+  (@nuxt/ui 4.10, vue 3.5.40, CodeMirror suite, vitest 4.1.10, …) — Dependabot's group
+  lockfile was broken (missing `commander@13.1.0`, `npm ci` failed on every job), so the
+  lockfile was regenerated locally and the full gate matrix re-proven green. Majors
+  remain scheduled (Next №2). 868 tests / 109 files on the bumped tree.
 - **Uptime monitoring runbook'd; error reporter formally deferred** (v0.8.2, 2026-07-17) —
   the operations half of analysis-roadmap §5.4-7, docs-only: runbook §4a instructs the
   UptimeRobot free-tier setup (Studio URL monitor + Strapi `/_health` monitor — the
@@ -82,18 +92,34 @@ _Last updated: 2026-07-17 · Current version: v0.8.2_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — the smalls, №1 below — begins
-  after v0.8.2._
+- _Nothing in flight at this release. The 2026-07-16 priority queue is complete; the
+  accessibility riders (№1 below) are the next scheduled work._
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Smalls** — relation-write support (or document the read-only limitation), merge the
-   pending green Dependabot PRs, schedule the four accessibility riders.
+1. **Accessibility riders** (scheduled 2026-07-17; analysis-roadmap §5.4-10) — the four
+   screen-reader/keyboard refinements from the annotations review, as one small release:
+   color-swatch **radiogroup** semantics; **roving tabindex** on the annotation toolbar;
+   **dialog semantics** on the annotation drawer; scoping the **document-level
+   keyboard-create listener**. The app measures AA-clean today — these are refinements,
+   not fixes.
+2. **Dependabot majors** (as compatibility windows allow): markdown-it-attrs 5 (PR #8
+   open), pinia 4 + @pinia/nuxt 1, TypeScript 7 — each needs its own compatibility pass;
+   minors/patches and CI-action bumps are merged as they arrive.
 
 ## Deferred (with rationale)
 
+- **Relation editing in the Studio** (decided 2026-07-17: document, don't build yet) —
+  the forms show related content (article ↔ apps ↔ datasets) read-only; linking stays in
+  the Strapi admin, and Studio saves structurally cannot destroy links (write payloads
+  omit relation fields; Strapi leaves omitted fields untouched — runbook §6 records the
+  posture). Build-in sketch when wanted: Strapi Content-Manager writes accept
+  `{ connect: [documentId…], disconnect: [documentId…] }` per relation field; UI would be
+  a searchable picker (the media-library grid pattern) on the three forms
+  (`RelationList.vue` becomes editable), with demo parity via the in-memory store and the
+  usual test-first pipeline. Revisit after real author usage shows demand.
 - **Sentry client error reporter** (§5.4-7's other half) — deferred by the 2026-07-17
   decision: management will build it in at a later date; the uptime half shipped in
   v0.8.2. Design notes for the future build-in (so it starts warm): a client-only
@@ -155,7 +181,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.2** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.3** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

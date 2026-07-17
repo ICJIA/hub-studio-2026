@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-07-17
+
+_The "smalls" release (analysis-roadmap §5 closeout) — decisions, docs, and dependency
+currency; no feature code._
+
+- **Relation editing: read-only posture documented** (decided 2026-07-17). The forms show
+  related content (article ↔ apps ↔ datasets) but linking stays in the Strapi admin;
+  Studio saves structurally cannot destroy links (write payloads omit relation fields,
+  which Strapi leaves untouched). Recorded in runbook §6 (known launch-posture decisions)
+  with the build-in sketch (Strapi `connect`/`disconnect` payloads, searchable picker on
+  the three forms) in `ROADMAP.md` under Deferred — revisit if real authors need it.
+- **Accessibility riders scheduled** (§5.4-10): the four screen-reader/keyboard
+  refinements (color-swatch radiogroup, roving toolbar tabindex, drawer dialog semantics,
+  scoped keyboard-create listener) are now ROADMAP Next №1 as one small release.
+- **Dependency currency** (merged to `main` alongside this release):
+  `actions/checkout` v5→v7 and `actions/setup-node` v5→v7 (Dependabot #11/#12); the
+  13-update minor-and-patch group — `@nuxt/ui` 4.10.0, `vue` 3.5.40, `vue-router` 5.2.0,
+  the CodeMirror suite, `dompurify` 3.4.12, `markdown-it` 14.3.0, `vitest` 4.1.10,
+  `vue-tsc` 3.3.7 — with the lockfile regenerated locally because Dependabot's PRs
+  (#10, then its replacement #13) shipped a lockfile missing `commander@13.1.0`, failing
+  `npm ci` on every CI job. Full gate matrix green on the bumped tree (clean `npm ci`,
+  typecheck, 868 tests, production build, demo generate + bypass control). Majors stay
+  scheduled (ROADMAP Next №2): `markdown-it-attrs` 5 (PR #8), `pinia` 4 + `@pinia/nuxt`,
+  TypeScript 7.
+
 ## [0.8.2] - 2026-07-17
 
 _Added / decided (docs-only — no code, dependency, or CSP change)_

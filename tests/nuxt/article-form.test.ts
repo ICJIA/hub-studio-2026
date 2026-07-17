@@ -425,6 +425,45 @@ describe('edit-conflict save-flow', () => {
     wrapper.unmount()
   })
 
+  // Final-review fix round 2 (re-review, non-blocking edge): on save success only the
+  // loadedUpdatedAt REF was refreshed — model.updatedAt (a plain data field on the model,
+  // separate from that ref) kept the PRE-save stamp. A snapshot taken later (interval or
+  // snapshotNow) embeds that stale model.updatedAt; a subsequent Restore then reseeds
+  // loadedUpdatedAt DOWN to it (per Finding 4→2's onRestore()), and the next save's conflict
+  // check compares that stale value against the server's current (post-first-save) stamp —
+  // spuriously flagging the author's OWN earlier save as "changed by someone else."
+  it('model.updatedAt also refreshes on save, so a later snapshot embeds the current stamp and a subsequent restore-then-save is NOT a spurious conflict', async () => {
+    getUpdatedAtMock.mockResolvedValueOnce(loaded.updatedAt ?? null) // first save: no conflict
+    const postFirstSaveStamp = '2026-07-16T10:00:00.000Z'
+    updateMock.mockResolvedValueOnce({ ...loaded, updatedAt: postFirstSaveStamp })
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+
+    await wrapper.vm.$.exposed!.submit() // first save succeeds
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe(postFirstSaveStamp)
+    // A successful save must leave the guard clean — model.updatedAt's own refresh must not
+    // itself re-arm dirty tracking (it has to happen BEFORE markSaved() captures its baseline).
+    expect(wrapper.vm.$.exposed!.draftGuard.dirty.value).toBe(false)
+
+    wrapper.vm.$.exposed!.setField('title', 'Edited after first save') // keep editing
+    wrapper.vm.$.exposed!.draftGuard.snapshotNow() // snapshot embeds the CURRENT model as-is
+    await wrapper.vm.$nextTick() // flush the DOM before querying the now-mounted banner
+
+    await wrapper.find('[data-test="draft-restore"]').trigger('click')
+    // Reseeded from the snapshot's OWN embedded stamp — must be the POST-first-save stamp, not
+    // the original pre-save `loaded.updatedAt` the snapshot would wrongly carry without the fix.
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe(postFirstSaveStamp)
+
+    // The server hasn't moved since the first save — getUpdatedAt reports that SAME stamp.
+    getUpdatedAtMock.mockResolvedValueOnce(postFirstSaveStamp)
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false) // no spurious warn
+    expect(updateMock).toHaveBeenCalledTimes(2) // the first save, plus this one
+    wrapper.unmount()
+  })
+
   // Final-review fix round 1 (Finding 2): publish/unpublish bumps the server's updatedAt (both
   // live Strapi and the demo repo — see demo-repository.ts's publish/unpublish). Without this,
   // ArticleForm's remembered loadedUpdatedAt goes stale the moment a publish succeeds, and the

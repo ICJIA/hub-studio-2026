@@ -105,8 +105,17 @@ async function submit() {
       : (m: Dataset) => repo.update(m.documentId, m)
     const res: SubmitResult<Dataset> = await submitForm(toSave, validateDataset, persist)
     if (!res.ok) { errors.value = res.errors; return }
-    draftGuard.markSaved() // clear-on-save invariant: a surviving snapshot always means unsaved work
+    // Refresh BOTH the remembered stamp (loadedUpdatedAt) AND model.updatedAt itself
+    // (final-review fix round 2, re-review non-blocking edge — see ArticleForm's comment for
+    // the full rationale: without the latter, a snapshot taken after this save would embed the
+    // PRE-save stamp, and a later Restore would reseed loadedUpdatedAt down to it, falsely
+    // flagging the author's own earlier save as a conflict). Both refreshes run BEFORE
+    // markSaved() on purpose — it captures its dirty-tracking baseline from
+    // JSON.stringify(model), so mutating model.updatedAt after that call would spuriously
+    // re-arm dirty tracking on a save that just succeeded.
+    model.updatedAt = res.saved?.updatedAt ?? model.updatedAt
     loadedUpdatedAt.value = res.saved?.updatedAt ?? loadedUpdatedAt.value
+    draftGuard.markSaved() // clear-on-save invariant: a surviving snapshot always means unsaved work
     toast.add({ title: 'Draft saved', color: 'success' })
     // Tab-only preview (user decision 2026-07-05): save just saves. A first-time create moves
     // to the entry's edit route (it now exists); preview is the Preview link's own named tab.

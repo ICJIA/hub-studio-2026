@@ -124,7 +124,7 @@ These three share a theme: **real authors will trust the Studio with hours of wo
 | # | Recommendation | Why it matters | Evidence in repo | Effort |
 |---|---|---|---|---|
 | 7 | **Error monitoring + uptime checks.** Wire a client error reporter (e.g. Sentry, allowed by adding one host to the production CSP) and simple uptime probes on the Studio and the Strapi API, alerting R&A/dev. | After launch, the only error signal today is "an author emails someone." A tool this central to the agency's most-read content deserves to know it's broken before its users do. | No monitoring/error-reporting code or config anywhere | 0.5–1 day |
-| 8 | **Make the Strapi host configurable for staging.** The backend URL is hardcoded (`studio.config.ts`); the runbook's own warning says a staging build **writes to the production Strapi** unless the code is edited. Honor the already-documented `NUXT_PUBLIC_STRAPI_BASE_URL` env override (it exists in `.env.example` but the config ignores it), keeping the hardcoded value as default, and document the paired CSP `connect-src` change. | Removes the sharpest edge in the launch plan: a rehearsal that can touch production data. Test-content hygiene (the runbook's current mitigation) works, but a config switch is safer than discipline. | `studio.config.ts:9`; runbook §2 warning; `.env.example` | 0.5 day |
+| 8 | **✅ Done (v0.8.1, 2026-07-17).** **Make the Strapi host configurable for staging.** ~~The runbook's own warning says a staging build **writes to the production Strapi** unless the code is edited; the `NUXT_PUBLIC_STRAPI_BASE_URL` override exists in `.env.example` but the config ignores it.~~ *Superseded:* the override was ALREADY honored — the value flows through `runtimeConfig.public.strapiBaseUrl`, which Nuxt's env mechanism substitutes (at generate time for static output; at **server runtime** for the production build). v0.8.1 verified it empirically, added a CI guard that boots the built server with a sentinel override, and rewrote runbook §2 with the env instructions + paired CSP `connect-src` step. | Removes the sharpest edge in the launch plan: a rehearsal that can touch production data. | `studio.config.ts`; runbook §2; `.env.example`; CI "Staging-host override guard" | — |
 | 9 | **Note the rate-limiter scope.** The email endpoint's 5-per-10-min limit is in-memory per serverless instance; under multiple concurrent instances the effective cap is higher. Fine at ICJIA volumes — just record it as a known property (or move the counter to a durable store later). | Prevents a future "the rate limit didn't hold" surprise from being investigated as a bug. | `app/lib/rate-limit.ts` (module-level Map) | doc-only |
 | 10 | **Accessibility polish backlog** (four small riders from the annotations review: color-swatch radiogroup semantics, roving toolbar tabindex, drawer dialog semantics, document-level keyboard-create listener). | The app measures AA-clean; these are screen-reader/keyboard *refinements* already on the tracked list — schedule them so they don't evaporate. | Runbook §6 pointer; `.superpowers/sdd/progress.md` | ~1 day |
 
@@ -192,7 +192,7 @@ These three share a theme: **real authors will trust the Studio with hours of wo
 |---|---|---|
 | Strapi setup | `review-annotation` + `studio-profile` types; roles & permissions; real accounts; CORS; publish-webhook; Media-Library upload limits (audit M-3/M-4) | R&A / Strapi admin (guides ship in repo) |
 | Email | Mailgun domain + credentials into Netlify env | R&A + dev |
-| Staging | Second Netlify site; **staging-host override (§5.4-8)** decided/implemented; full runbook §2 checklist with real accounts; **CSP verified on a deploy preview** | Dev |
+| Staging | Second Netlify site; **staging-host override (§5.4-8)** ✅ done in v0.8.1 (env-only, CI-guarded); full runbook §2 checklist with real accounts; **CSP verified on a deploy preview** | Dev |
 | Operations | Error monitoring + uptime alerts (§5.4-7) wired to the staging site first | Dev |
 
 **Exit criteria:** every line of runbook §2 checked off on staging; monitoring alerting to a real inbox; decisions in §8 recorded.
@@ -215,7 +215,7 @@ Playwright end-to-end suite in CI against deploy previews; annotation RBAC tight
 |---|---|---|---|
 | Approval slips past August | Medium | Low | Demo keeps running at zero cost/risk; phases slide intact |
 | Strapi-side misconfiguration (CORS, roles) stalls cutover day | Medium | Medium | All setup front-loaded to Phase 1 with in-repo guides; symptoms pre-documented (e.g. CORS ⇒ console errors, not 401s) |
-| Staging rehearsal touches production data | Medium today | Medium | §5.4-8 host override; until then, runbook's throwaway-content hygiene |
+| Staging rehearsal touches production data | ~~Medium~~ Low since v0.8.1 | Medium | §5.4-8 host override — verified + CI-guarded (runbook §2); throwaway-content hygiene remains the fallback if staging deliberately targets production |
 | Author loses in-progress work post-launch | Medium | High (trust) | §5.3-4 autosave/guard, scheduled before launch |
 | Single-maintainer concentration | — | Medium | Already strong docs; CI (§5.2-1) + push discipline (§5.1) remove the last single-machine failure modes |
 | Email deliverability not ready (Mailgun domain verification lead time) | Low | Low | Start Mailgun setup at Phase 1 open, not cutover week |
@@ -245,7 +245,7 @@ This is a healthy project in an unusually verifiable state: the demo anyone can 
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.1** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

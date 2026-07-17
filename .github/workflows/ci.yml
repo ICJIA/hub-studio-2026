@@ -43,6 +43,28 @@ jobs:
       - run: npm ci
       # Real production build (Nitro server routes included; demo flag absent).
       - run: npm run build
+      # Staging-host override guard (runbook §2). The production preset (node-server)
+      # resolves runtimeConfig.public at SERVER RUNTIME, not build time — so the guard
+      # starts the built server with a sentinel NUXT_PUBLIC_STRAPI_BASE_URL and asserts
+      # the SERVED page carries the override and not the hardcoded host. A staging
+      # rehearsal that silently talks to production Strapi is the sharpest edge in the
+      # launch plan — this is its tripwire. (Static literals only — no untrusted input.)
+      - name: Staging-host override guard (runtime env must reach the served page)
+        run: |
+          PORT=3199 NUXT_PUBLIC_STRAPI_BASE_URL='https://ci-staging-override-guard.invalid' node .output/server/index.mjs &
+          SERVER_PID=$!
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3199/ > /tmp/override-guard-page.html; then ok=1; break; fi
+            sleep 1
+          done
+          kill "$SERVER_PID" 2>/dev/null || true
+          [ "$ok" = "1" ] || { echo "::error::built server did not respond"; exit 1; }
+          grep -q "ci-staging-override-guard.invalid" /tmp/override-guard-page.html \
+            || { echo "::error::NUXT_PUBLIC_STRAPI_BASE_URL override did not reach the served page"; exit 1; }
+          if grep -q "v2.hub.icjia-api.cloud" /tmp/override-guard-page.html; then
+            echo "::error::hardcoded Strapi host served despite the override"; exit 1
+          fi
       # ── LAUNCH GATE (enable at cutover, runbook §4) ─────────────────────────────────
       # Pre-launch, the dev/demo bypass deliberately ships-but-unreachable in a production
       # bundle (runbook §0), so this step would fail today BY DESIGN. Uncomment it in the

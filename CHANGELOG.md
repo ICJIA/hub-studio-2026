@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-17
+
+_Fixed / verified_
+
+- **Staging Strapi-host override — verified working and CI-guarded** (analysis-roadmap
+  §5.4-8, the launch plan's sharpest edge). Empirical finding: `NUXT_PUBLIC_STRAPI_BASE_URL`
+  ALREADY overrides the hardcoded backend host — the value flows through
+  `runtimeConfig.public.strapiBaseUrl`, which Nuxt's env mechanism substitutes. WHERE the
+  override applies depends on the build preset (both verified): static/demo output
+  (`npm run generate`) bakes it in at generate time; the production build (`npm run build`,
+  node-server preset) resolves it at **server runtime**, so the variable must be present
+  where the server RUNS — on Netlify that means a UI/CLI-set variable (Functions scope by
+  default); `netlify.toml` `[build.environment]` never reaches Functions. No code change
+  was needed; what shipped is the proof and the guardrails: CI's
+  production-build job now boots the built server with a sentinel override and fails
+  unless the served page carries the sentinel (and doesn't carry the hardcoded host); the
+  runbook's staging section (§2) replaces its "staging writes to the PRODUCTION Strapi
+  unless you edit code" warning with the verified env-override instructions, the paired
+  CSP `connect-src` step, and an env-scope troubleshooting note; `studio.config.ts` and
+  `.env.example` document the per-preset mechanism.
+
 ## [0.8.0] - 2026-07-17
 
 _Added_

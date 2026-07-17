@@ -10,10 +10,22 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-16 · Current version: v0.8.0_
+_Last updated: 2026-07-17 · Current version: v0.8.1_
 
 ## Done (recent)
 
+- **Staging Strapi-host override — verified and guarded** (v0.8.1, 2026-07-17) — the
+  sharpest edge in the launch plan (a rehearsal that could touch production data,
+  analysis-roadmap §5.4-8) is closed without a code change: `NUXT_PUBLIC_STRAPI_BASE_URL`
+  provably overrides the hardcoded host via Nuxt's runtime-config mechanism — baked into
+  static output at generate time, resolved at **server runtime** for the production
+  (`npm run build`) deploy (both paths verified empirically; on Netlify, set it via the
+  UI/CLI — Functions scope by default — since `netlify.toml` vars never reach
+  Functions). CI boots the built production server with a sentinel override
+  and fails unless the served page carries it (and doesn't carry the hardcoded host), so
+  the mechanism can never silently rot; the runbook's staging section replaces its
+  "writes to production unless you edit code" warning with the verified env instructions,
+  the paired CSP `connect-src` step, and an env-scope troubleshooting note.
 - **Edit-conflict detection (save-time check, warn and choose)** (v0.8.0, 2026-07-17) —
   two editors can no longer silently overwrite each other (analysis-roadmap §5.3-5): a
   fields-limited draft-stamp check before every edit-mode save raises a warn-and-choose
@@ -62,18 +74,16 @@ _Last updated: 2026-07-16 · Current version: v0.8.0_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — the staging Strapi-host
-  override, №1 below — begins after v0.8.0._
+- _Nothing in flight at this release. The next queue item — error monitoring, №1 below —
+  begins after v0.8.1._
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
-   can never touch production data (§5.4-8).
-2. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
+1. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
    alerting before authors report breakage (§5.4-7).
-3. **Smalls** — relation-write support (or document the read-only limitation), merge the
+2. **Smalls** — relation-write support (or document the read-only limitation), merge the
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)
@@ -125,7 +135,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.1** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

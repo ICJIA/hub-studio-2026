@@ -71,11 +71,29 @@ Do this any time before cutover — it does not affect the running Hub.
 Stand up a second Netlify site (or a branch deploy) so the public demo keeps running
 untouched. Point it at the SAME repo with the production build settings from §3.
 
-> **⚠️ Staging writes to the PRODUCTION Strapi.** `strapiBaseUrl` is hardcoded to
-> `https://v2.hub.icjia-api.cloud` whenever the demo flag is unset (`studio.config.ts`) —
-> there is no separate staging backend unless you temporarily edit that line (and the
-> `connect-src` in `public/_headers`) to point at one. If you validate against production:
-> use clearly-named throwaway drafts (e.g. `ZZZ Staging Test — delete me`), do the
+> **Pointing staging at a separate Strapi — no code edit needed (verified 2026-07-17).**
+> Set **`NUXT_PUBLIC_STRAPI_BASE_URL=https://<staging-strapi-host>`** in the staging site's
+> Netlify **UI** (Site configuration → Environment variables) — NOT in `netlify.toml`'s
+> `[build.environment]` (the §3 pattern): per Netlify's docs, toml variables never reach
+> Functions, and this one must. Nuxt's runtime-config mechanism overrides the hardcoded
+> default — for the production build preset this happens at **server runtime** (the built
+> server reads the variable when it starts, not at build time), so the variable needs
+> Functions/Runtime scope; UI/CLI-set variables have it by default. Empirically confirmed;
+> CI's "Staging-host override guard" boots the built server with a sentinel override and
+> fails unless the served page reflects it. **Two paired steps:** (1) the staging Strapi
+> host must be allowed in the CSP — copy `public/_headers` for the staging deploy and swap
+> the `connect-src` host to match, or the browser will block every API call; (2) the
+> staging Strapi needs the same role/CORS setup as §1.
+>
+> *Troubleshooting:* if the staging site still calls the production host after setting the
+> variable, check WHERE it was set: `netlify.toml` `[build.environment]` structurally never
+> reaches Functions (move it to the UI), and a UI-set variable must include
+> **Functions/Runtime** in its scope, not "Builds" only. The paired CSP swap makes either
+> miss fail loud — the browser blocks calls to the unexpected host — rather than silently
+> writing to production.
+>
+> **If you deliberately validate against the PRODUCTION Strapi instead** (no env override
+> set): use clearly-named throwaway drafts (e.g. `ZZZ Staging Test — delete me`), do the
 > publish/unpublish round-trip on that throwaway only, and delete the test drafts and test
 > annotations afterward.
 

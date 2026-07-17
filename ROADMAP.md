@@ -10,10 +10,18 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-16 · Current version: v0.7.0_
+_Last updated: 2026-07-16 · Current version: v0.8.0_
 
 ## Done (recent)
 
+- **Edit-conflict detection (save-time check, warn and choose)** (v0.8.0, 2026-07-17) —
+  two editors can no longer silently overwrite each other (analysis-roadmap §5.3-5): a
+  fields-limited draft-stamp check before every edit-mode save raises a warn-and-choose
+  banner (**Save anyway** / **Load their version**); Load-theirs snapshots the author's
+  edits first, so the v0.6.0 restore banner hands them back — the two protections now
+  compose into full lost-update coverage, with restore reseeding the stamp so stale
+  restores are caught at the next save. Race-guarded end to end (two reviewer-found
+  Criticals closed with layered RED-proven tests); verified live. 868 tests / 109 files.
 - **Title search on content lists** (v0.7.0, 2026-07-16) — a labeled, debounced search box
   beside the Type filter on all three content types, filtering by title across the whole
   library server-side, identically in live and demo; re-pages to 1; distinct "No matches"
@@ -54,14 +62,8 @@ _Last updated: 2026-07-16 · Current version: v0.7.0_
 
 ## In progress
 
-- **Edit-conflict detection (save-time check, warn and choose)** — complete on the feature
-  branch — all five tasks built test-first with per-task adversarial review; pending the
-  whole-branch review and merge. Next on the launch queue (analysis-roadmap §5.3-5): a
-  fields-limited `updatedAt` read before every edit-mode save catches a colleague's
-  concurrent change (fails open on any check error) and raises a `role="alert"` banner
-  offering **Save anyway** or **Load their version** — the latter snapshots the author's
-  own edits first, so the v0.6.0 restore banner can offer them back afterward. Race-guarded
-  end to end; works identically in the public demo. 867 tests / 109 files on the branch.
+- _Nothing in flight at this release. The next queue item — the staging Strapi-host
+  override, №1 below — begins after v0.8.0._
 
 ## Next (proposed)
 
@@ -123,7 +125,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.7.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

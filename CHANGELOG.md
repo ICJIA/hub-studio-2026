@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 2026-07-16 — edit-conflict detection
+## [0.8.0] - 2026-07-17
 
 _Added_
 
@@ -48,9 +48,10 @@ Built test-first over five reviewed tasks (per-task adversarial review, incl. on
 reviewer-found Critical race closed with layered tests), plus a whole-branch final review
 (a second reviewer-found Critical — the mirror-image Restore/Discard race — closed the same
 way, plus the stamp-reseed, publish-refresh, and doc-truthfulness fixes above). Suite:
-**867 tests / 109 files** (822 + 45 new across the feature and this fix round, +2 new test
-files), typecheck clean. Built on the `edit-conflict` feature branch — pending merge with
-the next release.
+**868 tests / 109 files** (822 + 46 new across the feature and its fix rounds, +2 new test
+files), typecheck clean. Verified live in the running app before merge: clean saves, no
+false conflict after unpublish, and restore-then-save with the reseeded stamp — all
+observed; a genuine two-actor collision is the staging rehearsal's named two-browser step.
 
 ## [0.7.0] - 2026-07-16
 

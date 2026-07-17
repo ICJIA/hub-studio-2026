@@ -619,7 +619,7 @@ listed again in Section 4 with the owner of the remaining step:
 | No-bloated-images rule | Images never stored as embedded text | **Built** |
 | Save gate | Invalid or unsafe content can't be saved | **Built** |
 | Unsaved-work guard (leave warning, 30 s local backup, restore banner) | Authors can't silently lose in-progress work | **Built** (v0.6.0) |
-| Edit-conflict detection (save-time check, warn and choose) | Two editors can no longer silently overwrite each other | **Built** (feature branch; merges with the next release) |
+| Edit-conflict detection (save-time check, warn and choose) | Two editors can no longer silently overwrite each other | **Built** (v0.8.0) |
 | "Preview as published" (TOC, end matter, Print) | Exactly what the public will see | **Built** |
 | Tab-only preview + shareable per-draft link | Editor and preview side by side; reviewers open a draft directly | **Built** |
 | Word-style reviewer comments on drafts | Highlight a passage, comment, reply, resolve — a pure overlay | **Built** (per-browser today; shared storage dormant until R&A installs the type) |
@@ -1068,7 +1068,7 @@ A short digest for managers, newest first — the complete version-by-version re
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
-- **2026-07-16 — Edit-conflict detection built (feature branch, pending merge).** A
+- **2026-07-16 — Edit-conflict detection shipped (v0.8.0).** A
   fields-limited `updatedAt` check now runs before every edit-mode save on all three
   content forms; a genuine conflict raises a `role="alert"` banner — "This draft was
   changed by someone else while you were editing (their save: ⟨time⟩)." — offering
@@ -1082,8 +1082,9 @@ living list of what's in flight and what's next is the
   per-tab, so reproducing a genuine collision is a two-browser staging-rehearsal exercise,
   not a two-demo-tab one). Built test-first over five reviewed tasks with per-task
   adversarial review plus a whole-branch final review (two reviewer-found Critical races
-  closed with layered tests); **867 automated tests / 109 files** on the branch. Pending
-  merge with the next release.
+  closed with layered tests), then verified live in the running app (clean saves,
+  no false conflict after unpublish, restore-then-save with the reseeded stamp).
+  **868 automated tests / 109 files.**
 - **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
   now sits beside the Type filter on every content list — Articles, Apps, and Datasets
   alike — filtering by title, case-insensitive, across the **whole library**, server-side,
@@ -1139,7 +1140,7 @@ the live system yet.*
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.7.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

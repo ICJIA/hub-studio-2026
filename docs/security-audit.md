@@ -50,6 +50,12 @@ continuing the trail from the 2026-07-11 entries below:
   links, buttons, inputs, textareas, selects, or `contenteditable` — Enter keeps its native
   meaning there), plus radiogroup / roving-tabindex / drawer-dialog semantics with no new
   render sinks (attribute bindings only).
+- **Search/AI-exclusion posture re-affirmed (2026-07-17).** An external SEO/AI-readiness
+  scan (MetaPeek) flagged the deny-all `robots.txt` (8 AI bots blocked) and missing
+  `llms.txt`; the user explicitly chose to KEEP the exclusion — the runbook-§3 hardening
+  stands, now with an inline "deliberate scorecard failures — do not fix" note so the
+  finding can't be 'helpfully' reversed later. The scan's legitimate metadata items
+  (canonical, author, JSON-LD, freshness) shipped in 0.8.5 as inert head markup.
 - **`npm audit` (fresh, 2026-07-17):** 0 critical / 0 high / 0 moderate; the 1 known
   **dev-only Low** (esbuild dev-server file-read, Windows) is unchanged since §8.
 - **Suite totals:** **879 tests / 109 files**, typecheck clean (verified 2026-07-17, v0.8.4).

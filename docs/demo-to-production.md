@@ -188,6 +188,17 @@ No Strapi secret is needed in the Studio: users authenticate with their own admi
 both header sets now send `X-Robots-Tag: noindex` and `public/robots.txt` disallows all
 crawling (unit-tested in `tests/unit/security-headers.test.ts`) — no action needed here.
 
+> **Deliberate scorecard "failures" — do not "fix" (re-affirmed 2026-07-17).** SEO / AI-readiness
+> checkers (e.g. MetaPeek) will report two FAILs against this site forever: *"robots.txt blocks
+> AI bots"* and *"no llms.txt."* Both are THIS hardening working as designed — the Studio is an
+> internal tool whose demo is shared by link, not meant to be indexed by search engines or
+> ingested/cited by AI systems. The 2026-07-17 assessment closed every other item (canonical,
+> author, JSON-LD, freshness — inert head metadata for the humans a shared link reaches) and the
+> user explicitly chose to keep the exclusion. Unblocking AI bots or adding an llms.txt is a
+> posture decision, not a metadata fix — if ever wanted, change this section, the deny-all
+> `public/robots.txt`, and the `security-headers.test.ts` guards together, and record it in the
+> security-audit delta log.
+
 ## 4. Cutover day (≈30 minutes once §1–§3 are done)
 
 1. Freeze: no demo pushes to `main` during the window.

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Changed_
+
+- **Search/AI-exclusion posture re-affirmed** (2026-07-17, docs-only): the two remaining
+  MetaPeek AI-readiness FAILs (AI bots blocked in `robots.txt`; no `llms.txt`) are the
+  runbook-§3 hardening working as designed — the user explicitly chose to keep the
+  exclusion. Runbook §3 now carries a "deliberate scorecard failures — do not fix" note,
+  and the audit delta log records the decision. No code or header change.
+
 _Added_
 
 - **Env-sample sync guard.** `.env.example` was missing both keys developers actually set

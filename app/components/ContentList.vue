@@ -97,7 +97,15 @@ const activeType = computed(() =>
 // ALL items before paging, so this always re-pages from 1 too (same reasoning as the type filter).
 const search = ref('')
 
+// Monotonic request-generation guard (MediaLibraryGrid precedent): fetchPage serves THREE
+// reactive triggers (page, type, debounced search), so two calls can be in flight at once — a
+// slow page-2 response settling after a fresher type/search-driven page-1 response must not
+// clobber it. Each call claims the next generation; a settlement (success or failure) only
+// touches state if its generation is still current, so a superseded response is a no-op.
+let generation = 0
+
 async function fetchPage() {
+  const gen = ++generation
   loading.value = true
   try {
     // Sort by the article date so the Date column reads newest-first (true reverse-chronological).
@@ -110,9 +118,10 @@ async function fetchPage() {
       page: page.value,
       pageSize: props.pageSize,
     })
+    if (gen !== generation) return // stale: a newer fetchPage has already superseded this one
     result.value = data as PagedResult<AnyItem>
   } finally {
-    loading.value = false
+    if (gen === generation) loading.value = false
   }
 }
 

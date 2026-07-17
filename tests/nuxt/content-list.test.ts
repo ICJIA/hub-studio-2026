@@ -16,6 +16,14 @@ function makePagedResult<T>(items: T[], total?: number): PagedResult<T> {
   return { items, total: total ?? items.length, page: 1, pageSize: 25, pageCount: 1 }
 }
 
+/** A promise whose resolution is controlled externally — for exercising in-flight request races
+ *  (media-library-grid.test.ts precedent). */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => { resolve = r })
+  return { promise, resolve }
+}
+
 const listPageMock = vi.fn().mockResolvedValue(makePagedResult(DRAFT_ITEMS))
 const listMock = vi.fn().mockResolvedValue(DRAFT_ITEMS)
 
@@ -364,6 +372,45 @@ describe('ContentList — title search', () => {
     const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
     await new Promise((r) => setTimeout(r, 0))
     expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: undefined }))
+    wrapper.unmount()
+  })
+})
+
+describe('ContentList — stale response guard (generation counter)', () => {
+  afterEach(() => {
+    vi.useRealTimers() // safety net, same rationale as the title-search describe above
+  })
+
+  it('a stale page-2 response that resolves AFTER a fresher search response does not clobber it', async () => {
+    listPageMock.mockResolvedValue({ items: DRAFT_ITEMS, total: 75, page: 1, pageSize: 25, pageCount: 3 })
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+
+    // Pager on 2, request in flight but deliberately held open (not yet resolved).
+    const slow = deferred<PagedResult<typeof DRAFT_ITEMS[number]>>()
+    listPageMock.mockReturnValueOnce(slow.promise)
+    const nextBtn = wrapper.findAll('button').find((b) => b.text() === 'Next')!
+    await nextBtn.trigger('click')
+
+    // A fresh, debounced search fires and its response resolves BEFORE the stale page-2 one.
+    listPageMock.mockResolvedValueOnce(makePagedResult([PUBLISHED_ITEM]))
+    vi.useFakeTimers()
+    await wrapper.find('#content-list-search').setValue('gavel')
+    await vi.advanceTimersByTimeAsync(300)
+    vi.useRealTimers()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.text()).toContain('Published Article')
+
+    // Now the stale page-2 response finally resolves — it must be ignored entirely, not
+    // overwrite the fresher search result that already rendered.
+    slow.resolve({
+      items: [{ ...DRAFT_ITEMS[0]!, documentId: 'stale-1', title: 'Stale Page Two Item' }],
+      total: 75, page: 2, pageSize: 25, pageCount: 3,
+    })
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.text()).toContain('Published Article')
+    expect(wrapper.text()).not.toContain('Stale Page Two Item')
     wrapper.unmount()
   })
 })

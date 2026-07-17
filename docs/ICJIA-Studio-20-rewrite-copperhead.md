@@ -1068,6 +1068,16 @@ A short digest for managers, newest first — the complete version-by-version re
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-17 — Accessibility riders shipped; social card added (v0.8.4).** The four
+  screen-reader/keyboard refinements from the annotations review are in: the highlight
+  color swatches are a true radio group, the reviewer toolbar is a single Tab stop with
+  arrow-key movement, the phone-size comments drawer behaves as a proper dialog (focus
+  moves in, Escape closes and puts focus back), and starting a comment from the keyboard
+  (select text, press Enter) now works reliably — and never hijacks Enter on links,
+  buttons, or reply boxes. The repository and app also gained a dark social-preview
+  card (the image shown when a Studio link is shared), and the security audit's
+  between-passes delta log was brought current with a fresh dependency-vulnerability
+  re-check (still 0 critical / high / moderate).
 - **2026-07-16 — Edit-conflict detection shipped (v0.8.0).** A
   fields-limited `updatedAt` check now runs before every edit-mode save on all three
   content forms; a genuine conflict raises a `role="alert"` banner — "This draft was
@@ -1084,7 +1094,7 @@ living list of what's in flight and what's next is the
   adversarial review plus a whole-branch final review (two reviewer-found Critical races
   closed with layered tests), then verified live in the running app (clean saves,
   no false conflict after unpublish, restore-then-save with the reseeded stamp).
-  **868 automated tests / 109 files.**
+  **879 automated tests / 109 files.**
 - **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
   now sits beside the Type filter on every content list — Articles, Apps, and Datasets
   alike — filtering by title, case-insensitive, across the **whole library**, server-side,
@@ -1140,7 +1150,7 @@ the live system yet.*
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.3** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.4** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-07-17
+
+_Added_
+
+- **Annotation accessibility riders — all four shipped** (analysis-roadmap §5.4-10, the
+  scheduled ROADMAP Next №1), test-first with RED-verified failures per rider:
+  - **Color-swatch radiogroup.** The highlight-color swatches are a true radio group
+    (`role="radiogroup"` / `role="radio"` + `aria-checked`) instead of pressed buttons —
+    screen readers now announce "3 of 4, checked" style context.
+  - **Roving toolbar tabindex** (ARIA APG toolbar pattern). The reviewer bar is ONE Tab
+    stop: ←/→ move through Clean view → Highlight → the four swatches → filter → comments
+    toggle (wrapping), Home/End jump, focus hands the stop over, and collapsing to Clean
+    view can never strand the stop on a hidden control. Radios are arrowed *past* and
+    picked with Enter/Space — traversal alone never changes the armed tint.
+  - **Drawer dialog semantics.** The phone-size comments drawer is a labelled modal
+    (`role="dialog"`, `aria-modal`): focus hops to its Close button on open, Tab wraps
+    inside (the composer's minimal-trap pattern), Escape closes it (stopPropagation — the
+    editor's preview modal stays open) and focus returns to the opener. Keyed off the
+    same `lg` breakpoint that CSS-hides it, so a desktop rail open never moves focus.
+  - **Document-level keyboard-create listener, hard-scoped.** Armed Enter-to-comment now
+    listens on `document` — it previously could not fire at all in the standalone
+    preview: keyboard selections leave focus on `<body>` or the arm button, and neither
+    lives inside the wrapper the old listener was bound to. Scoping guards: armed only,
+    composer closed, never from interactive/editable targets (`a[href]`, `button`,
+    `input`, `textarea`, `select`, `contenteditable` — Enter keeps its native meaning
+    there; the same guard now also fixes an over-capture where Enter on a focused
+    in-article link opened the composer instead of following the link), never from
+    inside the wrapper (whose handler keeps mark-activation precedence), and
+    out-of-article selections stay inert via the existing `captureAnchor` guard.
+- **Dark social card (og:image) with the official ICJIA wordmark.** A hand-built
+  1200×630 SVG (`public/og-image.svg` — dark slate, the app's blue, a document with a
+  highlighted passage + its review comment, the Draft → Review → Publish pipeline, and
+  the **official ICJIA logo** inlined as white vector paths in the header lockup)
+  rendered to `public/og-image.png` at 2× (`rsvg-convert`; regen recipe in the SVG
+  header), shown atop the README and wired as `og:*`/`twitter:*` meta in
+  `nuxt.config.ts`. Absolute URLs come from Netlify's build-time `URL` env — every
+  deploy stamps its own host, zero new config; the meta is inert markup over a
+  same-origin asset (no CSP change, demo third-party posture intact).
+
+_Changed_
+
+- **Security-audit delta log brought current** (`docs/security-audit.md`): a new
+  2026-07-17 block records the security-relevant deltas of 0.4.0 → 0.8.4 — the
+  media-library picker surface (flagged for the next adversarial pass), the unsaved-work
+  localStorage guard, the 0.7.0 live-filter wire-format fix, the CI-guarded staging-host
+  override, the relation write-safety posture, dependency currency (dompurify 3.4.12),
+  and a **fresh `npm audit`** (0 critical / 0 high / 0 moderate; the 1 dev-only Low —
+  esbuild, Windows — unchanged). README's audit section now points at the delta log.
+- **Docs freshness pass:** ROADMAP reconciled (riders moved to Done; Dependabot majors
+  promoted to Next №1; a fifth audit pass queued as №2), analysis-roadmap §5.4-10 marked
+  Done with actuals, spec digest updated, all four manager-doc nav stamps at v0.8.4,
+  suite counts refreshed (historical release counts left as recorded).
+
+Suite: **879 tests / 109 files** (868 + 11 new: 4 toolbar roving-tabindex — plus the
+existing swatch test converted to radio semantics — 3 drawer dialog, 2 keyboard-create
+RED drivers, 2 scoping pins), typecheck clean.
+
 ## [0.8.3] - 2026-07-17
 
 _The "smalls" release (analysis-roadmap §5 closeout) — decisions, docs, and dependency
@@ -461,5 +518,5 @@ _Build / dependencies_
 - Pre-launch: remaining work is Strapi/email configuration (Research & Analysis), a deploy-preview CSP check, and removing the dev bypass — not new construction.
 - Backend (Strapi 5) is managed separately and must not be modified without coordination.
 
-[Unreleased]: https://github.com/icjia/hub-studio-2026/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/icjia/hub-studio-2026/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ICJIA/copperhead-studio-20/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ICJIA/copperhead-studio-20/releases/tag/v0.1.0

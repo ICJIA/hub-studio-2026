@@ -206,6 +206,10 @@ function tryOpenComposerFromSelection() {
   composer.value = { anchor: res.anchor, position: { x: rect.left, y: rect.bottom + 8 } }
 }
 
+/** Interactive/editable targets never yield Enter to the create path — Enter there keeps
+ *  its native meaning (follow the focused link, send the reply, toggle the button). */
+const CREATE_ENTER_SKIP = 'a[href], button, input, textarea, select, [contenteditable=""], [contenteditable="true"]'
+
 /** Enter/Space activates a painted mark (existing path — checked first, takes precedence).
  *  Otherwise, with the highlighter armed and a live text selection, Enter alone opens the
  *  composer: the keyboard-only path to start a comment (WCAG 2.1.1 — selection-to-comment
@@ -217,6 +221,28 @@ function onContainerKeydown(e: KeyboardEvent) {
     return
   }
   if (!armed.value || e.key !== 'Enter' || composer.value) return
+  if ((e.target as HTMLElement).closest?.(CREATE_ENTER_SKIP)) return // e.g. a link in the article
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
+  e.preventDefault()
+  tryOpenComposerFromSelection()
+}
+
+/** The document-level keyboard-create listener (a11y rider, 2026-07-17). Keyboard
+ *  selections leave focus OUTSIDE the preview wrapper — on <body> under caret browsing,
+ *  or on the arm button just toggled — so a wrapper-scoped listener never hears the
+ *  Enter that should open the composer. Listen at document level instead, hard-scoped:
+ *  armed only, composer closed, never from interactive/editable targets (CREATE_ENTER_SKIP),
+ *  never from inside the wrapper (onContainerKeydown owns those — marks take precedence
+ *  there), and captureAnchor already ignores selections outside the article ('outside'
+ *  fails silently), so a selection made in the rail can't create anything. */
+function onDocumentKeydown(e: KeyboardEvent) {
+  if (!armed.value || e.key !== 'Enter' || composer.value) return
+  const t = e.target
+  if (t instanceof Element) {
+    if (previewWrap.value?.contains(t)) return
+    if (t.closest(CREATE_ENTER_SKIP)) return
+  }
   const sel = window.getSelection()
   if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
   e.preventDefault()
@@ -236,6 +262,44 @@ function cancelComposer() {
   const el = composerReturnFocus.value
   if (el instanceof HTMLElement) el.focus({ preventScroll: true })
   composerReturnFocus.value = null
+}
+
+// ---- Mobile drawer dialog semantics (a11y rider, 2026-07-17) ----
+/** The drawer element renders whenever the rail is open (CSS hides it on lg), so "is the
+ *  drawer the thing the user actually sees?" can't be read off the DOM — a fixed-position
+ *  element has no offsetParent, and the test DOMs report zero rects. Key off the same
+ *  breakpoint that hides it instead: Tailwind `lg` = 64rem = 1024px. */
+const drawerEl = ref<HTMLElement | null>(null)
+/** Focus target remembered at open — restored on close. Only set when the drawer is the
+ *  visible surface (mobile): a desktop rail open must never move focus. */
+const drawerReturnFocus = ref<Element | null>(null)
+const drawerShowing = computed(() => railOpen.value && !cleanView.value)
+function drawerApplies(): boolean {
+  try { return !window.matchMedia('(min-width: 1024px)').matches } catch { return false }
+}
+watch(drawerShowing, async (open) => {
+  if (open) {
+    if (!drawerApplies()) return
+    drawerReturnFocus.value = document.activeElement
+    await nextTick() // the drawer is v-if — it exists one tick after the flag flips
+    drawerEl.value?.querySelector<HTMLElement>('[data-test="ann-drawer-close"]')?.focus()
+  } else {
+    const el = drawerReturnFocus.value
+    drawerReturnFocus.value = null
+    if (el instanceof HTMLElement && el.isConnected) el.focus({ preventScroll: true })
+  }
+})
+/** Escape closes (stopPropagation: inside the editor's Live-preview modal the same Escape
+ *  must not ALSO dismiss the modal — composer precedent); Tab wraps within the dialog
+ *  (the composer's minimal-trap pattern). */
+function onDrawerKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { e.stopPropagation(); railOpen.value = false; return }
+  if (e.key !== 'Tab') return
+  const focusables = Array.from(drawerEl.value?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, textarea, select') ?? [])
+  if (focusables.length === 0) return
+  const first = focusables[0]!, last = focusables[focusables.length - 1]!
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
 }
 
 /** Screen-reader announcements for actions with no visible focus change (spec §6). */
@@ -328,6 +392,7 @@ onMounted(async () => {
   color.value = initialColor()
   window.addEventListener('storage', onStorage)
   window.addEventListener('resize', onContentReflow)
+  document.addEventListener('keydown', onDocumentKeydown)
   if (typeof ResizeObserver !== 'undefined' && previewWrap.value) {
     contentResizeObserver = new ResizeObserver(onContentReflow)
     contentResizeObserver.observe(previewWrap.value)
@@ -341,6 +406,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('storage', onStorage)
   window.removeEventListener('resize', onContentReflow)
+  document.removeEventListener('keydown', onDocumentKeydown)
   contentResizeObserver?.disconnect()
   if (reflowRaf) cancelAnimationFrame(reflowRaf)
   if (alignPoll) clearInterval(alignPoll)
@@ -393,10 +459,21 @@ onBeforeUnmount(() => {
       </aside>
     </div>
 
-    <!-- Mobile: the rail as a slide-over drawer (z above the preview modal's overlay). -->
-    <div v-if="railOpen && !cleanView" class="lg:hidden fixed inset-y-0 right-0 z-[60] w-80 max-w-full bg-default border-l border-default shadow-xl overflow-y-auto p-3">
+    <!-- Mobile: the rail as a slide-over drawer (z above the preview modal's overlay).
+         A labelled modal dialog: focus hops in on open, Tab wraps, Escape closes and
+         restores focus (drawerShowing watcher + onDrawerKeydown above). -->
+    <div
+      v-if="railOpen && !cleanView"
+      ref="drawerEl"
+      data-test="ann-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Review comments"
+      class="lg:hidden fixed inset-y-0 right-0 z-[60] w-80 max-w-full bg-default border-l border-default shadow-xl overflow-y-auto p-3"
+      @keydown="onDrawerKeydown"
+    >
       <div class="flex justify-end mb-2">
-        <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close comments" @click="railOpen = false" />
+        <UButton data-test="ann-drawer-close" size="xs" variant="ghost" color="neutral" icon="i-lucide-x" aria-label="Close comments" @click="railOpen = false" />
       </div>
       <AnnotationRail :threads="threads" :filter="filter" :active-id="activeId"
         @reply="onReply" @resolve="onResolve" @remove="onRemove" @jump="jumpToMark" />

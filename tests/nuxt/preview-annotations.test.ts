@@ -18,7 +18,8 @@ import type { ReviewAnnotation } from '~/types/annotations'
 
 const article: Partial<Article> = {
   documentId: 'a1', title: 'Annotated Draft',
-  markdown: 'The quick brown fox jumps over the lazy dog.',
+  // The trailing link exercises the interactive-target scoping of the keyboard-create path.
+  markdown: 'The quick brown fox jumps over the lazy dog. See [details](https://example.com/) here.',
 }
 const findOneMock = vi.fn().mockResolvedValue(article)
 mockNuxtImport('useArticles', () => () => ({ list: vi.fn(), findOne: findOneMock, create: vi.fn(), update: vi.fn(), remove: vi.fn() }))
@@ -301,6 +302,71 @@ describe('preview page — annotations', () => {
     expect(wrapper.find('.ann-arming--yellow').exists()).toBe(false)
     wrapper.unmount()
   })
+  it('mobile drawer is a labelled modal dialog; opening moves focus in, Escape closes and restores it', async () => {
+    // Simulate a mobile viewport: the drawer's focus hop keys off the lg media query.
+    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((q: string) =>
+      ({ matches: false, media: q } as MediaQueryList))
+    try {
+      const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+      await new Promise((r) => setTimeout(r, 0))
+      await new Promise((r) => setTimeout(r, 0))
+      const toggle = wrapper.find('[data-test="ann-rail-toggle"]')
+      ;(toggle.element as HTMLElement).focus()
+      await toggle.trigger('click')
+      await new Promise((r) => setTimeout(r, 0))
+      const drawer = wrapper.find('[data-test="ann-drawer"]')
+      expect(drawer.exists()).toBe(true)
+      expect(drawer.attributes('role')).toBe('dialog')
+      expect(drawer.attributes('aria-modal')).toBe('true')
+      expect(drawer.attributes('aria-label')).toBe('Review comments')
+      // Focus hopped to the drawer's close button (modal open behavior).
+      expect(document.activeElement?.getAttribute('data-test')).toBe('ann-drawer-close')
+      // Escape closes the drawer and hands focus back to the opener.
+      await drawer.trigger('keydown', { key: 'Escape' })
+      await new Promise((r) => setTimeout(r, 0))
+      expect(wrapper.find('[data-test="ann-drawer"]').exists()).toBe(false)
+      expect(document.activeElement).toBe(toggle.element)
+      wrapper.unmount()
+    } finally { mm.mockRestore() }
+  })
+  it('mobile drawer Tab wraps within the dialog (minimal focus trap)', async () => {
+    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((q: string) =>
+      ({ matches: false, media: q } as MediaQueryList))
+    try {
+      const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+      await new Promise((r) => setTimeout(r, 0))
+      await new Promise((r) => setTimeout(r, 0))
+      await wrapper.find('[data-test="ann-rail-toggle"]').trigger('click')
+      await new Promise((r) => setTimeout(r, 0))
+      const drawer = wrapper.find('[data-test="ann-drawer"]')
+      const focusables = drawer.element.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, textarea, select')
+      expect(focusables.length).toBeGreaterThan(1)
+      const last = focusables[focusables.length - 1]!
+      last.focus()
+      await wrapper.find('[data-test="ann-drawer"]').trigger('keydown', { key: 'Tab' })
+      expect(document.activeElement?.getAttribute('data-test')).toBe('ann-drawer-close')
+      // Shift+Tab from the first wraps back to the last.
+      await wrapper.find('[data-test="ann-drawer"]').trigger('keydown', { key: 'Tab', shiftKey: true })
+      expect(document.activeElement).toBe(last)
+      wrapper.unmount()
+    } finally { mm.mockRestore() }
+  })
+  it('desktop (lg) viewport: opening the rail never steals focus into the hidden drawer', async () => {
+    const mm = vi.spyOn(window, 'matchMedia').mockImplementation((q: string) =>
+      ({ matches: q.includes('min-width'), media: q } as MediaQueryList))
+    try {
+      const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+      await new Promise((r) => setTimeout(r, 0))
+      await new Promise((r) => setTimeout(r, 0))
+      const toggle = wrapper.find('[data-test="ann-rail-toggle"]')
+      ;(toggle.element as HTMLElement).focus()
+      await toggle.trigger('click')
+      await new Promise((r) => setTimeout(r, 0))
+      expect(wrapper.find('[data-test="ann-drawer"]').exists()).toBe(true) // rendered, css-hidden on lg
+      expect(document.activeElement).toBe(toggle.element) // focus untouched
+      wrapper.unmount()
+    } finally { mm.mockRestore() }
+  })
   it('keyboard-only: Enter with a live selection (armed, target not on a mark) opens the composer', async () => {
     const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
     await new Promise((r) => setTimeout(r, 0))
@@ -312,6 +378,64 @@ describe('preview page — annotations', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.find('.ann-composer').exists()).toBe(true)
     expect(wrapper.text()).toContain('jumps over')
+    wrapper.unmount()
+  })
+  it('keyboard-only: Enter with focus on <body> (where caret-browsing selections leave it) opens the composer', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'jumps over')
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(true)
+    expect(wrapper.text()).toContain('jumps over')
+    wrapper.unmount()
+  })
+  it('scoping: Enter on a focused in-article link is never captured by the create path', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click')
+    const container = wrapper.find('.published-content').element as HTMLElement
+    const link = container.querySelector<HTMLAnchorElement>('a[href]')
+    expect(link).toBeTruthy()
+    selectExact(container, 'jumps over')
+    link!.focus()
+    link!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(false) // Enter follows the link instead
+    wrapper.unmount()
+  })
+  it('scoping: Enter while typing in a rail reply box is never captured by the create path', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.find('[data-test="ann-arm"]').trigger('click') // arms + auto-opens the rail
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'jumps over')
+    const reply = wrapper.find('[data-test="ann-reply-input"]')
+    expect(reply.exists()).toBe(true)
+    ;(reply.element as HTMLInputElement).focus()
+    reply.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(false)
+    wrapper.unmount()
+  })
+  it('scoping: Enter on a toolbar button keeps its native meaning (never opens the composer)', async () => {
+    const wrapper = await mountSuspended(PreviewPage, { attachTo: document.body })
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+    const arm = wrapper.find('[data-test="ann-arm"]')
+    await arm.trigger('click')
+    const container = wrapper.find('.published-content').element as HTMLElement
+    selectExact(container, 'jumps over')
+    ;(arm.element as HTMLElement).focus()
+    arm.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('.ann-composer').exists()).toBe(false)
     wrapper.unmount()
   })
 })

@@ -10,10 +10,26 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.3_
+_Last updated: 2026-07-17 · Current version: v0.8.4_
 
 ## Done (recent)
 
+- **Accessibility riders shipped + social card + audit-trail refresh** (v0.8.4,
+  2026-07-17) — the four screen-reader/keyboard refinements from the annotations review,
+  built test-first as the scheduled Next №1: color swatches are now a real
+  **radiogroup** (`role="radio"`, `aria-checked`); the reviewer toolbar is **one tab
+  stop** with roving tabindex (←/→ move, Home/End jump, per the ARIA APG toolbar
+  pattern); the mobile comments drawer is a labelled **modal dialog** (focus in on open,
+  Tab wraps, Escape closes and restores focus — desktop never affected); and
+  keyboard-create listens at **document level, hard-scoped** — Enter with a live
+  selection now works where keyboard selections actually leave focus (it previously
+  could not fire), while links, buttons, and inputs always keep Enter's native meaning
+  (an over-capture on in-article links is fixed). Also: a dark **social card**
+  (`public/og-image.svg` → PNG) with `og:*`/`twitter:*` meta wired through Netlify's
+  build-time URL — and atop the README; the security-audit **delta log brought current**
+  (2026-07-12 → 17: media-picker surface flagged for the next pass, wire-format fix,
+  staging guard, dompurify currency; fresh `npm audit` re-verified — 0 crit/high/mod).
+  **879 tests / 109 files** (11 new), typecheck clean.
 - **The smalls — §5 closeout: relation posture, a11y riders scheduled, dependency
   currency** (v0.8.3, 2026-07-17) — the last item of the 2026-07-16 priority queue.
   Relation editing stays read-only by decision (runbook §6 records the posture — saves
@@ -92,22 +108,21 @@ _Last updated: 2026-07-17 · Current version: v0.8.3_
 
 ## In progress
 
-- _Nothing in flight at this release. The 2026-07-16 priority queue is complete; the
-  accessibility riders (№1 below) are the next scheduled work._
+- _Nothing in flight at this release. The 2026-07-16 priority queue AND its scheduled
+  rider (the a11y release, v0.8.4) are complete; Dependabot majors (№1 below) are the
+  next scheduled work._
 
 ## Next (proposed)
 
-Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
+Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized;
+№1 of that ordering — the accessibility riders — shipped in v0.8.4):
 
-1. **Accessibility riders** (scheduled 2026-07-17; analysis-roadmap §5.4-10) — the four
-   screen-reader/keyboard refinements from the annotations review, as one small release:
-   color-swatch **radiogroup** semantics; **roving tabindex** on the annotation toolbar;
-   **dialog semantics** on the annotation drawer; scoping the **document-level
-   keyboard-create listener**. The app measures AA-clean today — these are refinements,
-   not fixes.
-2. **Dependabot majors** (as compatibility windows allow): markdown-it-attrs 5 (PR #8
+1. **Dependabot majors** (as compatibility windows allow): markdown-it-attrs 5 (PR #8
    open), pinia 4 + @pinia/nuxt 1, TypeScript 7 — each needs its own compatibility pass;
    minors/patches and CI-action bumps are merged as they arrive.
+2. **Fifth adversarial audit pass** (when the next feature block lands, or pre-launch at
+   the latest) — the delta log flags the media-library picker surface (0.5.0) for it
+   explicitly; everything since §9 is recorded there for the auditor to walk.
 
 ## Deferred (with rationale)
 
@@ -181,7 +196,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.3** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.4** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

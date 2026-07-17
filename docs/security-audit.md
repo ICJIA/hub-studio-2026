@@ -1,8 +1,58 @@
 # Security Audit — ICJIA Research Hub Studio (Red Team / Blue Team)
 
-> **Ordering:** newest audit first. The latest pass is **§9 (2026-07-05)** immediately below;
-> the 2026-06-22 audit (§8), the 2026-06-21 production audit (§1–§6) and demo/public-deploy
-> audit (§7) follow, unchanged.
+> **Ordering:** newest audit first. The latest pass is **§9 (2026-07-05)**, below the
+> post-audit delta log; the 2026-06-22 audit (§8), the 2026-06-21 production audit (§1–§6)
+> and demo/public-deploy audit (§7) follow, unchanged.
+
+---
+
+## Post-audit delta log — 2026-07-17 (maintenance record, NOT an adversarial pass)
+
+Security-relevant changes landed 2026-07-12 → 2026-07-17 (releases 0.4.0 – 0.8.4),
+continuing the trail from the 2026-07-11 entries below:
+
+- **Media-library picker (0.5.0) — the one genuinely new surface since §9.** Library
+  browsing reuses the existing authed Strapi client (reads only); the picker's alt-text
+  write-back (`updateFileInfo`) is the new write path, demo-blocked like every other
+  (in-memory only). Demo desktop adds are session-only `blob:` object URLs with negative
+  ids that `mediaIdForWrite` structurally drops — never persisted, never networked — and
+  the demo CSP `img-src` deliberately gains `blob:`, guard-tested in both directions. The
+  demo's zero-write / zero-third-party promises hold. _Flagged for inclusion in the next
+  adversarial pass._
+- **Unsaved-work guard (0.6.0).** Draft snapshots to per-draft `localStorage` keys — live
+  builds only (the public demo takes none, keeping its "nothing is saved" promise literally
+  true), byte-capped ~1 MB, fail-open on any storage problem. Same same-origin-only
+  exposure class as the §9 F-3 annotation store; restored values flow through the same form
+  model and `html:false` markdown pipeline as typed input — nothing is rendered as HTML.
+- **Live filter wire-format defect fixed pre-merge (0.7.0 — availability class, flagged
+  CRITICAL in the branch review).** Nested `filters` objects were being JSON-stringified on
+  the wire by `ofetch`; Strapi 5 rejects a string `filters`, so every live-mode filtered
+  list call would have errored at launch. Fixed centrally (`flattenFilters()` →
+  bracket-key params) with regression tests. No injection surface — params remain
+  client-composed key paths.
+- **Staging-host override hardened (0.8.1).** The `strapiBaseUrl` override is env-only with
+  a CI guard (a build started with a sentinel host must serve that sentinel), so a staging
+  rehearsal can no longer silently target production; runbook §2 pairs it with the CSP
+  `connect-src` allowlist step.
+- **Relation write-safety documented (0.8.3).** Studio write payloads omit relation fields
+  entirely — Strapi leaves omitted fields untouched — so a Studio save structurally cannot
+  destroy article ↔ app/dataset links (runbook §6 records the posture).
+- **Dependency currency (0.8.3).** 13-update minor/patch group including **dompurify
+  3.4.12** (the XSS-relevant sanitizer stays current), vue 3.5.40, the CodeMirror suite,
+  markdown-it 14.3.0; CI actions bumped to v7. Supply-chain note: Dependabot's own PRs
+  shipped a broken lockfile (missing `commander@13.1.0` — `npm ci` EUSAGE on every job);
+  the lockfile was regenerated locally and the full gate matrix re-run green before merge.
+- **Social card + annotation a11y riders (0.8.4).** `public/og-image.png` plus static
+  `og:*`/`twitter:*` meta — inert markup over a same-origin asset, so no CSP delta and the
+  demo's zero-third-party posture is unchanged (the absolute URL comes from Netlify's
+  build-time `URL` env; no new config surface). The a11y riders add a **document-level**
+  keyboard-create listener, hard-scoped to non-interactive targets (it never fires from
+  links, buttons, inputs, textareas, selects, or `contenteditable` — Enter keeps its native
+  meaning there), plus radiogroup / roving-tabindex / drawer-dialog semantics with no new
+  render sinks (attribute bindings only).
+- **`npm audit` (fresh, 2026-07-17):** 0 critical / 0 high / 0 moderate; the 1 known
+  **dev-only Low** (esbuild dev-server file-read, Windows) is unchanged since §8.
+- **Suite totals:** **879 tests / 109 files**, typecheck clean (verified 2026-07-17, v0.8.4).
 
 ---
 

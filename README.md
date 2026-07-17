@@ -1,5 +1,7 @@
 # ICJIA Research Hub Studio 2026
 
+![ICJIA Research Hub Studio — write in plain language, preview exactly as published, and ship with built-in editorial review. A document with a highlighted passage and its review comment, over the Draft → Review → Publish pipeline.](public/og-image.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > This website is funded through a grant from the Bureau of Justice Statistics, Office of Justice Programs, U.S. Department of Justice. Neither the U.S. Department of Justice nor any of its components operate, control, are responsible for, or necessarily endorse, this website (including, without limitation, its content, technical infrastructure, and policies, and any services or tools provided).
@@ -33,7 +35,7 @@
 - **A proven platform, now modernized:** this is not a new bet. Under **Hub 1.0** (in production since 2019), the Research Hub became the most-read content on ICJIA's public site — about **45–50% of all pageviews** (up to ~66% of visitors). **Hub 2.0** carries that track record forward on a modern web stack and content management system, with a faster, friendlier authoring experience for R&A authors.
 - **Status:** built and working in development — you can click through a complete demo today, **as an Author or an Editor**, with a first-run **guided tour**.
 - **How it works:** authors draft in a plain-English editor with a live "exactly-as-published" preview; a manager (Editor) clicks **Publish**.
-- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **868 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
+- **Security:** independently red/blue-team audited **four** times (production, the public demo, the demo-roles/main-files/tour/dependency surface, and the annotations/preview/card-view surface) — **0 critical issues**; in-repo fixes done and covered by **879 automated tests** ([`docs/security-audit.md`](docs/security-audit.md)).
 - **What's left:** setup on the Strapi / email side (Research &amp; Analysis) and a short launch checklist — not new building.
 
 *That's the whole project in six lines. Everything below is supporting detail — read only what you need.*
@@ -110,7 +112,7 @@ This is a ground-up rebuild of the 2019 [`researchhub-studio`](https://github.co
 
 ## Status: built and working in development (pre-launch)
 
-The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), a debounced **title search** across every content list, whole-library and identical in live and demo, publishing/unpublishing, image handling, **library-first image picking** (every image field opens on the Media Library's newest images, searchable, with upload-from-desktop one tab away; alt-less library picks require alt text and write it back to the shared record — fully functional in the public demo, session-only, never persisted), multiple Main Files, an **unsaved-work guard** against lost drafts (leave-page warning, 30-second local snapshots, and a restore banner — live builds only), **edit-conflict detection** that warns instead of silently overwriting a colleague's concurrent save, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified) — all covered by **868 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
+The core Studio is **built and working** — authoring, the "exactly-as-published" preview (each draft opens in its own tab; the shareable review URL), **Word-style reviewer annotations** (highlight a passage, comment, reply, resolve — with margin-aligned comment cards and a Clean-view toggle), a **visual card view** for content lists (default, with a list toggle), a debounced **title search** across every content list, whole-library and identical in live and demo, publishing/unpublishing, image handling, **library-first image picking** (every image field opens on the Media Library's newest images, searchable, with upload-from-desktop one tab away; alt-less library picks require alt text and write it back to the shared record — fully functional in the public demo, session-only, never persisted), multiple Main Files, an **unsaved-work guard** against lost drafts (leave-page warning, 30-second local snapshots, and a restore banner — live builds only), **edit-conflict detection** that warns instead of silently overwriting a colleague's concurrent save, a role-aware **public demo** (enter as Author or Editor), a first-run **guided tour**, and **WCAG 2.1 AA in both light and dark** (axe-verified — deepened in v0.8.4 with full screen-reader/keyboard semantics on the review tools: radio-group color swatches, a single-Tab-stop toolbar, a true modal comments drawer, and reliable select-then-Enter comment creation) — all covered by **879 automated tests** run in **CI on every push and PR** (`.github/workflows/ci.yml`). The launch path is prepared too: the Strapi annotation adapter ships dormant behind the demo seam, and the demo→production cutover is a written runbook ([`docs/demo-to-production.md`](docs/demo-to-production.md)). It remains in **active development** ahead of launch: requirements are still refined as we go (for example, authentication moved from the public REST API to Strapi's admin **Content-Manager API** once we confirmed how the publish roles work), and the Strapi / email setup plus the runbook's checklist remain. The full design and the security review live here:
 
 - 📄 [**Design &amp; Implementation Spec**](docs/ICJIA-Studio-20-rewrite-copperhead.md) ([Word version](docs/ICJIA-Studio-20-rewrite-copperhead.docx)) — plain-English for managers **and** technical detail for developers; opens with a 30-second TL;DR.
 - 🔒 [**Security audit**](docs/security-audit.md) — independent red/blue team review (running log below).
@@ -141,6 +143,8 @@ A running log of red / blue team security audits. The **latest** summary is show
 | F-5..F-7 — adapter demo double-lock, XSS sweep, excerpt ReDoS review | — | Blue-team credit | ✅ Verified |
 
 Full detail in [`docs/security-audit.md`](docs/security-audit.md) §9. Verification: **647 tests + typecheck (0) + axe-core 0 violations (light and dark)**; measured contrast table in §9.3.
+
+**Between passes,** every security-relevant change is recorded in the report's **post-audit delta log** (newest entry 2026-07-17: the media-library picker surface — flagged for the next adversarial pass — the unsaved-work localStorage guard, the pre-merge live-filter wire-format fix, the CI-guarded staging-host override, dependency currency incl. dompurify 3.4.12, and the social-card meta). A fresh `npm audit` on 2026-07-17 reconfirms **0 critical / 0 high / 0 moderate** (1 known dev-only Low, esbuild on Windows, unchanged).
 
 <details>
 <summary><strong>Previous audits</strong></summary>
@@ -440,7 +444,7 @@ A first-run, skippable walkthrough on the dashboard (`app/composables/useGuidedT
 
 **Runner:** Vitest `^4.1.9` with `@nuxt/test-utils ^4.0.3` and `happy-dom ^20.10.6`.
 
-**Current totals:** **868 tests** across **109 test files** (73 unit + 36 Nuxt component).
+**Current totals:** **879 tests** across **109 test files** (73 unit + 36 Nuxt component).
 
 **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every PR: typecheck + the full suite, a production `nuxt build`, and the public-demo `nuxt generate` with the **dev-bypass bundle-guard positive control** (`scripts/check-dev-bypass.mjs` — proves the sentinel scan detects the token). The production-bundle *absence* check is a commented **launch gate**: enable it in the same PR that deletes `app/lib/dev-auth.ts` (see the runbook §6 note).
 
@@ -460,7 +464,7 @@ tests/
 **Commands:**
 
 ```bash
-npm test            # run all 868 tests once (vitest run)
+npm test            # run all 879 tests once (vitest run)
 npm run test:watch  # watch mode (vitest)
 npm run typecheck   # vue-tsc type-check
 ```
@@ -549,7 +553,7 @@ NUXT_PUBLIC_DEMO_MODE=true npm run generate   # static demo build → .output/pu
 ```
 
 ```bash
-npm test          # run 868 tests
+npm test          # run 879 tests
 npm run typecheck # TypeScript type-check
 npm run build     # production build
 ```
@@ -642,7 +646,7 @@ docs/
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.3** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.4** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

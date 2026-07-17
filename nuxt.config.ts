@@ -4,6 +4,12 @@
 import studioConfig from './studio.config'
 import pkg from './package.json'
 
+// Absolute base for social-card (og:*) URLs. Netlify exports the site's primary URL as `URL`
+// during builds, so every deploy (demo, staging, production) stamps its own absolute og:image
+// with zero per-site config; local builds fall back to a relative path (harmless — crawlers
+// only ever see deployed HTML).
+const siteUrl = (process.env.URL ?? '').replace(/\/+$/, '')
+
 export default defineNuxtConfig({
   ssr: false,
   modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt', '@nuxt/fonts'],
@@ -94,6 +100,22 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'en' },
       title: 'ICJIA Research Hub Studio',
+      // SEO / social cards. The og:image ships in public/ (source: public/og-image.svg —
+      // regen recipe in the SVG header comment). Meta tags are inert markup: no CSP impact,
+      // and the image is same-origin, so the demo's zero-third-party-requests posture holds.
+      meta: [
+        { name: 'description', content: 'The ICJIA Research Hub authoring studio — write in plain language, preview exactly as published, and ship with built-in editorial review.' },
+        { property: 'og:site_name', content: 'ICJIA Research Hub Studio' },
+        { property: 'og:title', content: 'ICJIA Research Hub Studio' },
+        { property: 'og:description', content: 'Write, preview, and publish Research Hub content — with built-in editorial review.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:image', content: `${siteUrl}/og-image.png` },
+        { property: 'og:image:width', content: '2400' },
+        { property: 'og:image:height', content: '1260' },
+        { property: 'og:image:alt', content: 'ICJIA Research Hub Studio — a highlighted passage with its review comment beside a document, over the Draft, Review, Publish pipeline.' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: `${siteUrl}/og-image.png` },
+      ],
     },
   },
   devtools: { enabled: false },

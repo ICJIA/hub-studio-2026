@@ -9,6 +9,12 @@
 // markSaved() is called by the form's successful submit path: clears the snapshot + resets
 // the baseline — the clear-on-save invariant that makes "a snapshot exists" mean "unsaved
 // work exists". Restored content is deliberately left DIRTY so the author saves it normally.
+// snapshotNow() + resetBaseline() are the edit-conflict flow's "Load their version" primitives
+// (called in that order): snapshotNow() force-writes the current model past the dirty gate and
+// refreshes the snapshot ref immediately (no interval wait) right before the model is replaced
+// by the server's copy; resetBaseline() then re-bases dirty tracking to that replaced model
+// WITHOUT touching storage — deliberately NOT markSaved(), which would clear the very snapshot
+// snapshotNow() just preserved.
 import { computed, ref, onMounted, onBeforeUnmount, inject } from '#imports'
 import { matchedRouteKey } from 'vue-router'
 import {
@@ -60,11 +66,46 @@ export function useDraftGuard<T extends object>(opts: {
     snapshot.value = null
   }
 
-  /** Call after a SUCCESSFUL save: nothing left behind, baseline reset. */
+  /**
+   * Call after a SUCCESSFUL save: nothing left behind, baseline reset. Contrast with
+   * resetBaseline(): this one ALSO clears the snapshot — right when the save has durably
+   * persisted everything, so no local backup is needed any more. resetBaseline() re-bases
+   * dirty tracking WITHOUT clearing the snapshot, for the one case where the model changed
+   * but nothing was saved (the conflict flow's "Load their version").
+   */
   function markSaved() {
     baseline.value = JSON.stringify(opts.model)
     clearSnapshot(opts.type, opts.documentId)
     snapshot.value = null
+  }
+
+  /**
+   * Immediate best-effort snapshot of the CURRENT model, regardless of dirty state (demo-gated
+   * exactly like every other snapshot write, by routing through writeSnapshot()). Unlike the
+   * interval writer, this has NO dirty gate: the conflict flow's "Load their version" calls
+   * this the instant before the model is wholesale-replaced by the server's copy, so even a
+   * clean (or seconds-old) model must be captured NOW — waiting for the next interval tick
+   * would lose the race. Also refreshes the in-memory `snapshot` ref from storage so
+   * `restoreAvailable` flips true immediately afterwards, without waiting on that same
+   * interval — the conflict flow renders the restore banner right after calling this.
+   */
+  function snapshotNow() {
+    writeSnapshot()
+    snapshot.value = loadSnapshot<T>(opts.type, opts.documentId)
+  }
+
+  /**
+   * Re-base dirty tracking to the CURRENT model WITHOUT touching storage or the `snapshot`
+   * ref. Call this right after the model has been replaced wholesale from the server (the
+   * conflict flow's "Load their version", after snapshotNow() has already captured the
+   * author's pre-replace edits): dirty flips false against the freshly loaded content, same
+   * as markSaved() — but markSaved() would ALSO clear the snapshot just written by
+   * snapshotNow(), destroying the very edits it was meant to preserve. Use markSaved() for
+   * "this content is now durably saved"; use resetBaseline() for "the model under our feet
+   * changed, but nothing was saved."
+   */
+  function resetBaseline() {
+    baseline.value = JSON.stringify(opts.model)
   }
 
   function onBeforeUnload(event: BeforeUnloadEvent) {
@@ -115,5 +156,7 @@ export function useDraftGuard<T extends object>(opts: {
     })
   }
 
-  return { dirty, restoreAvailable, snapshotSavedAt, restore, discard, markSaved }
+  return {
+    dirty, restoreAvailable, snapshotSavedAt, restore, discard, markSaved, snapshotNow, resetBaseline,
+  }
 }

@@ -169,6 +169,70 @@ describe('useDraftGuard', () => {
     vi.advanceTimersByTime(5000)
     expect(loadSnapshot('article', 'doc1')).toBeNull()
   })
+
+  // snapshotNow()/resetBaseline() are the conflict flow's "Load their version" primitives
+  // (Task 3): snapshotNow() captures the author's edits an instant before the model is
+  // wholesale-replaced by the server's copy; resetBaseline() then re-bases dirty tracking to
+  // that replaced model WITHOUT touching the snapshot snapshotNow() just wrote.
+  describe('snapshotNow', () => {
+    it('live mode: writes immediately (no interval wait) with the current model — regardless of dirty state — flips restoreAvailable true immediately, and a subsequent restore() round-trips the content', async () => {
+      await mountSuspended(probe('doc1'))
+      expect(guard.dirty.value).toBe(false)
+      expect(guard.restoreAvailable.value).toBe(false)
+
+      // Clean model: still snapshots — no dirty gate, unlike the interval writer.
+      guard.snapshotNow()
+      expect(loadSnapshot<{ title: string }>('article', 'doc1')?.model.title).toBe('Original')
+      expect(guard.restoreAvailable.value).toBe(true) // flips true immediately, no interval wait
+      expect(guard.snapshotSavedAt.value).toBe('2026-07-16T14:41:00.000Z')
+
+      // Re-snapshot with freshly edited content, exactly as Load-theirs does right before
+      // replacing the model.
+      model.title = 'Edited before Load-theirs'
+      guard.snapshotNow()
+      const snap = loadSnapshot<{ title: string }>('article', 'doc1')
+      expect(snap!.model.title).toBe('Edited before Load-theirs')
+
+      // Simulate the model being wholesale-replaced by the server's version.
+      model.title = "Someone else's version"
+      guard.restore() // round-trips: applies the SNAPSHOT (author's pre-replace edits)
+      expect(model.title).toBe('Edited before Load-theirs')
+      expect(guard.restoreAvailable.value).toBe(false)
+      expect(loadSnapshot('article', 'doc1')).toBeNull()
+    })
+
+    it('demo mode: writes nothing; restoreAvailable stays false', async () => {
+      demoMode = true
+      await mountSuspended(probe('doc1'))
+      model.title = 'Edited in demo before Load-theirs'
+      guard.snapshotNow()
+      expect(loadSnapshot('article', 'doc1')).toBeNull()
+      expect(guard.restoreAvailable.value).toBe(false)
+    })
+  })
+
+  describe('resetBaseline', () => {
+    it('flips dirty false against the current model; a pre-existing snapshot survives UNTOUCHED (contrast with markSaved, which clears it)', async () => {
+      saveSnapshot('article', 'doc1', { title: 'Pre-existing', markdown: 'x' }, '2026-07-16T09:00:00.000Z')
+      await mountSuspended(probe('doc1'))
+      expect(guard.restoreAvailable.value).toBe(true)
+      model.title = 'Edited'
+      expect(guard.dirty.value).toBe(true)
+
+      guard.resetBaseline()
+
+      expect(guard.dirty.value).toBe(false)
+      // Storage and the snapshot ref are UNTOUCHED — unlike markSaved(), which clears both
+      // (see "markSaved clears the snapshot and resets the baseline" above).
+      expect(loadSnapshot('article', 'doc1')).not.toBeNull()
+      expect(guard.restoreAvailable.value).toBe(true)
+
+      // Dirty tracking is re-based to the model AT resetBaseline() time: further edits are
+      // dirty again relative to the new baseline.
+      model.title = 'Edited again after reset'
+      expect(guard.dirty.value).toBe(true)
+    })
+  })
 })
 
 // `probe()` above is mounted directly (mountSuspended(probe(...))) — deliberately with NO active

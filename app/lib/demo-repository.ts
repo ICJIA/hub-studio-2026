@@ -5,6 +5,14 @@
 // A full page reload re-imports this module → the `stores` Map is recreated → state resets to the
 // seed ("saving disabled" contract — nothing is persisted to cookie/localStorage). NEVER calls
 // $api and NEVER mutates the imported DEMO_* seed arrays.
+//
+// Cross-tab session copy: the Studio's Live preview opens a SEPARATE tab (its own JS context,
+// its own module-level `stores`), so without help it would re-seed and never see this session's
+// saved edits — in live builds both tabs read the same Strapi server, and the demo must simulate
+// that. Every tab exposes its LIVE `stores` map on window; a fresh tab bootstraps a key by
+// structuredClone-copying that key's array from its OPENER Studio tab (all studio-preview links
+// carry rel="opener"). Same-origin only, guarded, and still session-only: close the tabs and
+// it's gone; reload the editor tab and everything reseeds exactly as before.
 import type { Repository, ListOptions, PagedResult } from '~/lib/repository'
 
 let _counter = 0
@@ -14,16 +22,56 @@ let _counter = 0
 // (module re-import). Each value is a deep clone of the seed (so the seed is never mutated).
 const stores = new Map<string, unknown[]>()
 
+declare global {
+  interface Window {
+    /** This demo tab's LIVE session stores — read by tabs it opens (Live preview). */
+    __icjiaStudioDemoStores?: Map<string, unknown[]>
+  }
+}
+
+/** Deep, PLAIN clone for every store boundary. JSON round-trip ON PURPOSE, not structuredClone:
+ *  create()/update() receive the LIVE form model whose nested values are Vue reactive PROXIES,
+ *  and the cross-tab bootstrap reads arrays from ANOTHER realm — structuredClone throws
+ *  DataCloneError on any proxy (browser-verified), while JSON serialization unwraps proxies and
+ *  realms alike. Domain models are JSON-shaped by construction (they round-trip Strapi REST and
+ *  the draft-backup snapshots the same way), so nothing is lost. */
+function plainClone<V>(value: V): V {
+  return JSON.parse(JSON.stringify(value)) as V
+}
+
+/** The opener Studio tab's exposed session stores, when reachable. Duck-typed rather than
+ *  `instanceof Map` (the opener's Map constructor belongs to ANOTHER realm), and try/caught:
+ *  a cross-origin opener throws on property access, and a closed opener yields nothing. */
+function openerSessionStores(): Map<string, unknown[]> | null {
+  try {
+    if (typeof window === 'undefined') return null
+    const maybe = (window.opener as Window | null)?.__icjiaStudioDemoStores
+    return maybe && typeof maybe.get === 'function' && typeof maybe.has === 'function' ? maybe : null
+  } catch {
+    return null
+  }
+}
+
 export function makeDemoRepository<T extends {
   documentId: string
   updatedAt?: string | null
   publishedAt?: string | null
 }>(seed: T[], key: string): Repository<T> {
-  // First call for this key: deep-clone the seed into the shared map (NEVER mutate the seed).
+  // First call for this key: bootstrap the shared map entry — from the OPENER Studio tab's live
+  // session store when there is one (the Live-preview tab picking up this session's saved edits),
+  // else a deep clone of the seed. Both paths clone (NEVER mutate the seed, never share an array
+  // across tabs — a preview-tab mutation must not write back into the editor tab's store).
   // Subsequent calls for the same key reuse the SAME array reference, so mutations made through
   // one composable instance are visible to every other instance for the rest of the session.
   if (!stores.has(key)) {
-    stores.set(key, structuredClone(seed))
+    const opener = openerSessionStores()
+    const fromOpener = opener?.has(key) ? opener.get(key)! : null
+    stores.set(key, plainClone(fromOpener ?? seed))
+  }
+  // Expose the LIVE map for tabs this one opens (session-only; recreated on reload). Client only —
+  // `window` does not exist during unit runs in node and this file is demo-session-only anyway.
+  if (typeof window !== 'undefined') {
+    window.__icjiaStudioDemoStores = stores
   }
   const store = stores.get(key) as T[]
 
@@ -88,7 +136,9 @@ export function makeDemoRepository<T extends {
     async findOne(documentId) {
       const item = store.find((i) => i.documentId === documentId)
       if (!item) throw new Error(`Demo: item not found: ${documentId}`)
-      return { ...item }
+      // Deep-plain copy, not a shallow spread: the edit form wraps this in reactive() — shared
+      // NESTED objects would let live typing silently mutate the "saved" store entry.
+      return plainClone(item)
     },
 
     // Edit-conflict check (see ~/lib/edit-conflict's hasConflict): the store already stamps
@@ -102,18 +152,20 @@ export function makeDemoRepository<T extends {
     async create(model) {
       const id = `demo-new-${++_counter}`
       const now = new Date().toISOString()
-      const item: T = { ...model, documentId: id, updatedAt: now } as T
+      // plainClone: `model` is the LIVE reactive form model — the store must hold a detached,
+      // proxy-free snapshot (see plainClone's doc comment; proxies also break the cross-tab copy).
+      const item: T = plainClone({ ...model, documentId: id, updatedAt: now } as T)
       store.unshift(item)
-      return { ...item }
+      return plainClone(item)
     },
 
     async update(documentId, model) {
       const idx = store.findIndex((i) => i.documentId === documentId)
       if (idx === -1) throw new Error(`Demo: item not found: ${documentId}`)
       const now = new Date().toISOString()
-      const item: T = { ...model, documentId, updatedAt: now } as T
+      const item: T = plainClone({ ...model, documentId, updatedAt: now } as T)
       store[idx] = item
-      return { ...item }
+      return plainClone(item)
     },
 
     async publish(documentId) {

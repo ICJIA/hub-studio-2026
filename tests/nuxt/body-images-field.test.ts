@@ -248,3 +248,28 @@ describe('Add from library', () => {
     expect(wrapper.vm.$.exposed!.__pendingAlt.value).toBe('')
   })
 })
+
+// ── Cursor-line awareness (the "it will land at line N" hint) ───────────────────────────────
+// New authors don't realize the body CURSOR decides where Insert places a figure. The parent
+// form passes the editor's live cursor line; the panel says it out loud, in real time.
+describe('cursor-line awareness', () => {
+  it('shows the live insert-line hint when insertLine is provided', async () => {
+    const wrapper = await mountSuspended(BodyImagesField, { props: { insertLine: 16 } })
+    const hint = wrapper.find('[data-test="insert-line-hint"]')
+    expect(hint.exists()).toBe(true)
+    expect(hint.text()).toMatch(/line 16/)
+  })
+
+  it('updates the hint when the cursor moves (prop change)', async () => {
+    const wrapper = await mountSuspended(BodyImagesField, { props: { insertLine: 3 } })
+    expect(wrapper.find('[data-test="insert-line-hint"]').text()).toMatch(/line 3/)
+    await wrapper.setProps({ insertLine: 42 })
+    expect(wrapper.find('[data-test="insert-line-hint"]').text()).toMatch(/line 42/)
+  })
+
+  it('keeps the generic cursor wording when no insertLine is given', async () => {
+    const wrapper = await mountSuspended(BodyImagesField, {})
+    expect(wrapper.find('[data-test="insert-line-hint"]').exists()).toBe(false)
+    expect(wrapper.text()).toMatch(/at the cursor/)
+  })
+})

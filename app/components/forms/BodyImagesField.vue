@@ -34,6 +34,10 @@ interface TrayImage {
   align: FigureCaptionAlign
 }
 
+// insertLine: the body editor's LIVE 1-based cursor line (null until the parent wires it) —
+// shown in the hint so authors know exactly where Insert will place the figure BEFORE clicking.
+const props = defineProps<{ insertLine?: number | null }>()
+
 const emit = defineEmits<{ insert: [markdown: string] }>()
 
 const { uploadImage, updateInfo } = useMediaLibrary()
@@ -238,7 +242,11 @@ defineExpose({
           </div>
         </div>
       </div>
-      <p class="mt-1 text-xs text-muted">
+      <p v-if="props.insertLine != null" class="mt-1 text-xs text-muted" data-test="insert-line-hint">
+        Upload to add an image, set its alt + caption, then Insert to place it in the body at the
+        cursor — currently <span class="font-medium text-highlighted">line {{ props.insertLine }}</span>.
+      </p>
+      <p v-else class="mt-1 text-xs text-muted">
         Upload to add an image, set its alt + caption, then Insert to place it in the body at the cursor.
       </p>
 

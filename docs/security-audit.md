@@ -8,8 +8,34 @@
 
 ## Post-audit delta log — 2026-07-17 (maintenance record, NOT an adversarial pass)
 
-Security-relevant changes landed 2026-07-12 → 2026-07-17 (releases 0.4.0 – 0.8.4),
+Security-relevant changes landed 2026-07-12 → 2026-07-17 (releases 0.4.0 – 0.8.6),
 continuing the trail from the 2026-07-11 entries below:
+
+- **`safeMediaUrl` — a second, MEDIA-only URL allowlist (0.8.6; severity: none — net
+  hardening with one reviewed relaxation).** MediaRef-derived urls (article splash +
+  main-file downloads, app image, dataset datafile) move from `safeHref` to a dedicated
+  `safeMediaUrl`: `https?://` and root-relative pass as before, **`blob:` now passes**
+  (demo/session uploads must render in previews — the established zero-base64 posture is
+  "blob:, never data:", and the demo CSP `img-src` already allowlists `blob:` from 0.5.0),
+  and every rejection returns `''` so the element is **hidden** rather than rendered as
+  `src="#"` (the old truthy-`'#'` collapse painted a broken image; a hostile-scheme main
+  file now yields NO link at all — regression-tested both ways). Scope is strictly the
+  media pipeline: author-TYPED urls (markdown links/images, app/source links) stay on
+  `safeHref`/markdown-it unchanged, so no author-controlled text gains a new scheme.
+  Mitigation note: a `blob:` url is only mintable by this same-origin session's own JS;
+  it cannot be fabricated from typed content to reference foreign data.
+- **Demo cross-tab session copy (0.8.6; severity: none — demo-only, same-origin,
+  session-only).** Demo tabs expose their in-memory content stores on `window.
+  __icjiaStudioDemoStores` and a freshly-opened Studio tab deep-copies its `window.opener`'s
+  stores at boot, so the Live-preview tab reflects the session's saved edits (parity with
+  live mode's shared server). Exposure assessment: same-origin scripts could already read
+  all of this (it is the bundled public sample content plus the visitor's own session
+  edits); the read is guarded (duck-typed, try/caught — a cross-origin or closed opener
+  falls back to the seed), copies are deep and detached (a preview-tab mutation can never
+  write back), and nothing touches cookies/localStorage — the "resets each session"
+  demo promise is structurally unchanged. Also fixed: the store previously held LIVE
+  reactive references from the form (post-save typing could mutate "saved" entries);
+  every store boundary now deep-plain-clones (JSON round-trip), regression-tested.
 
 - **Media-library picker (0.5.0) — the one genuinely new surface since §9.** Library
   browsing reuses the existing authed Strapi client (reads only); the picker's alt-text

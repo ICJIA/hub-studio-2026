@@ -11,7 +11,7 @@
 import { computed, ref, onMounted, onBeforeUnmount } from '#imports'
 import type { Article } from '~/types/content'
 import { renderArticleBody, renderInline } from '~/lib/markdown'
-import { safeHref } from '~/lib/safe-url'
+import { safeMediaUrl } from '~/lib/safe-url'
 import { pickActiveHeadingId } from '~/lib/toc-scrollspy'
 import { clearAnnotations } from '~/lib/annotations/paint'
 
@@ -39,19 +39,19 @@ function bioLine(a: { title: string; description: string }): string {
   return `${a.title}, ${d}${/[.!?]$/.test(d) ? '' : '.'}`
 }
 
-/** Splash url through the href allowlist (no data:/javascript:); empty when absent. */
-const splashUrl = computed(() => {
-  const u = props.article.splash?.url
-  return u ? safeHref(u) : ''
-})
+/** Splash url through the MEDIA allowlist (blob: allowed for demo/session uploads; data:/
+ *  javascript: reject to '' so the img hides instead of rendering a broken src). */
+const splashUrl = computed(() => safeMediaUrl(props.article.splash?.url))
 const hasTags = computed(() => Boolean(props.article.categories?.length || props.article.tags?.length))
 
 /** Downloadable Main Files (PDFs) for the "Downloads" section under the TOC. Each carries a
- *  safe href (no data:/javascript:) and a display filename; empty list ⇒ section renders nothing. */
+ *  safe MEDIA href (blob: allowed — demo/session uploads; no data:/javascript:) and a display
+ *  filename; entries whose url is rejected drop out; empty list ⇒ section renders nothing. */
 const downloads = computed(() =>
   (props.article.mainfiles ?? [])
     .filter((f) => f && f.url)
-    .map((f) => ({ href: safeHref(f.url), name: f.name?.trim() || f.url })),
+    .map((f) => ({ href: safeMediaUrl(f.url), name: f.name?.trim() || f.url }))
+    .filter((d) => d.href),
 )
 
 function printArticle() {

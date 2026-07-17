@@ -55,7 +55,33 @@ const conflictTheirAt = ref<string | null>(null)
 let bypassConflictOnce = false
 
 // Ref to the body MarkdownField so the sidebar BodyImagesField can insert figures at the cursor.
-const bodyField = ref<{ insertMarkdown: (text: string) => void } | null>(null)
+// insertMarkdown returns the 1-based line the insert began on; cursorLine is the live cursor
+// position (both forwarded from the CodeMirror editor) — they power the sidebar's "lands at
+// line N" awareness for authors who don't yet know the cursor decides the insertion point.
+const bodyField = ref<{ insertMarkdown: (text: string) => number | null; cursorLine: number } | null>(null)
+
+/** Sidebar tray → body editor: place the figure at the cursor and SAY where it landed. */
+function onInsertFigure(markdown: string) {
+  const line = bodyField.value?.insertMarkdown(markdown) ?? null
+  toast.add({
+    title: line ? `Image inserted at line ${line}` : 'Image inserted',
+    description: 'Save the draft to update the Live preview.',
+    color: 'success',
+  })
+}
+
+/** Live-preview click while the form has unsaved changes: the preview page renders the last
+ *  SAVED draft (demo and live alike), so say so — otherwise a manager who picks a splash and
+ *  immediately clicks Live preview reads the stale preview as "my change didn't take". The
+ *  navigation itself proceeds untouched (this never blocks the link). */
+function onPreviewClick() {
+  if (!draftGuard.dirty.value) return
+  toast.add({
+    title: 'Preview shows the last saved draft',
+    description: 'Save the draft to include your newest changes, then preview again.',
+    color: 'warning',
+  })
+}
 
 const authorColumns = [
   { key: 'title', label: 'Name' },
@@ -279,6 +305,7 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
             data-test="live-preview-link"
             size="sm" variant="soft" color="primary" icon="i-lucide-eye" label="Live preview"
             :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
+            @click="onPreviewClick"
           />
           <UButton
             v-else
@@ -318,7 +345,7 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
           <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
           <ChipsField v-model="model.tags" label="Tags" />
           <MediaField v-model="model.splash" label="Splash image" />
-          <BodyImagesField @insert="bodyField?.insertMarkdown($event)" />
+          <BodyImagesField :insert-line="bodyField?.cursorLine ?? null" @insert="onInsertFigure" />
           <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
           <MainFilesField v-model="model.mainfiles" />
           <RelationList label="Linked datasets" :items="model.datasets" />
@@ -337,6 +364,7 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
         v-if="mode === 'edit' && model.documentId"
         variant="soft" color="primary" icon="i-lucide-eye" label="Preview as published"
         :to="`/preview/article/${model.documentId}`" :target="`studio-preview-${model.documentId}`" rel="opener"
+        @click="onPreviewClick"
       />
       <UButton
         v-else

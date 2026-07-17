@@ -162,11 +162,13 @@ describe('PublishedArticlePreview – Downloads (Main Files under the TOC)', () 
     expect(wrapper.findAll('.published-download-link')).toHaveLength(1)
   })
 
-  it('passes the file url through the href allowlist (no javascript:/data:)', async () => {
+  it('drops a main file with a hostile scheme entirely (no javascript:/data: link, not even "#")', async () => {
     const wrapper = await mountSuspended(PublishedArticlePreview, {
       props: { article: { ...article, mainfiles: [pdf('evil.pdf', 'javascript:alert(1)')] } },
     })
-    const link = wrapper.find('.published-download-link')
-    expect(link.attributes('href')).toBe('#') // safeHref collapses the hostile scheme
+    // safeMediaUrl rejects to '' and the downloads computed filters the entry out — the
+    // hostile url yields NO rendered link at all (stricter than the old '#' collapse).
+    expect(wrapper.findAll('.published-download-link')).toHaveLength(0)
+    expect(wrapper.find('[data-test="published-downloads"]').exists()).toBe(false)
   })
 })

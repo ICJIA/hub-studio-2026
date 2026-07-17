@@ -3,12 +3,14 @@
   categories, tags, big Oswald title, byline (date + unit/time-period summary), a rule,
   the description as Georgia serif prose, a Variables table, a Sources list, labelled facts
   for time period and unit, and a "Download data" link when a datafile URL is present.
-  Styled by prose-preview.css. Uses safeHref for every URL; no data: URIs reach the DOM.
+  Styled by prose-preview.css. The MediaRef datafile goes through safeMediaUrl (blob: allowed
+  for demo/session uploads); author-typed source links stay on safeHref. No data: URIs reach
+  the DOM.
 -->
 <script setup lang="ts">
 import { computed } from '#imports'
 import type { Dataset } from '~/types/content'
-import { safeHref } from '~/lib/safe-url'
+import { safeHref, safeMediaUrl } from '~/lib/safe-url'
 
 const props = defineProps<{ dataset: Partial<Dataset> }>()
 
@@ -24,10 +26,7 @@ const bylineSuffix = computed(() => {
   return parts.join(' · ')
 })
 
-const datafileUrl = computed(() => {
-  const u = props.dataset.datafile?.url
-  return u ? safeHref(u) : ''
-})
+const datafileUrl = computed(() => safeMediaUrl(props.dataset.datafile?.url))
 
 const hasTags = computed(() => Boolean(props.dataset.categories?.length || props.dataset.tags?.length))
 const hasSources = computed(() => Boolean(props.dataset.sources?.length))
@@ -101,7 +100,7 @@ const hasVariables = computed(() => Boolean(props.dataset.variables?.length))
         </dl>
       </div>
 
-      <div v-if="datafileUrl && datafileUrl !== '#'" class="published-dataset-download">
+      <div v-if="datafileUrl" class="published-dataset-download">
         <a :href="datafileUrl" target="_blank" rel="noopener noreferrer" class="published-open-link">Download data</a>
       </div>
     </div>

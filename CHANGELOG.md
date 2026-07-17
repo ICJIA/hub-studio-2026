@@ -5,7 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.6] - 2026-07-17
+
+_Added_
+
+- **Image picks and inserts now announce themselves** (user request 2026-07-17: managers
+  trying the demo must SEE that choosing an image worked). Selecting an image in any
+  media field toasts **"«field» selected"** with the file name and the one step between
+  "chose it" and "see it": *save the draft to update the Live preview* (Splash image /
+  App image / Data file — every `MediaField`, library pick and desktop upload alike).
+  Inserting a body figure from the sidebar tray toasts **"Image inserted at line N"** —
+  N being the line the editor actually placed it on.
+
+- **Live cursor-line indicator for body-image inserts.** The Body images panel's hint now
+  ends "…at the cursor — **currently line N**", tracking the body editor's cursor in real
+  time (CodeMirror selection listener → `MarkdownEditor.cursorLine` → the sidebar). New
+  authors otherwise don't realize the cursor decides where Insert lands; now the panel
+  says it before the click and the toast confirms it after.
+
+- **Demo Live preview now shows this session's saved edits** — the demo finally simulates
+  what live mode gets from the shared Strapi server. The preview opens in a separate tab
+  (a fresh JS context whose in-memory store used to re-seed from the bundled sample
+  content, so a saved splash replacement NEVER appeared — reproduced in-browser before
+  the fix). Every demo tab now exposes its live session stores on `window`; a
+  freshly-opened Studio tab bootstraps each store by deep-copying its **opener** tab's
+  (all studio-preview links already carry `rel="opener"`; same-origin, guarded, seed
+  fallback). Still session-only: nothing touches cookies/localStorage, closing the tabs
+  ends it, and a full editor reload resets to seed exactly as before.
+
+- **Unsaved-changes guidance on Live preview.** Clicking Live preview (or "Preview as
+  published") while the form is dirty toasts **"Preview shows the last saved draft —
+  save the draft to include your newest changes, then preview again."** The navigation
+  itself is untouched; the preview's saved-draft semantics (user decision 2026-07-05:
+  save just saves) are unchanged, now just legible.
+
+- **Env-sample sync guard.** `.env.example` was missing both keys developers actually set
+  (`NUXT_PUBLIC_DEMO_MODE`, `STRAPI_API_TOKEN` — names only, values stay in the gitignored
+  `.env`); it now documents all of them with sanitized comments, and a new guard test
+  (`tests/unit/env-example.test.ts`) fails any local run where `.env` gains a key the
+  example doesn't document (CI skips that half — `.env` isn't committed — but still
+  asserts the example exists). Same rules-as-failing-tests philosophy as the docs-nav and
+  security-header guards.
+
+_Fixed_
+
+- **Demo/session `blob:` images collapsed to a BROKEN image in previews.** `safeHref`
+  rejects `blob:` and returns `'#'` — which is truthy, so the published previews rendered
+  `<img src="#">` instead of hiding. New `safeMediaUrl` guards **MediaRef-derived** urls
+  only (article splash + main-file downloads, app image, dataset datafile): `https?://`,
+  root-relative, and `blob:` (the zero-base64 posture is "blob:, never data:") pass;
+  everything else — `data:` included — rejects to `''` so the element hides entirely
+  (stricter than the old `'#'` collapse). Author-typed links stay on `safeHref`
+  unchanged. Verified in-browser: a demo desktop upload now renders as the splash in the
+  Live preview tab (image pixels confirmed loaded).
+
+- **Demo store held live reactive references.** `create`/`update` stored the form's
+  reactive model behind a shallow spread, so nested objects (authors, splash, files)
+  stayed SHARED with the live form — post-save typing silently mutated the "saved" store
+  entry, and the cross-tab copy crashed outright (`structuredClone` throws
+  `DataCloneError` on Vue proxies; caught live in the browser during verification). Every
+  store boundary (`create`, `update`, `findOne`, the cross-tab bootstrap) now deep-plain
+  clones via JSON round-trip — domain models are JSON-shaped by construction. Regression
+  tests cover the proxy copy and all three detachment directions.
 
 _Changed_
 
@@ -15,15 +76,13 @@ _Changed_
   exclusion. Runbook §3 now carries a "deliberate scorecard failures — do not fix" note,
   and the audit delta log records the decision. No code or header change.
 
-_Added_
-
-- **Env-sample sync guard.** `.env.example` was missing both keys developers actually set
-  (`NUXT_PUBLIC_DEMO_MODE`, `STRAPI_API_TOKEN` — names only, values stay in the gitignored
-  `.env`); it now documents all of them with sanitized comments, and a new guard test
-  (`tests/unit/env-example.test.ts`) fails any local run where `.env` gains a key the
-  example doesn't document (CI skips that half — `.env` isn't committed — but still
-  asserts the example exists). Same rules-as-failing-tests philosophy as the docs-nav and
-  security-header guards.
+_Verification_ — **921 tests / 113 files** (34 new, test-first: opener bootstrap ×6,
+plain-clone ×4 — one reproducing the browser-caught `DataCloneError` —, `safeMediaUrl`
+×10, preview media-url rendering ×5, selection/insert/dirty-preview toasts ×5, cursor-line
+seams ×3, plus a hardened hostile-download assertion), suite ×3, typecheck, build, demo
+generate all green; full flow driven live in the demo build (library pick → toast → save →
+Live preview shows the new splash; desktop upload → `blob:` splash renders in preview;
+cursor-line hint tracking line 1→3→39; figure inserted at the hinted line).
 
 ## [0.8.5] - 2026-07-17
 
@@ -579,5 +638,4 @@ _Build / dependencies_
 - Pre-launch: remaining work is Strapi/email configuration (Research & Analysis), a deploy-preview CSP check, and removing the dev bypass — not new construction.
 - Backend (Strapi 5) is managed separately and must not be modified without coordination.
 
-[Unreleased]: https://github.com/ICJIA/copperhead-studio-20/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/ICJIA/copperhead-studio-20/releases/tag/v0.1.0

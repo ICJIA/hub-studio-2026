@@ -1,5 +1,5 @@
 // tests/unit/demo-repository.test.ts
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { makeDemoRepository } from '~/lib/demo-repository'
 import type { Article } from '~/types/content'
 
@@ -225,6 +225,121 @@ describe('makeDemoRepository', () => {
     await articles.publish('test-25')
     // The other store (different key) is unaffected.
     expect((await apps.findOne('test-25')).publishedAt).toBeNull()
+  })
+})
+
+// ── Cross-tab session copy (opener bootstrap) ────────────────────────────────
+// The Live-preview tab is a SEPARATE JS context: without this, its module-level store
+// re-seeds from the bundled demo content and the editor tab's saved changes (splash
+// replacements included) are invisible in the preview. A fresh tab therefore bootstraps
+// its store for a key by COPYING that key's array from the opener Studio tab's exposed
+// session stores (same-origin only; session-only — nothing is persisted anywhere).
+describe('cross-tab session copy (opener bootstrap)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** A window stub whose opener exposes `map` the way a live Studio tab does. */
+  function stubWindowWithOpener(map: Map<string, unknown[]> | null) {
+    vi.stubGlobal('window', { opener: map ? { __icjiaStudioDemoStores: map } : null })
+  }
+
+  it("bootstraps a new tab's store from the opener tab's session store, not the seed", async () => {
+    const openerItem = { ...makeItem(0, true), documentId: 'test-0', title: 'Edited in opener tab' }
+    const openerMap = new Map<string, unknown[]>([['k-opener-copy', [openerItem]]])
+    stubWindowWithOpener(openerMap)
+
+    const repo = makeDemoRepository([...seed], 'k-opener-copy')
+    const item = await repo.findOne('test-0')
+    expect(item.title).toBe('Edited in opener tab') // the opener's state, not the seed's 'Article 0'
+    expect((await repo.listPage({ page: 1, pageSize: 100 })).total).toBe(1) // opener array, whole
+  })
+
+  it('copies a snapshot: mutations in this tab do not leak back into the opener store', async () => {
+    const openerItem = { ...makeItem(0, true), documentId: 'test-0', title: 'Opener title' }
+    const openerArray = [openerItem]
+    const openerMap = new Map<string, unknown[]>([['k-opener-detach', openerArray]])
+    stubWindowWithOpener(openerMap)
+
+    const repo = makeDemoRepository([...seed], 'k-opener-detach')
+    const item = await repo.findOne('test-0')
+    await repo.update('test-0', { ...item, title: 'Changed in preview tab' })
+    expect(openerItem.title).toBe('Opener title') // the opener's own array is untouched
+  })
+
+  it('exposes this tab\'s LIVE stores on window so tabs it opens can copy current state', async () => {
+    vi.stubGlobal('window', { opener: null })
+    const repo = makeDemoRepository([...seed], 'k-expose')
+    const exposed = (window as unknown as { __icjiaStudioDemoStores?: Map<string, unknown[]> })
+      .__icjiaStudioDemoStores
+    expect(exposed?.has('k-expose')).toBe(true)
+    // Live, not a copy: a later mutation through the repo is visible in the exposed array.
+    const item = await repo.findOne('test-3')
+    await repo.update('test-3', { ...item, title: 'Visible to opened tabs' })
+    const arr = exposed!.get('k-expose') as Article[]
+    expect(arr.find((i) => i.documentId === 'test-3')?.title).toBe('Visible to opened tabs')
+  })
+
+  it('falls back to the seed when the opener map lacks the key', async () => {
+    stubWindowWithOpener(new Map([['some-other-key', []]]))
+    const repo = makeDemoRepository([...seed], 'k-opener-misskey')
+    expect((await repo.listPage({ page: 1, pageSize: 100 })).total).toBe(30)
+  })
+
+  it('falls back to the seed when reading the opener throws (cross-origin opener)', async () => {
+    const hostileOpener = new Proxy({}, {
+      get() { throw new DOMException('Blocked a frame from accessing a cross-origin frame.', 'SecurityError') },
+    })
+    vi.stubGlobal('window', { opener: hostileOpener })
+    const repo = makeDemoRepository([...seed], 'k-opener-hostile')
+    expect((await repo.listPage({ page: 1, pageSize: 100 })).total).toBe(30)
+  })
+
+  it('copies an opener store whose entries are reactive PROXIES (structuredClone would throw)', async () => {
+    // The editor tab's store holds the saved form model — in the real app its nested values are
+    // Vue reactive proxies, and window.structuredClone throws DataCloneError on ANY proxy
+    // (browser-verified failure: "Failed to execute 'structuredClone' on 'Window'"). The copy
+    // must deep-PLAIN-clone instead.
+    const proxied = new Proxy({ ...makeItem(0, true), documentId: 'test-0', title: 'Proxied opener entry' }, {})
+    const openerMap = new Map<string, unknown[]>([['k-opener-proxy', [proxied]]])
+    stubWindowWithOpener(openerMap)
+
+    const repo = makeDemoRepository([...seed], 'k-opener-proxy')
+    expect((await repo.findOne('test-0')).title).toBe('Proxied opener entry')
+  })
+})
+
+// ── Store snapshots are deep and PLAIN (no live references into or out of the store) ─────────
+// update()/create() receive the LIVE (reactive) form model; findOne() feeds edit forms. A
+// shallow spread shares every NESTED object with the caller — later form edits would silently
+// mutate the "saved" store entry (and proxies in the store break the cross-tab copy above).
+describe('store snapshots are deep and plain', () => {
+  it('update() detaches nested objects: mutating the saved-from model afterwards does not change the store', async () => {
+    const repo = makeDemoRepository([...seed], 'k-plain-update')
+    const model = await repo.findOne('test-1')
+    model.authors = [{ title: 'Original Author', description: 'bio' }]
+    await repo.update('test-1', model)
+    model.authors[0]!.title = 'Edited AFTER save — must not leak'
+    expect((await repo.findOne('test-1')).authors[0]!.title).toBe('Original Author')
+  })
+
+  it('create() detaches nested objects the same way', async () => {
+    const repo = makeDemoRepository([...seed], 'k-plain-create')
+    const model = makeItem(80, false)
+    model.authors = [{ title: 'Creator', description: 'bio' }]
+    const created = await repo.create(model)
+    model.authors[0]!.title = 'Edited AFTER create — must not leak'
+    expect((await repo.findOne(created.documentId)).authors[0]!.title).toBe('Creator')
+  })
+
+  it('findOne() returns a detached copy: mutating its nested objects does not change the store', async () => {
+    const repo = makeDemoRepository([...seed], 'k-plain-findone')
+    const first = await repo.findOne('test-2')
+    first.authors = [{ title: 'Stored Author', description: 'bio' }]
+    await repo.update('test-2', first)
+    const loaded = await repo.findOne('test-2')
+    loaded.authors[0]!.title = 'Mutated on the loaded copy'
+    expect((await repo.findOne('test-2')).authors[0]!.title).toBe('Stored Author')
   })
 })
 

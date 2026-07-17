@@ -20,6 +20,9 @@ mockNuxtImport('useArticles', () => () => ({
 }))
 // MediaField → MediaPicker → useUpload; stub so mounting the form hits no network.
 mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mockResolvedValue([]), remove: vi.fn() }))
+// Toast spy: the form toasts on save AND on sidebar body-image inserts (line-number feedback).
+const toastAdd = vi.fn()
+mockNuxtImport('useToast', () => () => ({ add: toastAdd }))
 // Toolbar Publish/Unpublish is manager-gated (canPublish). Toggle it per-test; PublishButton is
 // ALSO canPublish-gated internally, so it reads the same mocked composable.
 const canPublish = ref(false)
@@ -496,6 +499,61 @@ describe('edit-conflict save-flow', () => {
 
     expect(getUpdatedAtMock).not.toHaveBeenCalled()
     expect(createMock).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+})
+
+// ── Sidebar body-image insert: line-number toast + the figure actually landing ──────────────
+// The sidebar tray forwards its markdown to the body editor; new authors don't realize the
+// CURSOR decides where it lands, so the form toasts "Image inserted at line N" (N = the line
+// the editor actually inserted at) and the markdown must be in the body model afterwards.
+describe('body-image insert notification', () => {
+  it('toasts the insert line and the figure markdown lands in the body model', async () => {
+    toastAdd.mockClear()
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    await new Promise((r) => setTimeout(r, 0)) // let CodeMirror mount
+
+    const tray = wrapper.findComponent({ name: 'BodyImagesField' })
+    expect(tray.exists()).toBe(true)
+    tray.vm.$emit('insert', '![A chart](/uploads/figure_abc.png)')
+    await new Promise((r) => setTimeout(r, 0))
+
+    const call = toastAdd.mock.calls.find((c) => /Image inserted/.test((c[0] as { title: string }).title))
+    expect(call).toBeTruthy()
+    // Blank article body → the insert begins at line 1, and the toast says so.
+    expect((call![0] as { title: string }).title).toBe('Image inserted at line 1')
+    expect((call![0] as { description?: string }).description).toMatch(/Live preview/)
+    expect(wrapper.vm.$.exposed!.model.markdown).toContain('![A chart](/uploads/figure_abc.png)')
+    wrapper.unmount()
+  })
+})
+
+// ── Live-preview click with unsaved changes: say the preview shows the last SAVED draft ─────
+// The preview tab renders saved state (demo AND live). Without this cue a manager who picks a
+// splash and immediately clicks Live preview reads the stale preview as "my change didn't take".
+describe('live-preview unsaved-changes guidance', () => {
+  const savedArticle = (): Article => ({
+    ...blankArticle(), documentId: 'doc-9', title: 'Saved Title', slug: 'saved-title',
+    date: '2020-01-01', updatedAt: '2026-01-01T00:00:00.000Z',
+  } as Article)
+
+  it('toasts "last saved draft" guidance when clicking Live preview while dirty', async () => {
+    toastAdd.mockClear()
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: savedArticle() } })
+    wrapper.vm.$.exposed!.setField('title', 'Edited but not saved')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('[data-test="live-preview-link"]').trigger('click')
+    const call = toastAdd.mock.calls.find((c) => /last saved draft/i.test((c[0] as { title: string }).title))
+    expect(call).toBeTruthy()
+    expect((call![0] as { description?: string }).description).toMatch(/[Ss]ave the draft/)
+    wrapper.unmount()
+  })
+
+  it('does NOT toast when clicking Live preview on a clean (just-loaded) form', async () => {
+    toastAdd.mockClear()
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: savedArticle() } })
+    await wrapper.find('[data-test="live-preview-link"]').trigger('click')
+    expect(toastAdd.mock.calls.some((c) => /last saved draft/i.test((c[0] as { title: string }).title))).toBe(false)
     wrapper.unmount()
   })
 })

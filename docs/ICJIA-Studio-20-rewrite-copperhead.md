@@ -10,7 +10,7 @@
 | **Part of** | The **Hub 2.0 publishing project** — the modernization of the ICJIA Research Hub (internal program codename: **Copperhead**; this repository: `copperhead-studio-20`, alongside `copperhead-hub-20` for the public site). The codename is internal only — the public never sees it |
 | **This component** | **Hub Studio 2.0** — the internal authoring-and-publishing tool within Hub 2.0 |
 | **Status** | **Feature-complete in the workshop** — the full tool is built and a public demo is clickable at <https://studio-2026.netlify.app>; not yet switched on for real publishing |
-| **Date** | 2026-06-21 · **revised 2026-07-17 (v0.8.5)** — see **What's changed recently**, immediately below, for the dated digest (kept at the top of this document, newest first) |
+| **Date** | 2026-06-21 · **revised 2026-07-17 (v0.8.6)** — see **What's changed recently**, immediately below, for the dated digest (kept at the top of this document, newest first) |
 | **Replaces** | ICJIA Research Hub Studio (built 2019) |
 | **Audience** | Two readers, addressed separately: a **manager** (Sections 1–6) and a **developer** (Section 7) |
 
@@ -18,7 +18,7 @@
 > a researcher will touch — signing in, writing, previewing exactly what will
 > publish, Word-style reviewer comments on drafts, and publishing — exists today,
 > runs on the team's shared, official copy of the project, and is checked by
-> **879 automated tests, all passing**, re-run automatically on every change (CI).
+> **921 automated tests, all passing**, re-run automatically on every change (CI).
 > Anyone can click through the real tool in the **public demo**
 > (<https://studio-2026.netlify.app>) as an Author or an Editor. What is *not* done
 > is the set of setup steps that only ICJIA's own Research & Analysis staff can do
@@ -40,6 +40,21 @@ latest state is the first thing you see — the complete version-by-version reco
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-17 — Choosing an image now visibly works, end to end, in the demo
+  (v0.8.6).** The flow managers will try first — pick a new splash image, save, open the
+  Live preview — now confirms itself at every step: choosing an image pops a
+  notification ("Splash image selected — save the draft to update the Live preview"),
+  inserting a body figure says exactly **which line** it landed on, the Body images
+  panel shows the cursor's line in real time *before* you click Insert ("…at the cursor
+  — currently line 16"), and previewing with unsaved changes explains that the preview
+  shows the last saved draft. Behind it, a real demo bug is fixed: the Live preview
+  opens in its own tab, and in the demo that tab used to rebuild its in-memory sample
+  content from scratch — so a saved image change **never appeared there** (the live
+  version was always fine; both its tabs read the same server). Demo tabs now hand
+  their session's content to the tabs they open — still memory-only, still reset by a
+  reload, nothing stored anywhere. Images you upload from your desktop in the demo now
+  genuinely render in the preview too. **921 automated tests / 113 files** (34 new,
+  written before the code), the full flow driven live in the demo in a real browser.
 - **2026-07-17 — Changelog & Roadmap now readable inside the Studio (v0.8.5).** The
   bottom status bar's Changelog and Roadmap links open in-app pages rendering the
   repository's own records — no GitHub account or repository access needed (the
@@ -1159,7 +1174,7 @@ the live system yet.*
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.5** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.6** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

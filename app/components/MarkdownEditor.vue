@@ -32,6 +32,11 @@ const accept = ALLOWED_IMAGE_EXTENSIONS.map((e) => `.${e}`).join(',')
 const host = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadError = ref<string | null>(null)
+// 1-based line the cursor is on — kept current by the CM update listener (selection AND doc
+// changes). The sidebar BodyImagesField reads this (via MarkdownField → ArticleForm) to show
+// authors WHERE an Insert will land before they click it. CM retains its selection while the
+// author works in the sidebar, so this stays meaningful when the editor is not focused.
+const cursorLine = ref(1)
 // Default to a wide, full-width editor; the Preview button splits in a live preview on demand.
 const showPreview = ref(false)
 // Body linter (full mode only): a cheap O(n) scan over the current source. Reads the prop so the
@@ -108,12 +113,16 @@ function wrapSelection(before: string, after: string) {
   })
   view.focus()
 }
-/** Replace the selection (or insert at the cursor); cursor lands after the text. */
-function insertText(text: string) {
-  if (!view) return
+/** Replace the selection (or insert at the cursor); cursor lands after the text. Returns the
+ *  1-based line the insertion BEGAN on (null before CM mounts) — the sidebar insert toast
+ *  reports it so new authors learn that the cursor decides where content lands. */
+function insertText(text: string): number | null {
+  if (!view) return null
   const { from, to } = view.state.selection.main
+  const line = view.state.doc.lineAt(from).number
   view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } })
   view.focus()
+  return line
 }
 /** Prepend a marker to the start of the cursor's line (lists, blockquote). */
 function prefixLine(prefix: string) {
@@ -164,8 +173,9 @@ function undo() { if (view) cmUndo({ state: view.state, dispatch: view.dispatch 
 function redo() { if (view) cmRedo({ state: view.state, dispatch: view.dispatch }) }
 
 /** Imperative insert at the current selection (the sidebar BodyImagesField calls this to place a
- *  figure into the body). Routes through the same insertText path the toolbar commands use. */
-function insertMarkdown(text: string) { insertText(text) }
+ *  figure into the body). Routes through the same insertText path the toolbar commands use and
+ *  returns the 1-based line the insert began on (null before CM mounts). */
+function insertMarkdown(text: string): number | null { return insertText(text) }
 
 /** The formatting toolbar, grouped (mirrors the ICJIA editor). Headings are a separate
     dropdown (headingItems below) so the toolbar stays compact. */
@@ -223,6 +233,7 @@ onMounted(() => {
   const state = createStudioEditorState({
     doc: props.modelValue,
     onChange: emitChange,
+    onCursorLine: (line) => { cursorLine.value = line },
   })
   view = new EditorView({
     state,
@@ -265,10 +276,12 @@ onBeforeUnmount(() => {
   view = null
 })
 
-// Public imperative API: the sidebar BodyImagesField inserts figures via insertMarkdown.
+// Public imperative API: the sidebar BodyImagesField inserts figures via insertMarkdown (which
+// returns the 1-based insert line); cursorLine is the live cursor position for the sidebar hint.
 // Test seams: route through the SAME functions CM's onChange / handlers use (not divergent logic).
 defineExpose({
   insertMarkdown,
+  cursorLine,
   __emitChange: emitChange,
   __handleFiles: handleFiles,
   __insertMarkdown: insertMarkdown,

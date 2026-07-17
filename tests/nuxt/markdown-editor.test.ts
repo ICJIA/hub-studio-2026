@@ -70,6 +70,19 @@ describe('MarkdownEditor (CM6 shell; the MarkdownField seam)', () => {
     expect(typeof wrapper.vm.$.exposed!.__insertMarkdown).toBe('function')
   })
 
+  it('insertMarkdown returns the 1-based insertion line and cursorLine tracks the cursor', async () => {
+    const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
+    await new Promise((r) => setTimeout(r, 0)) // let onMounted create the EditorView
+    const exposed = wrapper.vm.$.exposed!
+    // Empty doc: the insert begins on line 1 — and that line is what the sidebar toast reports.
+    expect(exposed.insertMarkdown('alpha\nbravo\n')).toBe(1)
+    await new Promise((r) => setTimeout(r, 0))
+    // The cursor landed after the trailing newline → line 3; the reactive seam reports it.
+    expect(exposed.cursorLine.value).toBe(3)
+    // A second insert therefore begins at line 3.
+    expect(exposed.insertMarkdown('charlie')).toBe(3)
+  })
+
   it('no longer renders an in-editor body-image tray (it moved to the sidebar BodyImagesField)', async () => {
     const wrapper = await mountSuspended(MarkdownEditor, { props: { modelValue: '', label: 'Body' } })
     expect(wrapper.find('[data-test="body-image-gallery"]').exists()).toBe(false)

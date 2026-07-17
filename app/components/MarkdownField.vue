@@ -15,19 +15,24 @@ import { ref, computed } from '#imports'
 const props = defineProps<{ modelValue: string; label?: string; compact?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-const editor = ref<{ insertMarkdown: (text: string) => void } | null>(null)
+const editor = ref<{ insertMarkdown: (text: string) => number | null; cursorLine: number } | null>(null)
 
 const value = computed({
   get: () => props.modelValue,
   set: (v: string) => emit('update:modelValue', v),
 })
 
-/** Forward an imperative insert to the underlying editor (used by the sidebar BodyImagesField). */
-function insertMarkdown(text: string) {
-  editor.value?.insertMarkdown(text)
+/** Forward an imperative insert to the underlying editor (used by the sidebar BodyImagesField);
+ *  returns the 1-based line the insert began on (null before the editor mounts). */
+function insertMarkdown(text: string): number | null {
+  return editor.value?.insertMarkdown(text) ?? null
 }
 
-defineExpose({ insertMarkdown })
+/** The editor's live 1-based cursor line (1 before mount) — exposed refs unwrap on the
+ *  child instance, so this computed stays reactive through the template ref. */
+const cursorLine = computed(() => editor.value?.cursorLine ?? 1)
+
+defineExpose({ insertMarkdown, cursorLine })
 </script>
 
 <template>

@@ -27,6 +27,9 @@ mockNuxtImport('useMediaLibrary', () => () => ({
   uploadImage: uploadMock,       // the file's existing image-upload mock
   updateInfo: updateInfoMock,
 }))
+// Selection toast (manager-visible confirmation that the pick landed).
+const toastAdd = vi.fn()
+mockNuxtImport('useToast', () => () => ({ add: toastAdd }))
 
 import MediaField from '~/components/fields/MediaField.vue'
 
@@ -57,6 +60,31 @@ describe('MediaField', () => {
     const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash' } })
     await wrapper.vm.$.exposed!.clear()
     expect(wrapper.emitted('update:modelValue')!.at(-1)![0]).toBeNull()
+  })
+
+  describe('selection notification (a manager-visible confirmation the pick landed)', () => {
+    beforeEach(() => { toastAdd.mockClear() })
+
+    it('toasts "«label» selected" with save-then-preview guidance when a new image is selected', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: null, label: 'Splash image' } })
+      const picker = wrapper.findComponent({ name: 'MediaPicker' })
+      picker.vm.$.exposed!.setFile(new File(['x'], 'splash.png', { type: 'image/png' }))
+      picker.vm.$.exposed!.setAlt('Splash alt')
+      await picker.vm.$.exposed!.submit()
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(toastAdd).toHaveBeenCalledTimes(1)
+      const toast = toastAdd.mock.calls[0]![0] as { title: string; description?: string }
+      expect(toast.title).toBe('Splash image selected')
+      expect(toast.description).toMatch(/[Ss]ave the draft/)
+      expect(toast.description).toMatch(/Live preview/)
+    })
+
+    it('does NOT toast when the selection is removed', async () => {
+      const wrapper = await mountSuspended(MediaField, { props: { modelValue: picked, label: 'Splash image' } })
+      await wrapper.vm.$.exposed!.clear()
+      expect(toastAdd).not.toHaveBeenCalled()
+    })
   })
 
   describe('selected state when modelValue is set', () => {

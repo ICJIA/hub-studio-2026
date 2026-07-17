@@ -2,12 +2,13 @@
   PublishedAppPreview: renders an App as it would appear on the public Research Hub — categories,
   tags, big Oswald title, splash image, byline (contributors + date), a rule, the description as
   Georgia serif prose, and an "Open app" link when a URL is present. Styled by prose-preview.css
-  (the swappable hub stylesheet). Uses safeHref for every URL/image; no data: URIs reach the DOM.
+  (the swappable hub stylesheet). The MediaRef image goes through safeMediaUrl (blob: allowed for
+  demo/session uploads); the author-typed app URL stays on safeHref. No data: URIs reach the DOM.
 -->
 <script setup lang="ts">
 import { computed } from '#imports'
 import type { App } from '~/types/content'
-import { safeHref } from '~/lib/safe-url'
+import { safeHref, safeMediaUrl } from '~/lib/safe-url'
 
 const props = defineProps<{ app: Partial<App> }>()
 
@@ -19,10 +20,7 @@ const bylineLine = computed(() => {
   return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
 })
 
-const imageUrl = computed(() => {
-  const u = props.app.image?.url
-  return u ? safeHref(u) : ''
-})
+const imageUrl = computed(() => safeMediaUrl(props.app.image?.url))
 
 const appUrl = computed(() => (props.app.url ? safeHref(props.app.url) : ''))
 

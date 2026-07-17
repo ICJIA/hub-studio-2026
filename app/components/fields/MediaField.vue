@@ -47,6 +47,7 @@ const altError = computed(() =>
 )
 
 const { updateInfo } = useMediaLibrary()
+const toast = useToast()
 
 // Last-persisted alt/caption for the CURRENT media id — persistInfo only fires on a real change.
 const persistError = ref<string | null>(null)
@@ -121,6 +122,13 @@ function onSelect(mediaRef: MediaRef) {
   emit('update:modelValue', mediaRef)
   pickerOpen.value = false
   altTouched.value = false
+  // Manager-visible confirmation the pick landed (the picker collapsing alone is easy to miss),
+  // plus the ONE step between "chose it" and "see it in the Live preview": saving the draft.
+  toast.add({
+    title: `${props.label} selected`,
+    description: `${mediaRef.name ?? 'File'} — save the draft to update the Live preview.`,
+    color: 'success',
+  })
 }
 function clear() {
   emit('update:modelValue', null)

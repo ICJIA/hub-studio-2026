@@ -15,9 +15,13 @@ export interface StudioEditorOptions {
   onChange: (value: string) => void
   /** Dark vs light CodeMirror theme. Defaults to true (matches the upstream default). */
   isDark?: boolean
+  /** Fired with the 1-based cursor line on every selection/document update — feeds the
+   *  "Insert lands at line N" awareness in the sidebar BodyImagesField. Optional. */
+  onCursorLine?: (line: number) => void
 }
 
 /** Build a per-instance CodeMirror EditorState from the vendored ICJIA config (no singleton). */
 export function createStudioEditorState(opts: StudioEditorOptions): EditorState {
-  return createEditorState(opts.doc, opts.onChange, opts.isDark ?? true)
+  // The vendored 4th arg also passes a second `immediate` flag; our callers only need the line.
+  return createEditorState(opts.doc, opts.onChange, opts.isDark ?? true, opts.onCursorLine)
 }

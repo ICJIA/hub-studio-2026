@@ -10,9 +10,26 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.5_
+_Last updated: 2026-07-17 · Current version: v0.8.6_
 
 ## Done (recent)
+
+- **Demo Live preview shows session edits; image picks/inserts announce themselves**
+  (v0.8.6, 2026-07-17) — the user's manager-demo priority: choose a splash → a toast
+  confirms **"Splash image selected"** (with "save the draft to update the Live
+  preview") → Save → the Live preview tab now really shows it. The demo's preview tab
+  used to re-seed its in-memory store and NEVER reflected session edits (live mode was
+  fine — both tabs read the same Strapi server); demo tabs now bootstrap their store
+  from the opener Studio tab (session-only, seed reset on reload unchanged). Also:
+  body-figure inserts toast **"Image inserted at line N"** and the Body images panel
+  shows the body cursor's line in real time ("…at the cursor — currently line 16"), so
+  new authors learn the cursor decides the insertion point; previewing with unsaved
+  changes toasts that the preview shows the last SAVED draft; demo `blob:` uploads now
+  actually render in previews (new `safeMediaUrl`: blob: passes for media-pipeline urls,
+  hostile schemes hide the element instead of painting a broken `src="#"` image); and a
+  browser-caught store bug is fixed root-cause (the demo store held live reactive
+  references; every boundary now deep-plain-clones, regression-tested). **921 tests /
+  113 files** (34 new, test-first); driven live in the demo end-to-end.
 
 - **In-app Changelog & Roadmap pages; spec digest moved to the top** (v0.8.5,
   2026-07-17) — the bottom status bar's Changelog and Roadmap links no longer point at
@@ -207,7 +224,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.5** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.6** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

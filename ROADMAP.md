@@ -10,9 +10,24 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-17 · Current version: v0.8.6_
+_Last updated: 2026-07-17 · Current version: v0.8.7_
 
 ## Done (recent)
+
+- **One-click image picks + the draft saves itself on edit pages** (v0.8.7, 2026-07-17)
+  — closes the user-reported "the replaced splash still doesn't show in the Live
+  preview": the real blocker (reproduced in-browser) was that a library-tile click only
+  *staged* the pick — the committing "Use this image" button rendered below the fold —
+  and the preview then needed a manual Save on top. Now a tile click on an image with
+  alt text commits immediately (grid collapses, new thumbnail in the field), and on
+  edit pages every **major change** — image/file pick, replace, remove, body-figure
+  insert — **auto-saves the draft** (same validation/conflict-check/"Draft saved" toast
+  as the Save button; create pages stay manual so a pick can't auto-create a
+  half-formed draft; Restore/Load-theirs never auto-persist). The demo's manager
+  teaching flow is now: click an image → toast confirms + draft saves itself → Live
+  preview shows it. Session-only demo semantics unchanged (in-memory, resets on
+  reload). **946 tests / 114 files** (25 new, test-first); driven live in the demo
+  end-to-end, twice, including the preview tab's rendered image.
 
 - **Demo Live preview shows session edits; image picks/inserts announce themselves**
   (v0.8.6, 2026-07-17) — the user's manager-demo priority: choose a splash → a toast
@@ -224,7 +239,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.8.6** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.8.7** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

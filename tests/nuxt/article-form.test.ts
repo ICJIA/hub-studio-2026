@@ -557,3 +557,138 @@ describe('live-preview unsaved-changes guidance', () => {
     wrapper.unmount()
   })
 })
+
+// ── Auto-save on major (media) changes ──────────────────────────────────────────────────────
+// User decision 2026-07-17: picking/replacing/removing an image or file — and inserting a body
+// figure — must save the draft BY ITSELF on edit pages, so the demo's select → saved → Live-
+// preview chain never depends on a manual Save click. Keyed to the media-identity SIGNATURE
+// (ids), so alt/caption typing and body-text edits never trigger it; create mode is excluded
+// (a half-formed draft must not be auto-created). Programmatic model replacement (Restore,
+// Load-theirs) must NOT auto-save — those flows deliberately leave the author in charge.
+describe('auto-save on media changes (edit mode)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    createMock.mockClear(); updateMock.mockClear(); getUpdatedAtMock.mockClear(); findOneMock.mockClear()
+    toastAdd.mockClear()
+  })
+
+  const editInitial = (): Article => ({
+    ...blankArticle(),
+    documentId: 'auto1', title: 'Crime In Illinois', slug: 'crime-in-illinois', date: '2020-01-01',
+    updatedAt: '2026-07-16T09:00:00.000Z',
+  } as Article)
+
+  const librarySplash = {
+    id: -5, url: '/images/demo/picked.jpg', name: 'picked.jpg',
+    alternativeText: 'Picked alt', caption: null, width: 1200, height: 600, mime: 'image/jpeg',
+  }
+
+  it('picking a splash on an edit page saves the draft automatically and toasts "Draft saved"', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+    wrapper.vm.$.exposed!.setField('splash', librarySplash)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect((updateMock.mock.calls[0]![1] as Article).splash?.id).toBe(-5)
+    expect(toastAdd.mock.calls.some((c) => (c[0] as { title: string }).title === 'Draft saved')).toBe(true)
+    expect(wrapper.vm.$.exposed!.draftGuard.dirty.value).toBe(false) // saved ⇒ clean
+    wrapper.unmount()
+  })
+
+  it('REMOVING the splash also auto-saves (a demo id-0 splash cleared to null is a real change)', async () => {
+    const withSplash: Article = { ...editInitial(), splash: { id: 0, url: '/images/demo/seeded.jpg', alternativeText: 'Seeded', caption: null, width: 1200, height: 600, mime: 'image/jpeg' } } as Article
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: withSplash } })
+    wrapper.vm.$.exposed!.setField('splash', null)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect((updateMock.mock.calls[0]![1] as Article).splash).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('create mode NEVER auto-saves (no auto-created half-formed drafts)', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')
+    wrapper.vm.$.exposed!.setField('date', '2020-01-01')
+    wrapper.vm.$.exposed!.setField('splash', librarySplash)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(createMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it("the demo mainfiles seed (display-only id-0 refs) does NOT fire an auto-save on page open", async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+    // MainFilesField's demo seed emits id-0 sample refs into the model on mount — simulate it.
+    wrapper.vm.$.exposed!.setField('mainfiles', [
+      { id: 0, url: '/files/demo/sample-report.pdf', name: 'sample-report.pdf', alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf' },
+      { id: 0, url: '/files/demo/sample-brief.pdf', name: 'sample-brief.pdf', alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf' },
+    ])
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('adding a REAL main file (persistable id) auto-saves', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+    wrapper.vm.$.exposed!.setField('mainfiles', [
+      { id: 12, url: '/uploads/report.pdf', name: 'report.pdf', alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf' },
+    ])
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateMock).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
+  it('alt-text typing on the selected splash does NOT re-fire auto-save (identity unchanged)', async () => {
+    const withSplash: Article = { ...editInitial(), splash: { ...librarySplash } } as Article
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: withSplash } })
+    wrapper.vm.$.exposed!.setField('splash', { ...librarySplash, alternativeText: 'Better alt text' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(updateMock).not.toHaveBeenCalled() // same media id ⇒ not a "major change"
+    wrapper.unmount()
+  })
+
+  it('Restore does NOT auto-save the restored snapshot (author stays in charge)', async () => {
+    saveSnapshot('article', 'auto1', { ...editInitial(), splash: librarySplash } as Article, '2026-07-16T09:05:00.000Z')
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+    await wrapper.find('[data-test="draft-restore"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(wrapper.vm.$.exposed!.draftGuard.dirty.value).toBe(true) // restored content stays unsaved
+    wrapper.unmount()
+  })
+
+  it('Load-theirs does NOT auto-save even when their version changes the splash', async () => {
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T12:00:00.000Z') // provoke the conflict
+    findOneMock.mockResolvedValueOnce({
+      ...editInitial(), splash: { ...librarySplash, id: 9 }, updatedAt: '2026-07-16T12:00:00.000Z',
+    } as Article)
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+
+    await wrapper.find('[data-test="conflict-load-theirs"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).not.toHaveBeenCalled() // their version landed without a write-back
+    wrapper.unmount()
+  })
+
+  it('inserting a body figure on an edit page auto-saves; the toast says the save is automatic', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: editInitial() } })
+    await new Promise((r) => setTimeout(r, 0)) // let CodeMirror mount
+
+    const tray = wrapper.findComponent({ name: 'BodyImagesField' })
+    tray.vm.$emit('insert', '![A chart](/uploads/figure_abc.png)')
+    await new Promise((r) => setTimeout(r, 0))
+
+    const call = toastAdd.mock.calls.find((c) => /Image inserted/.test((c[0] as { title: string }).title))
+    expect(call).toBeTruthy()
+    expect((call![0] as { description?: string }).description).toMatch(/sav.* automatically/i)
+    expect(updateMock).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+})

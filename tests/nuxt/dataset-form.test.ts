@@ -67,6 +67,39 @@ describe('DatasetForm', () => {
   })
 })
 
+// Auto-save on media changes (user decision 2026-07-17; ArticleForm is the reference
+// integration — see its 'auto-save on media changes' describe for the full matrix. Here we pin
+// the Dataset-specific wiring: the `datafile` field's identity drives it, edit mode only.)
+describe('auto-save on media changes (edit mode)', () => {
+  beforeEach(() => { localStorage.clear(); createMock.mockClear(); updateMock.mockClear() })
+
+  const dataFile = {
+    id: -7, url: '/files/demo/data.csv.pdf', name: 'data.pdf',
+    alternativeText: null, caption: null, width: null, height: null, mime: 'application/pdf',
+  }
+
+  it('picking the Data file on an edit page saves the draft automatically', async () => {
+    const initial: Dataset = { ...blankDataset(), documentId: 'ds-auto1', title: 'Crime Data', slug: 'crime-data', date: '2021-01-01', updatedAt: '2026-07-16T09:00:00.000Z' } as Dataset
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial } })
+    wrapper.vm.$.exposed!.setField('datafile', dataFile)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect((updateMock.mock.calls[0]![1] as Dataset).datafile?.id).toBe(-7)
+    wrapper.unmount()
+  })
+
+  it('create mode never auto-saves on a datafile pick', async () => {
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'Crime Data')
+    wrapper.vm.$.exposed!.setField('date', '2021-01-01')
+    wrapper.vm.$.exposed!.setField('datafile', dataFile)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(createMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('unsaved-work guard integration', () => {
   beforeEach(() => localStorage.clear())
 

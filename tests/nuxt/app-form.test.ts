@@ -51,6 +51,38 @@ describe('AppForm', () => {
   })
 })
 
+// Auto-save on media changes (user decision 2026-07-17; ArticleForm is the reference
+// integration — see its 'auto-save on media changes' describe for the full matrix. Here we pin
+// the App-specific wiring: the `image` field's identity drives it, edit mode only.)
+describe('auto-save on media changes (edit mode)', () => {
+  beforeEach(() => { localStorage.clear(); createMock.mockClear(); updateMock.mockClear() })
+
+  const appImage = {
+    id: -3, url: '/images/demo/app.png', name: 'app.png',
+    alternativeText: 'App screenshot', caption: null, width: 800, height: 600, mime: 'image/png',
+  }
+
+  it('picking the App image on an edit page saves the draft automatically', async () => {
+    const initial: App = { ...blankApp(), documentId: 'app-auto1', title: 'Explorer', slug: 'explorer', updatedAt: '2026-07-16T09:00:00.000Z' } as App
+    const wrapper = await mountSuspended(AppForm, { props: { mode: 'edit', initial } })
+    wrapper.vm.$.exposed!.setField('image', appImage)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect((updateMock.mock.calls[0]![1] as App).image?.id).toBe(-3)
+    wrapper.unmount()
+  })
+
+  it('create mode never auto-saves on an image pick', async () => {
+    const wrapper = await mountSuspended(AppForm, { props: { mode: 'create' } })
+    wrapper.vm.$.exposed!.setField('title', 'Explorer')
+    wrapper.vm.$.exposed!.setField('image', appImage)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(createMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('unsaved-work guard integration', () => {
   beforeEach(() => localStorage.clear())
 

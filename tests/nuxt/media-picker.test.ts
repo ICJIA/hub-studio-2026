@@ -202,6 +202,30 @@ describe('Library tab (kind="image")', () => {
     expect(wrapper.find('input[type="file"]').exists()).toBe(true)
   })
 
+  // Single-click commit (user decision 2026-07-17): clicking a tile whose image already HAS alt
+  // text commits the pick right there — no "Use this image" confirm step (which rendered BELOW
+  // the grid, off-viewport on the edit page, and read as "my click did nothing"). This aligns
+  // MediaPicker with BodyImagesField.onLibraryPick, which has always tray-added alt-present
+  // picks in one click. The confirm panel now exists ONLY as the alt-required gate.
+  it('clicking a library tile WITH alt commits in ONE step — select emits, no confirm panel, no pick state left behind', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withAlt)
+    await wrapper.vm.$nextTick()
+    const ref = wrapper.emitted('select')![0]![0] as MediaRef
+    expect(ref.id).toBe(7)
+    expect(wrapper.find('[data-test="pick-confirm"]').exists()).toBe(false)
+    expect(wrapper.vm.$.exposed!.__picked.value).toBeNull()
+    expect(updateInfoMock).not.toHaveBeenCalled() // existing alt is used as-is, never re-written
+  })
+
+  it('clicking a library tile WITHOUT alt opens the alt-gate panel and emits nothing yet', async () => {
+    const wrapper = await mountSuspended(MediaPicker)
+    await wrapper.vm.$.exposed!.__onLibrarySelect(withoutAlt)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(wrapper.find('[data-test="pick-confirm"]').exists()).toBe(true)
+  })
+
   it('picking a library image WITH alt emits select immediately — no write-back', async () => {
     const wrapper = await mountSuspended(MediaPicker)
     await wrapper.vm.$.exposed!.__onLibrarySelect(withAlt)

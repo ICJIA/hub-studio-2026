@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-07-17
+
+_Added_
+
+- **The draft now saves ITSELF after every major change on edit pages** (user decision
+  2026-07-17: "an article draft should automatically be saved after each major change —
+  I shouldn't need to manually click save"). Picking, replacing, or removing the Splash
+  image / App image / Data file / a Main file — and inserting a body figure — runs the
+  form's own save automatically: same validation, same edit-conflict check, same
+  **"Draft saved"** toast. The select → saved → Live-preview chain that the demo teaches
+  managers no longer depends on anyone finding the Save button. New
+  `useMediaAutoSave` composable (`app/composables/useMediaAutoSave.ts`), wired into all
+  three forms; keyed to media IDENTITY (ids), so alt/caption typing and body-text edits
+  never fire it. Create pages deliberately stay manual — picking an image must not
+  auto-create a half-formed draft — and their toasts keep the "save the draft" guidance.
+  Guard rails, all regression-tested: **Restore** and **Load their version** replace the
+  model programmatically and are paused/dropped (the author stays in charge of saving
+  restored content); a change landing while a save is in flight defers and retries once,
+  still gated on dirty; MainFilesField's demo mount-time seed (display-only id-0 sample
+  PDFs) is excluded from the signature, so a demo edit page can't auto-save just by
+  being opened — while CLEARING a demo id-0 splash still counts (splash: null is a real,
+  previewable change).
+
+_Changed_
+
+- **Library picks commit in ONE click when the image already has alt text.** Root cause
+  of the user-reported "the replaced splash still doesn't show in the Live preview"
+  (reproduced in-browser): clicking a library tile only STAGED the pick — the real
+  commit was a **"Use this image"** confirm panel rendering *below* the grid, **outside
+  the viewport** on the edit page's sidebar (measured: panel at y≈1042 in an 831px
+  viewport), so the click looked like it did nothing, nothing was committed, and the
+  preview *correctly* showed the old splash no matter what came after. A tile whose
+  image has alt text now emits the selection straight from the click — the grid
+  collapses, the field shows the new thumbnail, and (on edit pages) the auto-save above
+  finishes the chain. This matches the rule BodyImagesField has always applied to its
+  tray. The confirm panel remains ONLY as the alt-required gate for alt-less images
+  (type alt → written back to the shared record — unreachable via demo seeds, which all
+  carry alt; component-tested).
+- **Selection toasts on edit pages now say the truth about saving:** "«name» — the
+  draft saves automatically; the Live preview will show it" (MediaField's new
+  `autoSaves` prop; figure-insert toast likewise). Create pages keep "save the draft to
+  update the Live preview."
+
+**946 tests / 114 files** (25 new, test-first: single-click commit, the auto-save
+matrix across all three forms, the composable's pause/defer/dirty gates, seed
+exclusion, and the toast copy — RED before every change). Suite ×3, typecheck, build,
+demo generate all green; the full chain (one-click pick → auto-save toast → Live
+preview tab renders the new splash) driven live in the demo twice, cross-tab, with the
+store's auto-saved state and the preview tab's rendered `<img>` both verified.
+
 ## [0.8.6] - 2026-07-17
 
 _Added_

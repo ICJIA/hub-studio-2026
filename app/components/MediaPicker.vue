@@ -1,10 +1,11 @@
 <!-- app/components/MediaPicker.vue -->
 <!--
   MediaPicker: LIBRARY-FIRST image picking. For kind="image" it renders [Library | Upload]
-  tabs (Library default): the Library tab browses the Media Library (MediaLibraryGrid) with a
-  pick-confirm panel that REQUIRES alt when the chosen image lacks it — the typed alt is
-  written back to the media record (updateInfo; in-memory in demo) so the shared library
-  improves. The Upload tab is the original eager-upload flow (alt REQUIRED before an image
+  tabs (Library default): the Library tab browses the Media Library (MediaLibraryGrid). A tile
+  whose image already HAS alt text commits in ONE click (select emits straight from the tile —
+  no confirm step); only an alt-LESS image opens the pick-confirm panel, which REQUIRES alt —
+  the typed alt is written back to the media record (updateInfo; in-memory in demo) so the
+  shared library improves. The Upload tab is the original eager-upload flow (alt REQUIRED before an image
   upload completes; caption optional), now routed through useMediaLibrary().uploadImage so it
   is demo-capable. Every emitted `url` is a Media Library URL or (demo sessions only) a blob:
   object URL — NEVER a data: URI (the zero-base64 invariant, design spec §7/§13).
@@ -136,8 +137,19 @@ const canUsePicked = computed(() =>
 // prevents overlap), so there's no newer in-flight request a stale settle could stomp on.
 let pickSeq = 0
 
+/** Single-click commit (user decision 2026-07-17): a tile whose image already HAS alt text
+ *  emits select right from the click — no "Use this image" confirm step, which rendered BELOW
+ *  the grid (off-viewport on the edit page's sidebar) and read as "my click did nothing". Same
+ *  rule BodyImagesField.onLibraryPick has always applied to its tray. The pick-confirm panel
+ *  below now exists ONLY as the alt-required gate; existing alt is never silently overwritten. */
 function onLibrarySelect(mediaRef: MediaRef) {
   pickSeq++ // a new pick invalidates any in-flight write-back for whatever was picked before
+  if ((mediaRef.alternativeText ?? '').trim()) {
+    picked.value = null
+    pickError.value = null
+    emit('select', mediaRef)
+    return
+  }
   picked.value = mediaRef
   pickedAlt.value = ''
   pickedCaption.value = mediaRef.caption ?? ''

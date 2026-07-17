@@ -46,6 +46,17 @@ const loadedUpdatedAt = ref<string | null>(props.initial?.updatedAt ?? null)
 const conflictTheirAt = ref<string | null>(null)
 let bypassConflictOnce = false
 
+// Auto-save on major (media) changes — edit pages only (user decision 2026-07-17; ArticleForm
+// is the reference integration, see its comment): the App image's identity drives it. save()
+// is submit() itself, so validation/conflict-check/"Draft saved" toast all apply the same.
+const autoSave = useMediaAutoSave({
+  enabled: props.mode === 'edit',
+  signature: () => JSON.stringify([model.image?.id ?? null]),
+  dirty: () => draftGuard.dirty.value,
+  busy: () => saving.value,
+  save: () => submit(),
+})
+
 // contributors share the {title,description} row shape (parseAuthors fits).
 const contributorColumns = [
   { key: 'title', label: 'Name' },
@@ -127,6 +138,7 @@ function saveAnyway() {
 async function loadTheirs() {
   if (saving.value) return
   saving.value = true
+  autoSave.pause() // their version replacing the model must not auto-persist (see ArticleForm)
   try {
     draftGuard.snapshotNow()
     const fresh = await repo.findOne(model.documentId, { status: 'draft' })
@@ -137,6 +149,7 @@ async function loadTheirs() {
   } catch {
     toast.add({ title: 'Could not load their version', description: 'Please try again.', color: 'error' })
   } finally {
+    autoSave.resume()
     saving.value = false
   }
 }
@@ -162,7 +175,11 @@ function onPublished(entity: App) {
  *  see ArticleForm's onRestore()/useDraftGuard.restore() comments for the full rationale. */
 function onRestore() {
   if (saving.value) return
+  // Pause the media auto-save across the model replacement — restored content deliberately
+  // stays DIRTY for the author to review and save (see ArticleForm's onRestore comment).
+  autoSave.pause()
   const restored = draftGuard.restore()
+  autoSave.resume()
   if (restored) loadedUpdatedAt.value = restored.updatedAt ?? loadedUpdatedAt.value
 }
 
@@ -222,7 +239,7 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
           <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
           <ChipsField v-model="model.tags" label="Tags" />
           <RepeatableField v-model="model.contributors" label="Contributors" :columns="contributorColumns" :paste-parser="parseAuthors" />
-          <MediaField v-model="model.image" label="App image" />
+          <MediaField v-model="model.image" label="App image" :auto-saves="mode === 'edit'" />
           <TextField v-model="model.url" label="App URL" />
           <RelationList label="Linked datasets" :items="model.datasets" />
           <RelationList label="Linked articles" :items="model.articles" />

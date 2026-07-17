@@ -54,20 +54,44 @@ const loadedUpdatedAt = ref<string | null>(props.initial?.updatedAt ?? null)
 const conflictTheirAt = ref<string | null>(null)
 let bypassConflictOnce = false
 
+// Auto-save on major (media) changes — edit pages only (user decision 2026-07-17): picking/
+// replacing/removing the splash or a main file, and inserting a body figure, save the draft by
+// themselves so the select → saved → Live-preview chain never depends on the manual Save click.
+// The signature is media IDENTITY (ids), so alt/caption typing and body-text edits never fire
+// it. mainfiles filters display-only id-0 refs (MainFilesField's demo mount-time sample-PDF
+// seed) so a demo edit page can't auto-save just by opening; the splash's own id 0 stays IN —
+// clearing a demo splash to null IS a real, previewable change. save() is submit() itself:
+// validation, the conflict check, the "Draft saved" toast, and markSaved() all apply the same.
+const autoSave = useMediaAutoSave({
+  enabled: props.mode === 'edit',
+  signature: () => JSON.stringify([
+    model.splash?.id ?? null,
+    (model.mainfiles ?? []).filter((f) => f && f.id !== 0).map((f) => f.id),
+  ]),
+  dirty: () => draftGuard.dirty.value,
+  busy: () => saving.value,
+  save: () => submit(),
+})
+
 // Ref to the body MarkdownField so the sidebar BodyImagesField can insert figures at the cursor.
 // insertMarkdown returns the 1-based line the insert began on; cursorLine is the live cursor
 // position (both forwarded from the CodeMirror editor) — they power the sidebar's "lands at
 // line N" awareness for authors who don't yet know the cursor decides the insertion point.
 const bodyField = ref<{ insertMarkdown: (text: string) => number | null; cursorLine: number } | null>(null)
 
-/** Sidebar tray → body editor: place the figure at the cursor and SAY where it landed. */
+/** Sidebar tray → body editor: place the figure at the cursor and SAY where it landed. The
+ *  insert changes the body markdown (not any media id), so the auto-save is requested
+ *  explicitly here — a figure landing in the body is exactly as previewable as a splash swap. */
 function onInsertFigure(markdown: string) {
   const line = bodyField.value?.insertMarkdown(markdown) ?? null
   toast.add({
     title: line ? `Image inserted at line ${line}` : 'Image inserted',
-    description: 'Save the draft to update the Live preview.',
+    description: props.mode === 'edit'
+      ? 'The draft saves automatically — the Live preview will show it.'
+      : 'Save the draft to update the Live preview.',
     color: 'success',
   })
+  autoSave.request()
 }
 
 /** Live-preview click while the form has unsaved changes: the preview page renders the last
@@ -194,7 +218,8 @@ function saveAnyway() {
 async function loadTheirs() {
   if (saving.value) return
   saving.value = true
-  try {
+  autoSave.pause() // their version replacing the model must not auto-persist (belt: the busy
+  try {           // gate + post-resetBaseline clean state already drop the deferred attempt)
     draftGuard.snapshotNow()
     const fresh = await repo.findOne(model.documentId, { status: 'draft' })
     Object.assign(model, fresh)
@@ -204,6 +229,7 @@ async function loadTheirs() {
   } catch {
     toast.add({ title: 'Could not load their version', description: 'Please try again.', color: 'error' })
   } finally {
+    autoSave.resume()
     saving.value = false
   }
 }
@@ -236,7 +262,12 @@ function onPublished(entity: Article) {
  *  by edit-conflict detection" claim actually true rather than aspirational. */
 function onRestore() {
   if (saving.value) return
+  // Restored content is deliberately left DIRTY for the author to review and save — pause the
+  // media auto-save across the model replacement so a snapshot's different splash/files can't
+  // silently persist the whole restored draft the instant Restore is clicked.
+  autoSave.pause()
   const restored = draftGuard.restore()
+  autoSave.resume()
   if (restored) loadedUpdatedAt.value = restored.updatedAt ?? loadedUpdatedAt.value
 }
 
@@ -344,7 +375,7 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
           <SelectField v-model="model.type" label="Type" :options="ARTICLE_TYPE_OPTIONS" />
           <ChipsField v-model="model.categories" label="Categories" :options="CATEGORY_OPTIONS" />
           <ChipsField v-model="model.tags" label="Tags" />
-          <MediaField v-model="model.splash" label="Splash image" />
+          <MediaField v-model="model.splash" label="Splash image" :auto-saves="mode === 'edit'" />
           <BodyImagesField :insert-line="bodyField?.cursorLine ?? null" @insert="onInsertFigure" />
           <SelectField v-model="model.mainfiletype" label="Main file type" :options="MAINFILETYPE_OPTIONS" />
           <MainFilesField v-model="model.mainfiles" />

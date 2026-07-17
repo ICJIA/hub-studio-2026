@@ -26,7 +26,10 @@
 import { ref, computed, watch } from '#imports'
 import type { MediaRef } from '~/types/content'
 
-const props = defineProps<{ modelValue: MediaRef | null; label: string; kind?: 'image' | 'file' }>()
+// autoSaves: the parent form saves the draft by itself after this field changes (edit pages —
+// see useMediaAutoSave). Only the selection toast's guidance line reads it: instructing a
+// manual save there would be wrong, and vice versa on create pages, which stay manual.
+const props = defineProps<{ modelValue: MediaRef | null; label: string; kind?: 'image' | 'file'; autoSaves?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: MediaRef | null] }>()
 
 const kind = computed(() => props.kind ?? 'image')
@@ -122,11 +125,14 @@ function onSelect(mediaRef: MediaRef) {
   emit('update:modelValue', mediaRef)
   pickerOpen.value = false
   altTouched.value = false
-  // Manager-visible confirmation the pick landed (the picker collapsing alone is easy to miss),
-  // plus the ONE step between "chose it" and "see it in the Live preview": saving the draft.
+  // Manager-visible confirmation the pick landed (the picker collapsing alone is easy to miss).
+  // Guidance line matches who saves: edit pages auto-save on media changes (the parent sets
+  // autoSaves and its own "Draft saved" toast follows), create pages still need the manual save.
   toast.add({
     title: `${props.label} selected`,
-    description: `${mediaRef.name ?? 'File'} — save the draft to update the Live preview.`,
+    description: props.autoSaves
+      ? `${mediaRef.name ?? 'File'} — the draft saves automatically; the Live preview will show it.`
+      : `${mediaRef.name ?? 'File'} — save the draft to update the Live preview.`,
     color: 'success',
   })
 }

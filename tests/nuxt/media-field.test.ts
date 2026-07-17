@@ -85,6 +85,27 @@ describe('MediaField', () => {
       await wrapper.vm.$.exposed!.clear()
       expect(toastAdd).not.toHaveBeenCalled()
     })
+
+    // Edit-page forms auto-save on media changes (user decision 2026-07-17), so instructing a
+    // manual save there would be wrong — the parent opts in via :auto-saves and the toast says
+    // the save is happening by itself. The default (create mode) keeps the manual-save guidance.
+    it('with autoSaves: the toast says the draft saves ITSELF — no manual-save instruction', async () => {
+      const wrapper = await mountSuspended(MediaField, {
+        props: { modelValue: null, label: 'Splash image', autoSaves: true },
+      })
+      const picker = wrapper.findComponent({ name: 'MediaPicker' })
+      picker.vm.$.exposed!.setFile(new File(['x'], 'splash.png', { type: 'image/png' }))
+      picker.vm.$.exposed!.setAlt('Splash alt')
+      await picker.vm.$.exposed!.submit()
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(toastAdd).toHaveBeenCalledTimes(1)
+      const toast = toastAdd.mock.calls[0]![0] as { title: string; description?: string }
+      expect(toast.title).toBe('Splash image selected')
+      expect(toast.description).toMatch(/sav.* automatically/i)
+      expect(toast.description).toMatch(/Live preview/)
+      expect(toast.description).not.toMatch(/[Ss]ave the draft to update/)
+    })
   })
 
   describe('selected state when modelValue is set', () => {

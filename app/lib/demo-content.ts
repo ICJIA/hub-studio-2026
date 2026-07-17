@@ -557,8 +557,11 @@ function makeDataset(i: number): Dataset {
 
 // ── Exports ───────────────────────────────────────────────────────────────────
 
-// Attach updatedAt after construction (it's not on the Article domain type, but the
-// demo-repository uses it for sorting via the generic constraint)
+// Attach a deterministic updatedAt after construction. `updatedAt` IS on BaseContent now
+// (read-only, surfaced for edit-conflict detection — see types/content.ts) but
+// makeArticle/makeApp/makeDataset don't set it themselves, so this pass stamps every demo
+// record with one: demo-repository uses it for sorting (via the generic constraint), and the
+// edit-conflict save-time check needs real stamps to compare in the public demo.
 function withUpdatedAt<T>(item: T, i: number): T & { updatedAt: string } {
   return Object.assign({}, item, { updatedAt: updatedAt(i) })
 }

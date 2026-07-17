@@ -27,18 +27,30 @@ _Added_
   Both flows are race-guarded — a `saving`-gate on every entry point plus busy-disabled
   banner buttons — closing a reviewer-found Critical where an impatient Save-anyway click
   mid-Load-theirs could silently persist stale content while destroying the just-taken
-  snapshot in the same stroke. Works identically in the public demo: its in-memory store
-  stamps `updatedAt` on every write too, so two demo tabs editing the same draft can
-  genuinely reproduce a collision — a real training aid, not just a description of one.
+  snapshot in the same stroke (the whole-branch final review found the mirror-image gap on
+  the OTHER banner — Restore/Discard racing Load-theirs — closed the same way). The
+  unsaved-work guard's own Restore now reseeds the form's remembered `updatedAt` to the
+  restored snapshot's own stamp, so a same-session restore-then-save is checked against the
+  content actually being saved, not the page's load-time stamp — the fix that makes the
+  ROADMAP's cross-machine stale-restore mitigation claim true rather than aspirational.
+  Publish/unpublish also refreshes the remembered stamp from its response, closing a false-
+  conflict a publish/unpublish would otherwise leave behind on the very next save. Works
+  identically in the public demo: its in-memory store stamps `updatedAt` on every write too,
+  so the check runs the same logic against the in-memory store's stamps. (The demo store is
+  per-tab — a module-level map with no cross-tab sync — so reproducing a genuine two-editor
+  collision is a live two-browser staging-rehearsal exercise, not a two-demo-tab one.)
   **Honest caveat:** a small check-then-write window remains between the pre-save read and
   the save itself — Strapi has no native compare-and-set to close it completely; the
   design deliberately accepts warn-and-choose over a hard lock. Spec:
   `docs/superpowers/specs/2026-07-16-edit-conflict-design.md`.
 
 Built test-first over five reviewed tasks (per-task adversarial review, incl. one
-reviewer-found Critical race closed with layered tests). Suite: **860 tests / 109 files**
-(822 + 38 new, +2 new test files), typecheck clean. Built on the `edit-conflict` feature
-branch — pending the whole-branch review and merge with the next release.
+reviewer-found Critical race closed with layered tests), plus a whole-branch final review
+(a second reviewer-found Critical — the mirror-image Restore/Discard race — closed the same
+way, plus the stamp-reseed, publish-refresh, and doc-truthfulness fixes above). Suite:
+**867 tests / 109 files** (822 + 45 new across the feature and this fix round, +2 new test
+files), typecheck clean. Built on the `edit-conflict` feature branch — pending merge with
+the next release.
 
 ## [0.7.0] - 2026-07-16
 

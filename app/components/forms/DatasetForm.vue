@@ -158,7 +158,38 @@ async function loadTheirs() {
   }
 }
 
-defineExpose({ submit, setField, errors, model, loadedUpdatedAt, draftGuard, saveAnyway })
+/** External hook (final-review Fix round 1, Finding 2): unlike ArticleForm, Dataset's
+ *  PublishButton lives on the edit PAGE, not this form's own toolbar (see app/pages/edit/
+ *  [type]/[documentId].vue) — the page relays the fresh entity in via this exposed method after
+ *  a successful publish/unpublish, so loadedUpdatedAt tracks the updatedAt bump publish/
+ *  unpublish makes server-side (both live Strapi and the demo repo). Without it the VERY NEXT
+ *  save falsely reports "changed by someone else" against the author's own publish. Mirrors
+ *  ArticleForm's own onPublished (also syncs model.publishedAt for consistency, though nothing
+ *  in THIS form's template reads it — Dataset's Publish control isn't in-toolbar here). */
+function onPublished(entity: Dataset) {
+  model.publishedAt = entity.publishedAt
+  loadedUpdatedAt.value = entity.updatedAt ?? loadedUpdatedAt.value
+}
+
+/** Restore the draft-backup snapshot: same mid-flight guard as ArticleForm's onRestore()
+ *  (final-review Fix round 1, Critical) — loadTheirs() can mount DraftRestoreBanner mid-flight (its
+ *  snapshotNow() flips restoreAvailable before its own findOne() await settles), so without
+ *  this guard an impatient click here would clear the very snapshot snapshotNow() just wrote.
+ *  Also reseeds loadedUpdatedAt to the RESTORED snapshot's own embedded stamp (Finding 4→2) —
+ *  see ArticleForm's onRestore()/useDraftGuard.restore() comments for the full rationale. */
+function onRestore() {
+  if (saving.value) return
+  const restored = draftGuard.restore()
+  if (restored) loadedUpdatedAt.value = restored.updatedAt ?? loadedUpdatedAt.value
+}
+
+/** Discard the draft-backup snapshot: same mid-flight guard as onRestore() above. */
+function onDiscard() {
+  if (saving.value) return
+  draftGuard.discard()
+}
+
+defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, draftGuard, saveAnyway })
 </script>
 
 <template>
@@ -173,11 +204,14 @@ defineExpose({ submit, setField, errors, model, loadedUpdatedAt, draftGuard, sav
       @save-anyway="saveAnyway"
       @load-theirs="loadTheirs"
     />
+    <!-- :busy="saving" (final-review Fix round 1): mirrors ConflictBanner above — see DraftRestoreBanner's
+         and onRestore()'s comments for the mid-flight race this closes. -->
     <DraftRestoreBanner
       v-if="draftGuard.restoreAvailable.value"
       :saved-at="draftGuard.snapshotSavedAt.value ?? ''"
-      @restore="draftGuard.restore()"
-      @discard="draftGuard.discard()"
+      :busy="saving"
+      @restore="onRestore"
+      @discard="onDiscard"
     />
     <div class="flex justify-end">
       <!-- Tab-only preview: the standalone review page in a per-document named tab. -->

@@ -352,6 +352,101 @@ describe('edit-conflict save-flow', () => {
     wrapper.unmount()
   })
 
+  // Final-review fix round 1 (Critical, mirror of the Load-theirs/Save-anyway race above): the
+  // SAME mid-flight window — loadTheirs()'s snapshotNow() flips draftGuard.restoreAvailable
+  // true (mounting DraftRestoreBanner) BEFORE its own findOne() await settles — also exposes
+  // the OTHER banner's Restore button. Pre-fix, DraftRestoreBanner had no `busy` prop and
+  // @restore was wired straight to draftGuard.restore(): an impatient click there runs the raw
+  // restore(), which clears the very snapshot snapshotNow() just wrote to protect the author's
+  // pre-replace edits — even though loadTheirs()'s own Object.assign(model, fresh) then
+  // overwrites whatever restore() put in model anyway, so the visible symptom is a silently
+  // vanished local backup, not a wrong final model.
+  it("CRITICAL: an impatient Restore click while Load-theirs is still fetching does not clear the author's snapshot, and the model still ends up as theirs", async () => {
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T12:00:00.000Z') // provoke the conflict
+    const slow = deferred<Article>()
+    findOneMock.mockReturnValueOnce(slow.promise) // Load-theirs' fetch — held open on purpose
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+    wrapper.vm.$.exposed!.setField('title', 'My Unsaved Local Edit')
+
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+
+    // Click Load-theirs: snapshotNow() fires synchronously — DraftRestoreBanner mounts on the
+    // very same tick, before the refetch (held open) resolves.
+    await wrapper.find('[data-test="conflict-load-theirs"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(true)
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+
+    // Impatient click on Restore WHILE the fetch above is still pending.
+    await wrapper.find('[data-test="draft-restore"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    // The snapshot Load-theirs just wrote must survive — a stray restore() would clear it.
+    expect(loadSnapshot<Article>('article', 'c1')?.model.title).toBe('My Unsaved Local Edit')
+
+    // Let the held-open fetch resolve; Load-theirs still completes cleanly afterward.
+    slow.resolve({ ...loaded, title: 'Their Refetched Title', updatedAt: '2026-07-16T12:00:00.000Z' })
+    await new Promise((r) => setTimeout(r, 0))
+    const titleInput = wrapper.find('input')
+    expect((titleInput.element as HTMLInputElement).value).toBe('Their Refetched Title')
+    wrapper.unmount()
+  })
+
+  // Final-review fix round 1 (Finding 4→2): restoring a snapshot must reseed loadedUpdatedAt to
+  // the SNAPSHOT's own embedded stamp, not leave it at the page's load-time stamp. Otherwise the
+  // ROADMAP's "cross-machine stale-restore risk is now mitigated by edit-conflict detection"
+  // claim is false: a same-session restore of an old snapshot would compare the next save
+  // against the (unchanged) load-time stamp and see no conflict, even though the restored
+  // CONTENT is older than what the page originally loaded.
+  it('restoring an older snapshot reseeds loadedUpdatedAt to the snapshot\'s own stamp, so a subsequent save trips the conflict check (ROADMAP mitigation)', async () => {
+    const olderSnapshotModel: Article = {
+      ...loaded, title: 'Recovered from yesterday', updatedAt: '2026-07-15T09:00:00.000Z',
+    }
+    saveSnapshot('article', 'c1', olderSnapshotModel, '2026-07-15T09:05:00.000Z')
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe(loaded.updatedAt) // fresh-load stamp
+
+    await wrapper.find('[data-test="draft-restore"]').trigger('click')
+    // Reseeded to the RESTORED snapshot's own stamp, not the (newer) page-load stamp.
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe('2026-07-15T09:00:00.000Z')
+
+    // The server hasn't moved again since this page loaded — getUpdatedAt returns the SAME
+    // stamp the page originally loaded with, not a "new" one.
+    getUpdatedAtMock.mockResolvedValueOnce(loaded.updatedAt ?? null)
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+
+    // Even so, the check correctly fires: loadedUpdatedAt now reflects the STALER restored
+    // content, which could be missing changes made between the snapshot's time and now.
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  // Final-review fix round 1 (Finding 2): publish/unpublish bumps the server's updatedAt (both
+  // live Strapi and the demo repo — see demo-repository.ts's publish/unpublish). Without this,
+  // ArticleForm's remembered loadedUpdatedAt goes stale the moment a publish succeeds, and the
+  // VERY NEXT save falsely reports "changed by someone else" against the author's own publish.
+  it('publish then edit-save proceeds without a false conflict banner (loadedUpdatedAt refreshes from the publish response)', async () => {
+    const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'edit', initial: loaded } })
+    const publishedEntity: Article = {
+      ...loaded, publishedAt: '2026-07-16T11:00:00.000Z', updatedAt: '2026-07-16T11:00:00.000Z',
+    }
+    wrapper.vm.$.exposed!.onPublished(publishedEntity)
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe('2026-07-16T11:00:00.000Z')
+
+    wrapper.vm.$.exposed!.setField('title', 'Edited After Publish')
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T11:00:00.000Z') // == what publish just set
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false)
+    expect(updateMock).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
+
   it('create mode never calls getUpdatedAt (conflict-free by design — nothing to conflict with yet)', async () => {
     const wrapper = await mountSuspended(ArticleForm, { props: { mode: 'create' } })
     wrapper.vm.$.exposed!.setField('title', 'Crime In Illinois')

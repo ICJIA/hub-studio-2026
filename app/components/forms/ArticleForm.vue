@@ -173,10 +173,43 @@ async function loadTheirs() {
 }
 
 /** Toolbar Publish/Unpublish succeeded: reflect the new published state locally (so the toolbar
- *  toggles live) and forward to the parent edit page. */
+ *  toggles live), forward to the parent edit page, and (final-review Fix round 1, Finding 2)
+ *  refresh loadedUpdatedAt from the response — publish/unpublish bumps the server's updatedAt
+ *  (both live Strapi and the demo repo), so without this the VERY NEXT save falsely reports
+ *  "changed by someone else" against the author's own publish. */
 function onPublished(entity: Article) {
   model.publishedAt = entity.publishedAt
+  loadedUpdatedAt.value = entity.updatedAt ?? loadedUpdatedAt.value
   emit('published', entity)
+}
+
+/** Restore the draft-backup snapshot: guarded the same way saveAnyway()/loadTheirs() are
+ *  (final-review Fix round 1, Critical — mirror of the ConflictBanner/loadTheirs race): loadTheirs()
+ *  can mount DraftRestoreBanner mid-flight (its snapshotNow() flips restoreAvailable before its
+ *  own findOne() await settles), so without this guard an impatient click here would clear the
+ *  very snapshot snapshotNow() just wrote. See DraftRestoreBanner's `busy`-prop comment for the
+ *  full race and ArticleForm's loadTheirs()/submit() comments for the sibling races this
+ *  mirrors.
+ *
+ *  Also reseeds loadedUpdatedAt (final-review Fix round 1, Finding 4→2) to the RESTORED
+ *  snapshot's own embedded stamp — not left at whatever loadedUpdatedAt already was — so a
+ *  subsequent save's conflict check compares against the content the author is ACTUALLY about
+ *  to save, which may be far staler than "since this page loaded" (e.g. recovered from
+ *  yesterday's crash on a different machine). See useDraftGuard.restore()'s doc comment for the
+ *  full rationale; this is what makes ROADMAP's "cross-machine stale-restore risk is mitigated
+ *  by edit-conflict detection" claim actually true rather than aspirational. */
+function onRestore() {
+  if (saving.value) return
+  const restored = draftGuard.restore()
+  if (restored) loadedUpdatedAt.value = restored.updatedAt ?? loadedUpdatedAt.value
+}
+
+/** Discard the draft-backup snapshot: same mid-flight guard as onRestore() above — a stray
+ *  Discard click during loadTheirs()'s fetch would otherwise wipe the snapshot snapshotNow()
+ *  just wrote, with nothing left to fall back on once the model is replaced. */
+function onDiscard() {
+  if (saving.value) return
+  draftGuard.discard()
 }
 
 defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, draftGuard, saveAnyway })
@@ -198,11 +231,16 @@ defineExpose({ submit, setField, onPublished, errors, model, loadedUpdatedAt, dr
       @save-anyway="saveAnyway"
       @load-theirs="loadTheirs"
     />
+    <!-- :busy="saving" (final-review Fix round 1): this banner can be mounted mid-flight by loadTheirs()'s
+         own snapshotNow() call, so its buttons must reflect the same busy state ConflictBanner
+         already does — see DraftRestoreBanner's and onRestore()'s comments for the race this
+         closes. -->
     <DraftRestoreBanner
       v-if="draftGuard.restoreAvailable.value"
       :saved-at="draftGuard.snapshotSavedAt.value ?? ''"
-      @restore="draftGuard.restore()"
-      @discard="draftGuard.discard()"
+      :busy="saving"
+      @restore="onRestore"
+      @discard="onDiscard"
     />
     <!--
       Sticky secondary toolbar — pinned directly under the main app nav (which is `sticky top-0

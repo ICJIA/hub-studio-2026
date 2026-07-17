@@ -145,6 +145,21 @@ describe('useDraftGuard', () => {
     expect(guard.dirty.value).toBe(true) // restored content is UNSAVED — author must save
   })
 
+  // Final-review fix round 1 (Finding 4→2): restore() now RETURNS the restored model so a form
+  // can reseed anything derived from it (e.g. ArticleForm's loadedUpdatedAt — see its onRestore
+  // wrapper and article-form.test.ts's ROADMAP-mitigation test) with the snapshot's OWN
+  // embedded stamp, not whatever the caller already had.
+  it('restore() returns the restored model; returns null when there is nothing to restore', async () => {
+    await mountSuspended(probe('doc1'))
+    expect(guard.restore()).toBeNull() // no snapshot yet
+
+    saveSnapshot('article', 'doc1', { title: 'Recovered', markdown: '# Saved body' }, '2026-07-16T09:00:00.000Z')
+    // Re-mount so the guard's initial snapshot ref picks up the snapshot just written.
+    await mountSuspended(probe('doc1'))
+    const restored = guard.restore()
+    expect(restored).toEqual({ title: 'Recovered', markdown: '# Saved body' })
+  })
+
   it('discard clears the snapshot without touching the model', async () => {
     saveSnapshot('article', 'doc1', { title: 'Stale', markdown: 'x' }, '2026-07-16T09:00:00.000Z')
     await mountSuspended(probe('doc1'))

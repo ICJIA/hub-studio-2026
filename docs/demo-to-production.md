@@ -114,7 +114,14 @@ Checklist — every line exercised with a real Strapi account, none with admin/a
       reload as A. (Freshness model is refetch-on-open + after-write; there is no live push.)
 - [ ] Verify rows land in Strapi under **Review Annotation** and are **absent** from the
       public API (`/api/review-annotations` unauthenticated → 403/404).
-- [ ] Publish + unpublish an article as Editor; confirm on the public Hub side.
+- [ ] Publish + unpublish an article as Editor; confirm on the public Hub side. Then,
+      **without reloading the page**, edit a field and save — confirm the save proceeds
+      normally with NO conflict banner. (Publish/unpublish bumps the server's `updatedAt`;
+      the form refreshes its own remembered stamp from the publish/unpublish response
+      specifically so this next save isn't falsely flagged as "changed by someone else."
+      Repeat for an App or a Dataset if time allows — their Publish control lives on the
+      edit page itself rather than the form's toolbar, a different wiring path worth the
+      spot-check.)
 - [ ] **Request review** email: submit the form; confirm the Mailgun send and the rate limit
       (6th request inside 10 minutes → 429).
 - [ ] **CSP check** (README "Action required before launch"): open devtools on the staging

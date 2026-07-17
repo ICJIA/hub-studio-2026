@@ -22,6 +22,26 @@ onMounted(async () => {
   try { entry.value = await repo.findOne(documentId, { status: 'draft' }) }
   finally { loading.value = false }
 })
+
+// App/Dataset only: PublishButton lives HERE on the page, not inside those forms (contrast
+// ArticleForm, which hosts its own PublishButton and handles this internally via its
+// onPublished). Only one of these two is ever mounted (v-else-if below), so binding the SAME
+// ref name to both is safe — whichever form is active sets it, the other stays null.
+const appFormRef = ref<InstanceType<typeof AppForm> | null>(null)
+const datasetFormRef = ref<InstanceType<typeof DatasetForm> | null>(null)
+
+/** Publish/Unpublish succeeded for App/Dataset: keep the page's own entry.publishedAt in sync
+ *  (drives the "Published." indicator below) AND relay the fresh entity into the mounted form
+ *  via its exposed onPublished (final-review Fix round 1, Finding 2). Without that second hop,
+ *  the form's loadedUpdatedAt never learns about the updatedAt bump publish/unpublish makes
+ *  server-side, so the form's VERY NEXT save falsely reports "changed by someone else" against
+ *  the author's own publish — exactly the false-conflict ArticleForm avoids by handling
+ *  publish in its own onPublished (see that component). */
+function onNonArticlePublished(entity: App | Dataset) {
+  if (entry.value) entry.value.publishedAt = entity.publishedAt
+  appFormRef.value?.onPublished(entity as App)
+  datasetFormRef.value?.onPublished(entity as Dataset)
+}
 </script>
 <template>
   <div>
@@ -37,8 +57,8 @@ onMounted(async () => {
         :initial="entry as Article"
         @published="entry.publishedAt = ($event as Article).publishedAt"
       />
-      <AppForm v-else-if="type === 'app'" mode="edit" :initial="entry as App" />
-      <DatasetForm v-else-if="type === 'dataset'" mode="edit" :initial="entry as Dataset" />
+      <AppForm v-else-if="type === 'app'" ref="appFormRef" mode="edit" :initial="entry as App" />
+      <DatasetForm v-else-if="type === 'dataset'" ref="datasetFormRef" mode="edit" :initial="entry as Dataset" />
       <div class="mt-6 border-t border-default pt-4 space-y-3">
         <div class="flex items-center gap-3">
           <!-- App/Dataset still expose Publish here (only ArticleForm has the toolbar). -->
@@ -47,7 +67,7 @@ onMounted(async () => {
             :type="(type as 'app' | 'dataset')"
             :document-id="documentId"
             :published="entry.publishedAt != null"
-            @published="entry.publishedAt = ($event as App | Dataset).publishedAt"
+            @published="onNonArticlePublished($event as App | Dataset)"
           />
           <span v-if="entry.publishedAt" class="text-sm text-muted">Published.</span>
         </div>

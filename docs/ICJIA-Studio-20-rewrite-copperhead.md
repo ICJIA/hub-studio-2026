@@ -1074,12 +1074,16 @@ living list of what's in flight and what's next is the
   changed by someone else while you were editing (their save: ⟨time⟩)." — offering
   **Save anyway** or **Load their version**. Load-theirs snapshots the author's own edits
   to the local draft backup *first*, so the v0.6.0 restore banner can hand them back
-  afterward — the two features now work as one system. Fails open on any check error;
-  works identically in the public demo (two demo tabs can genuinely reproduce a
-  collision). Built test-first over five reviewed tasks with per-task adversarial review
-  (one reviewer-found Critical race closed with layered tests); **860 automated tests /
-  109 files** on the branch. Pending the whole-branch review and merge with the next
-  release.
+  afterward — the two features now work as one system, including a restore-vs-Load-theirs
+  race the whole-branch final review found and closed the same way as the original
+  Save-anyway race, plus a stamp reseed on Restore and a publish/unpublish refresh that
+  close two more false-conflict gaps. Fails open on any check error; the check runs the
+  same logic in the public demo against its in-memory store's stamps (the demo store is
+  per-tab, so reproducing a genuine collision is a two-browser staging-rehearsal exercise,
+  not a two-demo-tab one). Built test-first over five reviewed tasks with per-task
+  adversarial review plus a whole-branch final review (two reviewer-found Critical races
+  closed with layered tests); **867 automated tests / 109 files** on the branch. Pending
+  merge with the next release.
 - **2026-07-16 — Title search shipped (v0.7.0).** A labeled, 300 ms-debounced search box
   now sits beside the Type filter on every content list — Articles, Apps, and Datasets
   alike — filtering by title, case-insensitive, across the **whole library**, server-side,

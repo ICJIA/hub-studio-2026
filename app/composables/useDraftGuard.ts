@@ -52,12 +52,30 @@ export function useDraftGuard<T extends object>(opts: {
     saveSnapshot(opts.type, opts.documentId, opts.model, nowIso())
   }
 
-  /** Apply the snapshot to the model (stays DIRTY — the author saves it normally). */
-  function restore() {
-    if (!snapshot.value) return
-    Object.assign(opts.model, snapshot.value.model)
+  /**
+   * Apply the snapshot to the model (stays DIRTY — the author saves it normally). Returns the
+   * restored model (or null when there was no snapshot — a no-op), so a caller can reseed
+   * anything derived from the snapshot's OWN content — notably the edit-conflict save-flow's
+   * `loadedUpdatedAt` (see ArticleForm's `onRestore()` wrapper and its comment): the snapshot
+   * may be far staler than "since this page loaded" (e.g. recovered from yesterday's crash on
+   * a different machine), so the form must compare its NEXT save against the snapshot's own
+   * embedded stamp, not the page's load-time one — otherwise a same-session restore-then-save
+   * can silently overwrite changes the page's fresh load already reflected before Restore was
+   * clicked. This is what makes ROADMAP's "cross-machine stale-restore risk is mitigated by
+   * edit-conflict detection" claim actually true.
+   */
+  function restore(): T | null {
+    if (!snapshot.value) return null
+    const restored = snapshot.value.model
+    Object.assign(opts.model, restored)
     clearSnapshot(opts.type, opts.documentId)
     snapshot.value = null
+    // Cast, not a runtime coercion: `snapshot` is a Ref<DraftSnapshot<T> | null>, so Vue's
+    // deep-reactivity UnwrapRef<> widens the STATIC type of `.model` for a generic T (it can't
+    // prove UnwrapRef<T> assignable back to T for an arbitrary type param, even though every
+    // real T here is a plain domain object with no nested refs to unwrap) — the same friction
+    // Object.assign's own permissive typing above quietly absorbs.
+    return restored as T
   }
 
   /** Drop the snapshot, keep the loaded model. */

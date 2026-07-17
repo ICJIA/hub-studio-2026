@@ -173,4 +173,27 @@ describe('edit-conflict save-flow', () => {
     expect(wrapper.find('[data-test="draft-restore-banner"]').exists()).toBe(true)
     wrapper.unmount()
   })
+
+  // Final-review fix round 1 (Finding 2): App's PublishButton lives on the edit PAGE, not
+  // inside this form (contrast ArticleForm's own in-toolbar PublishButton) — the page relays
+  // the fresh entity in via this exposed onPublished (see app/pages/edit/[type]/[documentId]
+  // .vue). Without it, loadedUpdatedAt goes stale the moment a publish succeeds, and the VERY
+  // NEXT save falsely reports "changed by someone else" against the author's own publish.
+  it('publish then edit-save proceeds without a false conflict banner (loadedUpdatedAt refreshes from the publish response)', async () => {
+    const wrapper = await mountSuspended(AppForm, { props: { mode: 'edit', initial: loaded } })
+    const publishedEntity: App = {
+      ...loaded, publishedAt: '2026-07-16T11:00:00.000Z', updatedAt: '2026-07-16T11:00:00.000Z',
+    }
+    wrapper.vm.$.exposed!.onPublished(publishedEntity)
+    expect(wrapper.vm.$.exposed!.loadedUpdatedAt.value).toBe('2026-07-16T11:00:00.000Z')
+
+    wrapper.vm.$.exposed!.setField('title', 'Edited After Publish')
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T11:00:00.000Z') // == what publish just set
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false)
+    expect(updateMock).toHaveBeenCalledOnce()
+    wrapper.unmount()
+  })
 })

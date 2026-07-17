@@ -61,7 +61,7 @@ _Last updated: 2026-07-16 · Current version: v0.7.0_
   concurrent change (fails open on any check error) and raises a `role="alert"` banner
   offering **Save anyway** or **Load their version** — the latter snapshots the author's
   own edits first, so the v0.6.0 restore banner can offer them back afterward. Race-guarded
-  end to end; works identically in the public demo. 860 tests / 109 files on the branch.
+  end to end; works identically in the public demo. 867 tests / 109 files on the branch.
 
 ## Next (proposed)
 
@@ -79,7 +79,11 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 - **Unsaved-work-guard follow-ups** (from the v0.6.0 whole-branch review — none affect
   correctness for launch; the cross-machine stale-restore risk flagged at the time — a
   restore trusting local-snapshot existence over a possibly-newer server version — is now
-  MITIGATED by edit-conflict detection, which catches it at the next save): reseed
+  FULLY MITIGATED: Restore reseeds the form's remembered `updatedAt` to the restored
+  snapshot's own embedded stamp, not the page's load-time stamp, so the edit-conflict check
+  on the very next save compares against the CURRENT server stamp and correctly fires if
+  anything changed since the snapshot was taken — closing the gap a same-session
+  restore-then-save would otherwise leave, not just the across-a-reload case): reseed
   MediaField's alt/caption persist-baseline after a banner Restore (a stale restore can
   otherwise re-arm one redundant media-record write-back); decide whether explicit logout
   should clear draft snapshots (shared-machine courtesy — must NOT hook the 401/403

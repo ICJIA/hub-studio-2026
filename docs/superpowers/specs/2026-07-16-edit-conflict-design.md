@@ -50,7 +50,7 @@ own edits survive either way in the local draft backup.
 | Check timing | At save time only (not polling) | Matches the roadmap's design; polling adds load and UX noise for a staff-sized team. |
 | Check transport | Fields-limited findOne | Cheapest correct read; exact bracket-key wire shape pinned by tests (v0.7.0 lesson). |
 | Save-anyway semantics | Bypasses the check for THAT save only | A second conflict after another concurrent save re-warns — never a standing override. |
-| Demo parity | Same check against the in-memory store's stamps | Two demo tabs genuinely demonstrate the collision — good for training. |
+| Demo parity | Same check against the in-memory store's stamps | Demo store is per-tab (module-level map, no cross-tab sync) — collision reproduction is a two-browser staging-rehearsal exercise, not a two-demo-tab one. |
 
 ## 3. Testing
 

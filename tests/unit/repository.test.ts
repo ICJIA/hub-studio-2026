@@ -141,11 +141,15 @@ describe('getUpdatedAt (edit-conflict fields-limited read)', () => {
   // is NOT the bracket-key shape Strapi 5's qs-based parser expects for a single field, so the
   // param is sent as the flat key 'fields[0]': 'updatedAt' — mirrors flattenFilters's
   // path[i]-for-arrays convention (strapi-rest.ts) — never a nested array/object on the wire.
-  it('GETs the entity with a flat fields[0]=updatedAt bracket-key param and returns the stamp', async () => {
+  // status: 'draft' is pinned alongside it: the edit page loads the entity to compare against
+  // via `findOne(documentId, { status: 'draft' })` (app/pages/edit/[type]/[documentId].vue),
+  // so this MUST read the same draft version's stamp — a status mismatch would compare two
+  // different Draft & Publish versions and both miss real conflicts and flag false ones.
+  it('GETs the entity with fields[0]=updatedAt AND status=draft (same version the edit page loads) and returns the stamp', async () => {
     const api = vi.fn().mockResolvedValue({ data: { documentId: 'a', updatedAt: '2026-07-16T10:00:00.000Z' } }) as unknown as $Fetch
     const out = await makeRepo(api).getUpdatedAt('a')
     expect(api).toHaveBeenCalledWith(`${BASE}/a`, expect.objectContaining({
-      query: expect.objectContaining({ 'fields[0]': 'updatedAt' }),
+      query: expect.objectContaining({ 'fields[0]': 'updatedAt', status: 'draft' }),
     }))
     expect(out).toBe('2026-07-16T10:00:00.000Z')
   })

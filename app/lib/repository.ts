@@ -57,8 +57,10 @@ export interface Repository<TDomain> {
   unpublish(documentId: string): Promise<TDomain>
   /**
    * Cheapest correct read of the server's current `updatedAt`, for the save-time edit-conflict
-   * check (see `~/lib/edit-conflict`'s `hasConflict`). Never throws: a missing record or a
-   * response without the field both resolve to null.
+   * check (see `~/lib/edit-conflict`'s `hasConflict`). Reads the DRAFT version's stamp — the
+   * same version every editor route loads via `findOne(documentId, { status: 'draft' })` — so
+   * the comparison is always apples-to-apples. Never throws: a missing record or a response
+   * without the field both resolve to null.
    */
   getUpdatedAt(documentId: string): Promise<string | null>
 }
@@ -216,9 +218,17 @@ export function createRepository<TRaw, TDomain, TWrite>(
       // so a non-scalar query value is JSON.stringified/repeated by ufo instead of reaching
       // Strapi's qs-based parser in the bracket-index shape it expects (mirrors
       // flattenFilters's path[i]-for-arrays convention in strapi-rest.ts).
+      //
+      // status: 'draft' is REQUIRED, not optional: every editor route loads the entity to
+      // compare against via `findOne(documentId, { status: 'draft' })` (see
+      // app/pages/edit/[type]/[documentId].vue), so this must read the SAME Draft & Publish
+      // version's stamp. Without it, a concurrent publish could false-positive (published
+      // version's stamp moved, draft didn't) and a genuine concurrent draft edit could
+      // false-negative (comparing against the wrong version's unchanged stamp) — the exact
+      // silent-overwrite this feature exists to catch.
       try {
         const res = await cfg.api<StrapiSingleResponse<{ updatedAt?: string | null }>>(`${base}/${documentId}`, {
-          query: { 'fields[0]': 'updatedAt' },
+          query: { 'fields[0]': 'updatedAt', status: 'draft' },
         })
         return unwrapOne(res)?.updatedAt ?? null
       } catch {

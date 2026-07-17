@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 2026-07-16 — title search
+## [0.7.0] - 2026-07-16
 
 _Added_
 
@@ -55,10 +55,10 @@ _Fixed_
   the same `createRepository()`. Final live confirmation is a staging-rehearsal curl check
   (`docs/demo-to-production.md` §2).
 
-Built test-first over three reviewed tasks (per-task adversarial review). Suite: **822
+Built test-first over three reviewed tasks (per-task adversarial review); the whole-branch review caught the filter wire-format defect pre-merge, and the feature was verified live in the demo. Suite: **822
 tests / 107 files** (800 + 12 new, + 10 in the wire-format fix round), typecheck clean.
-Built on the `title-search` feature branch — pending the whole-branch review and merge
-with the next release.
+
+
 
 ## [0.6.0] - 2026-07-16
 

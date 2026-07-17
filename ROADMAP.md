@@ -10,10 +10,17 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-16 · Current version: v0.6.0_
+_Last updated: 2026-07-16 · Current version: v0.7.0_
 
 ## Done (recent)
 
+- **Title search on content lists** (v0.7.0, 2026-07-16) — a labeled, debounced search box
+  beside the Type filter on all three content types, filtering by title across the whole
+  library server-side, identically in live and demo; re-pages to 1; distinct "No matches"
+  state. The release also fixes a latent live-mode filter-serialization defect uncovered
+  by the whole-branch review (the existing type filter was affected too — invisible until
+  now because demo/dev run in-memory; final wire confirmation is a named staging-rehearsal
+  step). Verified live in the demo. 822 tests / 107 files.
 - **Unsaved-work guard + local draft backup** (v0.6.0, 2026-07-16) — the highest-trust
   author protection (analysis-roadmap §5.3-4): a native leave-page warning
   (`beforeunload` + a route-leave confirm), a 30-second local snapshot of the in-progress
@@ -47,13 +54,8 @@ _Last updated: 2026-07-16 · Current version: v0.6.0_
 
 ## In progress
 
-- **Title search on content lists (debounced, whole-library)** — complete on the feature
-  branch — all three tasks built test-first with per-task adversarial review; pending the
-  whole-branch review and merge. A labeled, 300 ms-debounced search box beside the Type
-  filter on all three content types, filtering by title across the whole library
-  server-side (identical semantics in live and demo), re-paging to page 1 on change, with a
-  distinct "No matches" empty state. Launch imports 236 real articles (analysis-roadmap
-  §5.3-6). 822 tests / 107 files on the branch.
+- _Nothing in flight at this release. The next queue item — edit-conflict detection,
+  №1 below — begins after v0.7.0._
 
 ## Next (proposed)
 
@@ -110,7 +112,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.6.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.7.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

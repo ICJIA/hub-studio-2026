@@ -2,7 +2,7 @@
 <!--
   ContentList: paginated listing for one content type, in TWO switchable views. Shows ALL
   items (published + draft) unless a `status` is passed — it is NOT author-scoped.
-  Fetches via repo.listPage({ status, sort, type, page, pageSize }).
+  Fetches via repo.listPage({ status, sort, type, search, page, pageSize }).
 
   Views (persisted per browser, icjia-studio-content-view-v1):
   - CARDS (default — user decision 2026-07-05, "visual-first for new users"): media cards,
@@ -12,10 +12,12 @@
 
   Articles also get a "Type" filter dropdown: it filters across ALL articles through the
   repo (not just the loaded page) and re-pages from 1; "All types" clears it.
+  ALL THREE types get a title Search box (debounced 300ms): same whole-library, re-page-from-1
+  semantics as the type filter, via ListOptions.search.
   The #row-actions slot (used by manage.vue) passes :document-id and :published to BOTH views.
 -->
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from '#imports'
+import { ref, watch, computed, onMounted, onBeforeUnmount } from '#imports'
 import type { ContentStatus } from '~/types/content'
 import type { PagedResult } from '~/lib/repository'
 import { ARTICLE_TYPE_OPTIONS, articleTypeLabel } from '~/lib/field-options'
@@ -91,15 +93,20 @@ const activeType = computed(() =>
   showTypeFilter.value && selectedType.value !== ALL_TYPES ? selectedType.value : undefined,
 )
 
+// Title search (all three content types). Whole-library, server-side: the repo filters across
+// ALL items before paging, so this always re-pages from 1 too (same reasoning as the type filter).
+const search = ref('')
+
 async function fetchPage() {
   loading.value = true
   try {
     // Sort by the article date so the Date column reads newest-first (true reverse-chronological).
-    // selectedType filters across ALL items at the repo (undefined when '' / not an article list).
+    // selectedType/search filter across ALL items at the repo (undefined/'' → no filter sent).
     const data = await repo.listPage({
       status: props.status,
       sort: 'date:desc',
       type: activeType.value,
+      search: search.value.trim() || undefined,
       page: page.value,
       pageSize: props.pageSize,
     })
@@ -117,6 +124,18 @@ watch(selectedType, () => {
   if (page.value !== 1) page.value = 1 // triggers fetchPage via the page watch
   else fetchPage()
 })
+
+// Debounced 300ms (MediaLibraryGrid precedent: watch + setTimeout + clearTimeout on unmount).
+// Re-pages from 1 exactly like the type filter above once the debounce elapses.
+let searchDebounce: ReturnType<typeof setTimeout> | undefined
+watch(search, () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    if (page.value !== 1) page.value = 1 // triggers fetchPage via the page watch
+    else fetchPage()
+  }, 300)
+})
+onBeforeUnmount(() => clearTimeout(searchDebounce))
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—'
@@ -150,6 +169,16 @@ function authorLabel(item: AnyItem): string {
           aria-label="Filter by article type"
         />
       </template>
+      <label class="text-sm text-muted" for="content-list-search">Search</label>
+      <UInput
+        id="content-list-search"
+        v-model="search"
+        size="sm"
+        icon="i-lucide-search"
+        placeholder="Search by title"
+        class="min-w-[14rem]"
+        data-test="content-list-search"
+      />
       <div class="ml-auto flex items-center gap-1" role="group" aria-label="View mode">
         <UButton
           data-test="view-cards"
@@ -170,7 +199,10 @@ function authorLabel(item: AnyItem): string {
 
     <p v-if="loading" class="text-sm text-muted">Loading…</p>
     <template v-else>
-      <p v-if="result.total === 0" class="text-sm text-muted">
+      <p v-if="result.total === 0 && search.trim()" data-test="content-list-no-matches" class="text-sm text-muted">
+        No {{ type }}s match "{{ search.trim() }}".
+      </p>
+      <p v-else-if="result.total === 0" class="text-sm text-muted">
         No {{ status ? `${status} ` : '' }}{{ type }}s{{ activeType ? ` of type "${articleTypeLabel(activeType)}"` : '' }} yet.
       </p>
       <div v-else>

@@ -1,5 +1,5 @@
 // @vitest-environment nuxt
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import type { PagedResult } from '~/lib/repository'
 
@@ -35,6 +35,19 @@ const appsListPageMock = vi.fn().mockResolvedValue({ items: [], total: 0, page: 
 mockNuxtImport('useApps', () => () => ({
   list: vi.fn().mockResolvedValue([]),
   listPage: appsListPageMock,
+  findOne: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
+  publish: vi.fn(),
+}))
+
+// Datasets repo: used by the title-search "renders for all three types" test. Returns an empty
+// page so the component renders its empty state (no Strapi $api needed in the test env).
+const datasetsListPageMock = vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 25, pageCount: 1 })
+mockNuxtImport('useDatasets', () => () => ({
+  list: vi.fn().mockResolvedValue([]),
+  listPage: datasetsListPageMock,
   findOne: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
@@ -271,5 +284,86 @@ describe('ContentList — card view (visual default) vs list toggle', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(wrapper.findAll('img')).toHaveLength(0)
     expect(wrapper.findAll('[data-test="card-image-placeholder"]')).toHaveLength(2)
+  })
+})
+
+describe('ContentList — title search', () => {
+  // Safety net (use-draft-guard.test.ts precedent): a failed assertion mid-test must not leave
+  // fake timers active for later tests in this file.
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('typing a term calls listPage with the trimmed search and page:1, after the debounce', async () => {
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    listPageMock.mockClear()
+
+    vi.useFakeTimers()
+    await wrapper.find('#content-list-search').setValue('  gavel  ')
+    expect(listPageMock).not.toHaveBeenCalled() // debounce hasn't elapsed yet
+    await vi.advanceTimersByTimeAsync(300)
+    vi.useRealTimers()
+
+    expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: 'gavel', page: 1 }))
+    wrapper.unmount()
+  })
+
+  it('changing the search resets an advanced pager back to page 1', async () => {
+    listPageMock.mockResolvedValue({ items: DRAFT_ITEMS, total: 75, page: 1, pageSize: 25, pageCount: 3 })
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+
+    const nextBtn = wrapper.findAll('button').find((b) => b.text() === 'Next')!
+    await nextBtn.trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(listPageMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+
+    listPageMock.mockClear()
+    vi.useFakeTimers()
+    await wrapper.find('#content-list-search').setValue('gavel')
+    await vi.advanceTimersByTimeAsync(300)
+    vi.useRealTimers()
+
+    expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: 'gavel', page: 1 }))
+    wrapper.unmount()
+  })
+
+  it('a non-empty search with zero matches shows "No matches", distinct from the no-content empty state', async () => {
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+
+    listPageMock.mockResolvedValueOnce(makePagedResult([]))
+    vi.useFakeTimers()
+    await wrapper.find('#content-list-search').setValue('no-such-title')
+    await vi.advanceTimersByTimeAsync(300)
+    vi.useRealTimers()
+
+    expect(wrapper.find('[data-test="content-list-no-matches"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('yet.') // the no-content empty state must not also render
+    wrapper.unmount()
+  })
+
+  it('renders the search input for articles, apps, and datasets with an accessible name', async () => {
+    for (const type of ['article', 'app', 'dataset'] as const) {
+      const wrapper = await mountSuspended(ContentList, { props: { type } })
+      await new Promise((r) => setTimeout(r, 0))
+      expect(wrapper.find('#content-list-search').exists()).toBe(true)
+      const label = wrapper.find('label[for="content-list-search"]')
+      expect(label.exists()).toBe(true)
+      expect(label.text()).toBe('Search')
+      wrapper.unmount()
+    }
+  })
+
+  it('passes search=undefined to listPage on first load (no term yet)', async () => {
+    listPageMock.mockClear()
+    listPageMock.mockResolvedValue(makePagedResult(DRAFT_ITEMS))
+    const wrapper = await mountSuspended(ContentList, { props: { type: 'article' } })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(listPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: undefined }))
+    wrapper.unmount()
   })
 })

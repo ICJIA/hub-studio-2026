@@ -216,3 +216,50 @@ describe('makeDemoRepository', () => {
     expect((await apps.findOne('test-25')).publishedAt).toBeNull()
   })
 })
+
+describe('title search', () => {
+  it('filters case-insensitively by title contains, across the whole set before paging', async () => {
+    // 60 items; every 12th title contains "Police" in mixed case (i = 0,12,24,36,48 → 5 matches),
+    // scattered well beyond a pageSize:5 first page — mirrors the type-filter whole-set test.
+    const titled = Array.from({ length: 60 }, (_, i) => {
+      const item = makeItem(i, true)
+      item.title = i % 12 === 0 ? `${i} Police Report` : `Article ${i}`
+      return item
+    })
+    const repo = makeDemoRepository(titled, 'k-search-pages')
+    const result = await repo.listPage({ search: 'POLICE', page: 1, pageSize: 5 })
+    // All 5 matches found across the whole set (not just an unfiltered first page of 5).
+    expect(result.total).toBe(5)
+    expect(result.items.length).toBe(5)
+    expect(result.items.every((i) => i.title.toLowerCase().includes('police'))).toBe(true)
+  })
+
+  it('composes with type and status filters', async () => {
+    // 8 items: i<4 published else draft; even i → researchReport else article; only i=0's title
+    // contains "Police". Type+status ALONE would match i=0 AND i=2 — search must narrow to i=0
+    // only, so this fails if search is silently ignored (proves real composition, not a vacuous
+    // pass).
+    const mixed = Array.from({ length: 8 }, (_, i) => {
+      const item = makeItem(i, i < 4)
+      item.type = i % 2 === 0 ? 'researchReport' : 'article'
+      item.title = i === 0 ? 'Police Report' : `Article ${i}`
+      return item
+    })
+    const repo = makeDemoRepository(mixed, 'k-search-compose')
+    const result = await repo.listPage({
+      search: 'police', type: 'researchReport', status: 'published', page: 1, pageSize: 25,
+    })
+    expect(result.total).toBe(1)
+    expect(result.items[0]!.documentId).toBe('test-0')
+  })
+
+  it('empty/whitespace search applies no filter', async () => {
+    const repo = makeDemoRepository([...seed], 'k-search-empty')
+    const none = await repo.listPage({ page: 1, pageSize: 100 })
+    const empty = await repo.listPage({ search: '', page: 1, pageSize: 100 })
+    const whitespace = await repo.listPage({ search: '   ', page: 1, pageSize: 100 })
+    expect(none.total).toBe(30)
+    expect(empty.total).toBe(30)
+    expect(whitespace.total).toBe(30)
+  })
+})

@@ -44,6 +44,15 @@ export function makeDemoRepository<T extends {
       items = items.filter((item) => (item as Record<string, unknown>).type === opts.type)
     }
 
+    // Title search (case-insensitive contains). Applied across ALL items before paging,
+    // mirroring the live repo's filters[title][$containsi]. Empty/whitespace → no filter.
+    const term = opts.search?.trim().toLowerCase()
+    if (term) {
+      items = items.filter((item) =>
+        String((item as Record<string, unknown>).title ?? '').toLowerCase().includes(term),
+      )
+    }
+
     // Sort
     const sortStr = opts.sort ?? 'updatedAt:desc'
     const [field, dir] = sortStr.split(':') as [string, string]

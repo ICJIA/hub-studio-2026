@@ -88,3 +88,37 @@ describe('createRepository (Content-Manager API)', () => {
     })
   })
 })
+
+describe('title search (ListOptions.search)', () => {
+  it('maps search to filters[title][$containsi]', async () => {
+    const api = vi.fn().mockResolvedValue({ results: [], pagination: {} }) as unknown as $Fetch
+    await makeRepo(api).list({ search: 'police' })
+    expect(api).toHaveBeenCalledWith(BASE, expect.objectContaining({
+      query: expect.objectContaining({ filters: { title: { $containsi: 'police' } } }),
+    }))
+  })
+
+  it('composes with the type filter without clobbering either', async () => {
+    const api = vi.fn().mockResolvedValue({ results: [], pagination: {} }) as unknown as $Fetch
+    await makeRepo(api).list({ search: 'police', type: 'update' })
+    expect(api).toHaveBeenCalledWith(BASE, expect.objectContaining({
+      query: expect.objectContaining({
+        filters: { type: { $eq: 'update' }, title: { $containsi: 'police' } },
+      }),
+    }))
+  })
+
+  it('sends no title filter for absent/empty/whitespace search', async () => {
+    const none = vi.fn().mockResolvedValue({ results: [], pagination: {} }) as unknown as $Fetch
+    await makeRepo(none).list({})
+    expect((none as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].query.filters).toBeUndefined()
+
+    const empty = vi.fn().mockResolvedValue({ results: [], pagination: {} }) as unknown as $Fetch
+    await makeRepo(empty).list({ search: '' })
+    expect((empty as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].query.filters).toBeUndefined()
+
+    const whitespace = vi.fn().mockResolvedValue({ results: [], pagination: {} }) as unknown as $Fetch
+    await makeRepo(whitespace).list({ search: '   ' })
+    expect((whitespace as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].query.filters).toBeUndefined()
+  })
+})

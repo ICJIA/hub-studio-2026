@@ -26,6 +26,9 @@ export interface ListOptions {
   type?: string
   /** Content-Manager filters, e.g. { authorEmail: { $eq: 'a@x.gov' } }. Backward-compatible: existing callers omit it. */
   filters?: Record<string, unknown>
+  /** Case-insensitive title search. Maps to Strapi `filters[title][$containsi]` on the real
+   *  repo and an in-memory title-contains on the demo repo. Empty/whitespace ⇒ no filter. */
+  search?: string
 }
 export interface FindOptions { status?: ContentStatus }
 export interface WriteOptions { status?: ContentStatus }
@@ -74,13 +77,17 @@ export function assertWritesAllowed(): void {
 }
 
 /**
- * Merge the optional `type` filter into the Content-Manager `filters` object as `filters[type][$eq]`
- * — the same query shape Strapi uses for `status`/publicationState. Undefined `type` leaves the
- * caller's `filters` untouched (so the "All types" case sends no type filter at all).
+ * Merge the optional `type` and `search` filters into the Content-Manager `filters` object as
+ * `filters[type][$eq]` / `filters[title][$containsi]` — the same query shape Strapi uses for
+ * `status`/publicationState. Undefined `type` leaves the caller's `filters` untouched (so the
+ * "All types" case sends no type filter at all); empty/whitespace `search` likewise sends no
+ * title filter at all.
  */
 function buildFilters(opts: ListOptions): Record<string, unknown> | undefined {
-  if (!opts.type) return opts.filters
-  return { ...opts.filters, type: { $eq: opts.type } }
+  let merged = opts.type ? { ...opts.filters, type: { $eq: opts.type } } : opts.filters
+  const term = opts.search?.trim()
+  if (term) merged = { ...merged, title: { $containsi: term } }
+  return merged
 }
 
 export function createRepository<TRaw, TDomain, TWrite>(

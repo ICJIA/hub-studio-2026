@@ -37,13 +37,13 @@ export function useDraftGuard<T extends object>(opts: {
   const restoreAvailable = computed(() => snapshot.value !== null)
   const snapshotSavedAt = computed(() => snapshot.value?.savedAt ?? null)
 
-  function plainModel(): T {
-    return JSON.parse(JSON.stringify(opts.model)) as T
-  }
-
+  // Pass the reactive model straight through — saveSnapshot stringifies it immediately
+  // (a reactive proxy serializes identically to a plain clone), inside ITS OWN try/catch.
+  // That's the only serialization pass, and the only place a non-serializable model (e.g. a
+  // circular reference) can throw — where the lib's fail-open handling actually catches it.
   function writeSnapshot() {
     if (isDemoMode()) return // demo: warn-only, never persist
-    saveSnapshot(opts.type, opts.documentId, plainModel(), nowIso())
+    saveSnapshot(opts.type, opts.documentId, opts.model, nowIso())
   }
 
   /** Apply the snapshot to the model (stays DIRTY — the author saves it normally). */
@@ -69,10 +69,13 @@ export function useDraftGuard<T extends object>(opts: {
 
   function onBeforeUnload(event: BeforeUnloadEvent) {
     if (!dirty.value) return
-    writeSnapshot() // best-effort final write (no-op in demo)
+    // The native warning is the primary protection and must never be silently lost — arm it
+    // BEFORE attempting the snapshot write, so a write failure (belt-and-braces: saveSnapshot
+    // is itself fail-open and shouldn't throw, but nothing upstream of it is free) can never
+    // suppress the dialog. Chrome requires returnValue to show it.
     event.preventDefault()
-    // Chrome requires returnValue to show the native dialog.
     event.returnValue = ''
+    writeSnapshot() // best-effort final write (no-op in demo); failure here no longer matters
   }
 
   let timer: ReturnType<typeof setInterval> | undefined

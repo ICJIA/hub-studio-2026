@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 2026-07-16 — unsaved-work guard
+## [0.6.0] - 2026-07-16
 
 _Added_
 
@@ -31,8 +31,8 @@ _Added_
   `docs/superpowers/specs/2026-07-16-unsaved-work-guard-design.md`.
 
 Built test-first over six reviewed tasks (per-task adversarial review). Suite: **800
-tests / 107 files** (757 + 43 new), typecheck clean. Built on the `unsaved-work-guard`
-feature branch — pending the whole-branch review and merge with the next release.
+tests / 107 files** (757 + 43 new), typecheck clean. Verified end-to-end in the running app before merge (snapshot, restore, clear-on-save, and
+the demo zero-write policy all observed live).
 
 ## [0.5.0] - 2026-07-16
 

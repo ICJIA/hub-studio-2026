@@ -29,9 +29,11 @@ snapshot of the in-progress draft, and a restore banner when a newer snapshot is
   each session" promise stays exactly true; demo keeps both warnings); `markSaved()` clears
   the snapshot + resets the baseline; `restoreAvailable` / `restore()` / `discard()`.
 - **`DraftRestoreBanner.vue`**: banner atop the form (user-chosen UX) — "Unsaved changes
-  from ⟨time⟩ found — Restore / Discard". Shown when a snapshot exists that is newer than
-  the loaded draft's `updatedAt` (any snapshot, for `mode: 'create'`). Nothing changes
-  until clicked; Restore replaces the model (still unsaved); Discard clears the snapshot.
+  from ⟨time⟩ found," with "Restore" / "Discard" buttons. Shown whenever a snapshot EXISTS
+  for the draft (edit and create alike) — valid because every successful save clears the
+  snapshot, so a surviving one always represents unsaved work (see §1's parenthetical).
+  Nothing changes until clicked; Restore replaces the model (still unsaved); Discard
+  clears the snapshot.
 - **Wiring in all three form components** (they own `model` + submit): ArticleForm,
   AppForm, DatasetForm — one composable call each, covering create + edit.
 

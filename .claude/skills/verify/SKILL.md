@@ -25,6 +25,22 @@ writes to Strapi, and is the right surface for verifying authoring flows without
 
 ## Gotchas that cost time
 
+- **Editing form fields under automation: use the JS input pipeline, not click+type.** Focus
+  is flaky on the editor page; coordinate/ref typing can silently land elsewhere (or nowhere)
+  and the model never changes. Deterministic:
+  `const s = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+  s.call(input, 'new'); input.dispatchEvent(new Event('input', {bubbles:true}))`.
+- **Verifying draft snapshots needs LIVE-ish mode, not demo:** plain `npm run dev` (no demo
+  flag) + the admin/admin dev session = in-memory content with `isDemoMode()===false`, so
+  snapshots run. The public-demo flag disables all snapshot writes by design.
+- **NEVER trigger `beforeunload` or `window.confirm` under automation** (native dialogs block
+  the Chrome extension): don't navigate/close a DIRTY tab; verify the restore banner by
+  opening the same URL in a NEW tab; make a tab clean (revert its field) before leaving it.
+- **Cross-tab localStorage contamination:** an old tab left dirty keeps its 30s interval
+  alive even after a server restart — it re-writes draft keys into the shared origin storage
+  and can fake a demo-mode "snapshot leak." Clean-room any storage assertion: revert stray
+  tabs to clean first, then clear storage, then wait.
+
 - **Coordinate clicks are unreliable** on the editor page — the tall sidebar + sticky header
   produce large blank scroll regions and content shifts between screenshots. Use `find`/
   `read_page` refs for every interaction; screenshot only for visual evidence.

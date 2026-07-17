@@ -10,10 +10,17 @@ the full design see the
 A guard test (`tests/unit/docs-nav.test.ts`) fails the build if this file's version stamp
 falls behind a release.
 
-_Last updated: 2026-07-16 · Current version: v0.5.0_
+_Last updated: 2026-07-16 · Current version: v0.6.0_
 
 ## Done (recent)
 
+- **Unsaved-work guard + local draft backup** (v0.6.0, 2026-07-16) — the highest-trust
+  author protection (analysis-roadmap §5.3-4): a native leave-page warning
+  (`beforeunload` + a route-leave confirm), a 30-second local snapshot of the in-progress
+  draft while dirty (live builds only — the demo deliberately takes none, keeping its
+  "resets each session" promise literally true), and a non-blocking restore banner;
+  every successful save clears the backup. Six tasks, test-first, per-task adversarial
+  review; verified end-to-end in the running app. 800 tests / 107 files.
 - **Media-library picker (library-first images, demo parity)** (v0.5.0, 2026-07-16) — every
   image surface opens on the ~20 newest Media Library images (searchable, Load more) with
   upload-from-desktop one tab away; alt-less library picks require alt text and write it
@@ -40,13 +47,8 @@ _Last updated: 2026-07-16 · Current version: v0.5.0_
 
 ## In progress
 
-- **Unsaved-work guard + local draft backup** — complete on the feature branch — all six
-  tasks built test-first with per-task adversarial review; pending the whole-branch review
-  and merge. A native leave-page warning (`beforeunload` + a route-leave `confirm`), a
-  30-second local snapshot of the in-progress draft while dirty (live builds only — the
-  demo deliberately takes none, keeping its "resets each session" promise literally true),
-  and a non-blocking restore banner. The highest-trust author protection (analysis-roadmap
-  §5.3-4). 800 tests / 107 files on the branch.
+- _Nothing in flight at this release. The next queue item — title search on content
+  lists, №1 below — begins after v0.6.0._
 
 ## Next (proposed)
 
@@ -64,6 +66,16 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)
+
+- **Unsaved-work-guard follow-ups** (from the v0.6.0 whole-branch review — none affect
+  correctness for launch): reseed MediaField's alt/caption persist-baseline after a
+  banner Restore (a stale restore can otherwise re-arm one redundant media-record
+  write-back); decide whether explicit logout should clear draft snapshots (shared-machine
+  courtesy — must NOT hook the 401/403 session-clear paths, which would destroy the
+  feature's headline crash-recovery scenario); guard the dirty-check serialization against
+  non-JSON-serializable models (latent — no current model shape can trigger it); two small
+  test riders (30 s default-interval path; banner invalid-date fallback); boot-time sweep
+  of aged snapshot keys (no GC today, ≤1 MB each).
 
 - **Playwright end-to-end suite** — post-launch per the analysis roadmap; automates the
   cutover smoke checklist against deploy previews (§5.5).
@@ -95,7 +107,7 @@ Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-pri
 ---
 
 <!-- studio-bottom-nav -->
-**Hub Studio 2.0 · Studio build v0.5.0** — for managers monitoring this project:
+**Hub Studio 2.0 · Studio build v0.6.0** — for managers monitoring this project:
 [Spec & status](https://github.com/ICJIA/copperhead-studio-20/blob/main/docs/ICJIA-Studio-20-rewrite-copperhead.md) ·
 [What's changed (changelog)](https://github.com/ICJIA/copperhead-studio-20/blob/main/CHANGELOG.md) ·
 [What's next (roadmap)](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md) ·

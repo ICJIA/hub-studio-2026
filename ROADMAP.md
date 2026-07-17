@@ -47,22 +47,25 @@ _Last updated: 2026-07-16 · Current version: v0.6.0_
 
 ## In progress
 
-- _Nothing in flight at this release. The next queue item — title search on content
-  lists, №1 below — begins after v0.6.0._
+- **Title search on content lists (debounced, whole-library)** — complete on the feature
+  branch — all three tasks built test-first with per-task adversarial review; pending the
+  whole-branch review and merge. A labeled, 300 ms-debounced search box beside the Type
+  filter on all three content types, filtering by title across the whole library
+  server-side (identical semantics in live and demo), re-paging to page 1 on change, with a
+  distinct "No matches" empty state. Launch imports 236 real articles (analysis-roadmap
+  §5.3-6). 812 tests / 107 files on the branch.
 
 ## Next (proposed)
 
 Ordered per the 2026-07-16 planning decision (analysis-roadmap §5 items, re-prioritized):
 
-1. **Title search on content lists** — server-side search beside the type filter; launch
-   imports 236 real articles (§5.3-6).
-2. **Edit-conflict detection** — send `updatedAt` with saves; warn instead of silently
+1. **Edit-conflict detection** — send `updatedAt` with saves; warn instead of silently
    overwriting a colleague's changes (§5.3-5).
-3. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
+2. **Staging Strapi-host override** — honor `NUXT_PUBLIC_STRAPI_BASE_URL` so a rehearsal
    can never touch production data (§5.4-8).
-4. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
+3. **Error monitoring + uptime checks** — a CSP-compatible client reporter and probes,
    alerting before authors report breakage (§5.4-7).
-5. **Smalls** — relation-write support (or document the read-only limitation), merge the
+4. **Smalls** — relation-write support (or document the read-only limitation), merge the
    pending green Dependabot PRs, schedule the four accessibility riders.
 
 ## Deferred (with rationale)

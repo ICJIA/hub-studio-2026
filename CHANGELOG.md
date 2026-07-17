@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-16 — title search
+
+_Added_
+
+- **Title search on content lists (debounced, whole-library).** A labeled search box now
+  sits beside the Type filter on every content list — Articles, Apps, and Datasets alike
+  (the Type dropdown itself stays Articles-only) — filtering by **title**, case-insensitive
+  contains, across the **whole library**, server-side, never just the loaded page. Ahead of
+  launch's 236 real articles arriving at once (analysis-roadmap §5.3-6), this is how staff
+  will actually find one. A new `ListOptions.search?: string` carries the term into both
+  repositories identically: the live repository maps it to Strapi
+  `filters[title][$containsi]`, composed with the existing type/status/`filters` merge in
+  `buildFilters`; the demo repository applies the same case-insensitive contains in
+  `applyFilter`, before paging — so live and demo behave identically. The input is debounced
+  300 ms (the `MediaLibraryGrid` precedent) and, like the existing Type filter, resets the
+  pager to page 1 on every change. A non-empty search with zero matches now renders a
+  distinct "No ⟨type⟩s match "⟨term⟩"" message instead of the generic no-content empty
+  state. Spec: `docs/superpowers/specs/2026-07-16-title-search-design.md`.
+
+_Fixed_
+
+- **`ContentList` stale-response race (generation guard).** `fetchPage()` — the one function
+  backing all three of the list's reactive triggers (page, Type filter, and now title
+  search) — gained a monotonic generation counter (mirroring `MediaLibraryGrid`'s Load More
+  guard) so a slow response can no longer resolve after, and silently clobber, a fresher
+  one. The race pre-dates this feature (a fast page-then-type sequence could already
+  interleave); title search added a third trigger through the same function, which is what
+  surfaced it — one counter at the shared call site closes it for all three triggers at
+  once.
+
+Built test-first over three reviewed tasks (per-task adversarial review). Suite: **812
+tests / 107 files** (800 + 12 new), typecheck clean. Built on the `title-search` feature
+branch — pending the whole-branch review and merge with the next release.
+
 ## [0.6.0] - 2026-07-16
 
 _Added_

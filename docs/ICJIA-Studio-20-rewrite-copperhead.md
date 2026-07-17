@@ -623,6 +623,7 @@ listed again in Section 4 with the owner of the remaining step:
 | Tab-only preview + shareable per-draft link | Editor and preview side by side; reviewers open a draft directly | **Built** |
 | Word-style reviewer comments on drafts | Highlight a passage, comment, reply, resolve — a pure overlay | **Built** (per-browser today; shared storage dormant until R&A installs the type) |
 | Card-view content lists (+ table toggle, type filter) | Find and track every item at a glance | **Built** |
+| Title search on content lists (debounced, whole-library) | Find any item by title — 236 real articles arrive at launch | **Built** (feature branch; merges with the next release) |
 | Guided onboarding tour | First-run walkthrough; replay anytime | **Built** |
 | One-click sample article / app / dataset (local dev) | Demonstrate on demand | **Built** |
 | Light/dark mode + ICJIA logo (WCAG 2.1 AA, both) | Comfortable, on-brand, accessible | **Built** |
@@ -1066,6 +1067,14 @@ A short digest for managers, newest first — the complete version-by-version re
 living list of what's in flight and what's next is the
 [roadmap](https://github.com/ICJIA/copperhead-studio-20/blob/main/ROADMAP.md).
 
+- **2026-07-16 — Title search built (feature branch, pending merge).** A labeled,
+  300 ms-debounced search box now sits beside the Type filter on every content list —
+  Articles, Apps, and Datasets alike — filtering by title, case-insensitive, across the
+  **whole library**, server-side, identically in live and demo modes; a search change
+  re-pages to 1, and a distinct "No matches" message replaces the generic empty state.
+  Ahead of launch's 236 real articles (analysis-roadmap §5.3-6). Built test-first over
+  three reviewed tasks with per-task adversarial review; **812 automated tests / 107
+  files** on the branch. Pending the whole-branch review and merge with the next release.
 - **2026-07-16 — Unsaved-work guard shipped (v0.6.0).** Authors can no longer silently
   lose in-progress work: a native leave-page warning, a 30-second local draft snapshot
   while a form is dirty, and a non-blocking restore banner ("Restore" / "Discard") when a

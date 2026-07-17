@@ -7,8 +7,16 @@ import { saveSnapshot, loadSnapshot } from '~/lib/draft-backup'
 import { blankDataset } from '~/lib/forms/blank-models'
 
 const createMock = vi.fn(async (m: Dataset): Promise<Dataset> => ({ ...m, documentId: 'dsdocN' }))
+const updateMock = vi.fn(async (_id: string, m: Dataset): Promise<Dataset> => m)
+// Edit-conflict primitives (Task 4, mirrors ArticleForm/Task 3). Default to "no conflict"
+// (getUpdatedAt → null; hasConflict fails open on a missing stamp) and a same-shape refetch, so
+// every describe block below that predates the save-time check keeps passing unchanged. The
+// 'edit-conflict save-flow' describe overrides both with mockResolvedValueOnce per test.
+const getUpdatedAtMock = vi.fn(async (): Promise<string | null> => null)
+const findOneMock = vi.fn(async (id: string): Promise<Dataset> => ({ ...blankDataset(), documentId: id }))
 mockNuxtImport('useDatasets', () => () => ({
-  list: vi.fn(), findOne: vi.fn(), create: createMock, update: vi.fn(), remove: vi.fn(),
+  list: vi.fn(), findOne: findOneMock, create: createMock, update: updateMock, remove: vi.fn(),
+  getUpdatedAt: getUpdatedAtMock,
 }))
 mockNuxtImport('useUpload', () => () => ({ upload: vi.fn(), browse: vi.fn().mockResolvedValue([]), remove: vi.fn() }))
 
@@ -92,6 +100,62 @@ describe('unsaved-work guard integration', () => {
     await wrapper.vm.$.exposed!.submit()
     await new Promise((r) => setTimeout(r, 0))
     expect(loadSnapshot('dataset', 'ds1')).toBeNull()
+    wrapper.unmount()
+  })
+})
+
+// The save-time edit-conflict check (design §1-2; ArticleForm is the reference integration Task
+// 4 copies — see article-form.test.ts's 'edit-conflict save-flow' block for the full pattern,
+// including the race-condition hardening tests and the Load-theirs happy path, both pinned there
+// and not re-proven per form — app-form.test.ts carries the one Load-theirs cross-check the task
+// brief asks for "once total", so this file covers conflict-blocks + Save-anyway only).
+// getUpdatedAtMock/findOneMock default to "no conflict" / a same-shape refetch (module scope
+// above), so every describe block ABOVE this one needed no changes beyond that default.
+describe('edit-conflict save-flow', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    createMock.mockClear(); updateMock.mockClear(); getUpdatedAtMock.mockClear(); findOneMock.mockClear()
+  })
+
+  // A saved (edit-mode) dataset WITH a loaded updatedAt stamp — the save-time check compares
+  // against this. documentId 'ds-c1' keeps this block's snapshot key distinct from the 'ds1'
+  // fixture the unsaved-work guard block above uses (localStorage is shared across this file's tests).
+  const loaded: Dataset = {
+    ...blankDataset(),
+    documentId: 'ds-c1', title: 'Crime Data', slug: 'crime-data', date: '2021-01-01',
+    updatedAt: '2026-07-16T09:00:00.000Z',
+  }
+
+  it('a conflicted save aborts: persist is never called, no validate errors shown, and the banner shows their save time', async () => {
+    const theirAt = '2026-07-16T12:00:00.000Z' // newer than loaded ⇒ conflict
+    getUpdatedAtMock.mockResolvedValueOnce(theirAt)
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial: loaded } })
+
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(getUpdatedAtMock).toHaveBeenCalledWith('ds-c1')
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(wrapper.vm.$.exposed!.errors.value).toHaveLength(0)
+    const banner = wrapper.find('[data-test="conflict-banner"]')
+    expect(banner.exists()).toBe(true)
+    expect(banner.text()).toContain(new Date(theirAt).toLocaleString())
+    wrapper.unmount()
+  })
+
+  it('Save anyway bypasses the check exactly once, persists exactly once, and clears the conflict banner', async () => {
+    getUpdatedAtMock.mockResolvedValueOnce('2026-07-16T12:00:00.000Z') // provoke the conflict first
+    const wrapper = await mountSuspended(DatasetForm, { props: { mode: 'edit', initial: loaded } })
+    await wrapper.vm.$.exposed!.submit()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(true)
+
+    await wrapper.find('[data-test="conflict-save-anyway"]').trigger('click')
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(getUpdatedAtMock).toHaveBeenCalledOnce() // NOT re-checked — the bypass skipped it
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false)
     wrapper.unmount()
   })
 })

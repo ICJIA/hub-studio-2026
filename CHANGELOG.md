@@ -36,6 +36,24 @@ _Fixed_
   interleave); title search added a third trigger through the same function, which is what
   surfaced it — one counter at the shared call site closes it for all three triggers at
   once.
+- **Filters serialized as JSON on the wire, not Strapi's bracket-key query params (CRITICAL,
+  whole-branch review).** `repository.ts` was passing `query: { filters: { title: { $containsi:
+  ... } } }` — a nested object — straight to the plain `ofetch` client, which has no custom
+  query serializer; `ofetch`/`ufo` JSON.stringifies any non-scalar query value, so the wire
+  carried `filters=%7B%22title%22...%7D`. Strapi 5's qs-based query parser rejects a STRING
+  `filters` param, so **every live-mode filtered list call would have errored** — latent since
+  the `type` filter and the `studio-profile` author-email lookup shipped in earlier releases,
+  masked because unit tests mock `$Fetch` at the call boundary and never exercise real query
+  serialization; caught by the whole-branch final review, not by any of those tests. Fixed with
+  a new `flattenFilters()` helper (`app/lib/strapi-rest.ts`) that recursively converts nested
+  filter objects into flat bracket-key params (`filters[title][$containsi]=x`) — the same shape
+  already validated against the live sandbox for the Media Library (`lib/upload.ts`'s
+  `filters[name][$containsi]`). `repository.ts` now spreads the flattened params into the query
+  instead of nesting a `filters` object; every caller that filters through the generic
+  repository (title search, the type filter, `studio-profile`'s `findByAuthorEmail`, and the
+  Strapi `review-annotation` store) is fixed by this one change, since all of them flow through
+  the same `createRepository()`. Final live confirmation is a staging-rehearsal curl check
+  (`docs/demo-to-production.md` §2).
 
 Built test-first over three reviewed tasks (per-task adversarial review). Suite: **812
 tests / 107 files** (800 + 12 new), typecheck clean. Built on the `title-search` feature

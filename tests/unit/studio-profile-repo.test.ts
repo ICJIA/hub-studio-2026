@@ -16,11 +16,15 @@ describe('studio-profile repository', () => {
     const repo = createStudioProfileRepository(api)
     const out = await findByAuthorEmail(repo, 'author@icjia.illinois.gov')
 
-    // The list GET carries a filters query keyed by authorEmail ($eq).
+    // The list GET carries the authorEmail filter as a flat bracket-key param (CRITICAL fix,
+    // whole-branch review: a nested `filters: {...}` object gets JSON-stringified onto the wire
+    // by ofetch/ufo and rejected by Strapi 5's qs-based parser — findByAuthorEmail flows through
+    // repo.list() → the SAME createRepository()/flattenFilters() path as the title search fix,
+    // so it is fixed automatically; this assertion locks in the wire shape here too).
     expect(api).toHaveBeenCalledWith(
       BASE,
       expect.objectContaining({
-        query: expect.objectContaining({ filters: { authorEmail: { $eq: 'author@icjia.illinois.gov' } } }),
+        query: expect.objectContaining({ 'filters[authorEmail][$eq]': 'author@icjia.illinois.gov' }),
       }),
     )
     expect(out).not.toBeNull()

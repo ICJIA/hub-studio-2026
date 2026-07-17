@@ -89,6 +89,18 @@ Checklist — every line exercised with a real Strapi account, none with admin/a
       FAIL-OPEN by design: an API error must never lock anyone out.)
 - [ ] Content list shows REAL articles; open one in the editor; edit + save a draft; confirm
       the change in the Strapi admin.
+- [ ] **Filters wire format:** use the Type filter and the title search box and confirm each
+      returns real (filtered) results, not an error toast/blank list. These — plus
+      `studio-profile`'s first-login author-email lookup — are the first live-mode calls to
+      exercise `repository.ts`'s filter query params; a prior bug sent them as a JSON-stringified
+      `filters` value (`ofetch`/`ufo` has no custom query serializer for nested objects), which
+      Strapi 5's qs-based parser rejects. Fixed to flat bracket-key params
+      (`filters[title][$containsi]=...`), but this repo cannot reach live Strapi to confirm —
+      this is the first empirical check. Quick manual cross-check with curl (admin JWT from
+      devtools → Network → any `content-manager` request → `Authorization` header):
+      `curl -H "Authorization: Bearer <admin JWT>" "https://v2.hub.icjia-api.cloud/content-manager/collection-types/api::article.article?filters%5Btitle%5D%5B%24containsi%5D=a"`
+      → `200` with a `results` array, NOT a `400` ("The filters parameter must be an object or
+      an array").
 - [ ] **Annotations end-to-end:** in the Live preview (and on `/preview/...`), highlight →
       comment → reply → resolve → delete. Then the cross-user test: annotate as user A,
       open the same draft as user B on another machine — the thread is there; reply as B;

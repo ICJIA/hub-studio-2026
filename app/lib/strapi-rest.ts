@@ -89,3 +89,49 @@ export function relationsFromList(res: StrapiRelationsResponse | null | undefine
 export function relationsToWrite(refs: RelationRef[] | null | undefined): string[] {
   return (refs ?? []).map((r) => r.documentId)
 }
+
+/**
+ * CRITICAL fix (whole-branch review, title-search): the ofetch client in lib/api.ts has no
+ * custom query serializer, so a NESTED-OBJECT query value (e.g. `filters: { title: { $containsi:
+ * 'x' } }`) is JSON.stringified by ufo's `encodeQueryValue` (node_modules/ufo/dist/index.mjs)
+ * before it reaches the wire — `filters=%7B%22title%22...%7D`. Strapi 5's query parser is
+ * qs-based (bracket-key nesting, e.g. `a[b][c]=x` → `{a:{b:{c:'x'}}}`) and rejects a STRING
+ * filters param (`convertFiltersQueryParams`: "The filters parameter must be an object or an
+ * array"). This is shared plumbing — the Content API, the Upload plugin REST (already
+ * live-sandbox-validated here: lib/upload.ts's `filters[name][$containsi]`), and the
+ * Content-Manager admin API this repo's repositories call are all mounted on the one Koa app
+ * with the same global qs bracket-key parsing, so the fix is uniform across all of them.
+ *
+ * Recursively flattens a Strapi filters object into flat bracket-key query params:
+ * `{ title: { $containsi: 'x' } }` → `{ 'filters[title][$containsi]': 'x' }`. Nested objects
+ * recurse (`path[key]`); arrays index as `path[i]` (for logical wrappers like `$and`/`$or`);
+ * scalars (string/number/boolean) are leaves, written through as-is (never stringified — the
+ * whole point is that ofetch/ufo never sees a non-scalar query value to JSON.stringify).
+ * null/undefined leaves are dropped (nothing meaningful to send). Pure — no I/O.
+ */
+export function flattenFilters(
+  filters: Record<string, unknown>,
+  prefix = 'filters',
+): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {}
+  flattenFilterValue(out, filters, prefix)
+  return out
+}
+
+function flattenFilterValue(
+  out: Record<string, string | number | boolean>,
+  value: unknown,
+  path: string,
+): void {
+  if (value === null || value === undefined) return
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => flattenFilterValue(out, item, `${path}[${i}]`))
+  } else if (typeof value === 'object') {
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      flattenFilterValue(out, v, `${path}[${key}]`)
+    }
+  } else {
+    // Runtime-excluded null/undefined/array/object above; only string/number/boolean remain.
+    out[path] = value as string | number | boolean
+  }
+}

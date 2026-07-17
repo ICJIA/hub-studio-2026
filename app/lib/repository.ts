@@ -9,7 +9,7 @@ import type { ContentStatus, RelationRef } from '~/types/content'
 import { assertNoBase64 } from '~/lib/base64-guard'
 import { isDemoMode } from '~/lib/demo'
 import {
-  unwrapList, unwrapOne, relationsFromList,
+  unwrapList, unwrapOne, relationsFromList, flattenFilters,
   type StrapiListResponse, type StrapiSingleResponse, type StrapiRelationsResponse,
 } from '~/lib/strapi-rest'
 
@@ -77,9 +77,12 @@ export function assertWritesAllowed(): void {
 }
 
 /**
- * Merge the optional `type` and `search` filters into the Content-Manager `filters` object as
- * `filters[type][$eq]` / `filters[title][$containsi]` — the same query shape Strapi uses for
- * `status`/publicationState. Undefined `type` leaves the caller's `filters` untouched (so the
+ * Merge the optional `type` and `search` filters into the caller's `filters` object, logically
+ * (still nested at this stage — `{ type: { $eq: ... }, title: { $containsi: ... } }`). The
+ * list()/listPage() call sites below flatten this through `flattenFilters()` into the actual
+ * wire params (`filters[type][$eq]=...&filters[title][$containsi]=...`) right before the
+ * request — never sent as a nested object (see flattenFilters's doc comment in strapi-rest.ts
+ * for why that matters). Undefined `type` leaves the caller's `filters` untouched (so the
  * "All types" case sends no type filter at all); empty/whitespace `search` likewise sends no
  * title filter at all.
  */
@@ -103,7 +106,9 @@ export function createRepository<TRaw, TDomain, TWrite>(
           page: opts.page,
           pageSize: opts.pageSize,
           sort: opts.sort,
-          filters: buildFilters(opts),
+          // Flat bracket-key params (filters[title][$containsi]=x), NOT a nested `filters`
+          // object — see strapi-rest.ts's flattenFilters doc comment for why.
+          ...flattenFilters(buildFilters(opts) ?? {}),
         },
       })
       return unwrapList(res).map((raw) => cfg.fromStrapi(raw))
@@ -116,7 +121,9 @@ export function createRepository<TRaw, TDomain, TWrite>(
           page: opts.page,
           pageSize: opts.pageSize,
           sort: opts.sort,
-          filters: buildFilters(opts),
+          // Flat bracket-key params (filters[title][$containsi]=x), NOT a nested `filters`
+          // object — see strapi-rest.ts's flattenFilters doc comment for why.
+          ...flattenFilters(buildFilters(opts) ?? {}),
         },
       })
       const items = res.results.map((raw) => cfg.fromStrapi(raw))

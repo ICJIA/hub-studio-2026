@@ -58,11 +58,19 @@ describe('createStrapiAnnotationStore', () => {
     const list = await store.list('article', 'art-42')
     expect(calls).toHaveLength(1)
     expect(calls[0]!.url).toBe(BASE)
+    // CRITICAL fix (whole-branch review): asserts the FLAT bracket-key wire shape, not a nested
+    // `filters` object. store-strapi.ts's list() flows through repo.listPage() → the same
+    // createRepository()/flattenFilters() path the title-search fix lands in repository.ts —
+    // this Content-Manager admin-API call site (api::review-annotation) is fixed by the same
+    // change, not a separate one (verified: annotations.ts's createAnnotationsRepository is a
+    // thin createRepository() wrapper with no independent query serialization).
     expect(calls[0]!.query).toMatchObject({
       sort: 'createdAt:asc',
       pageSize: 100,
-      filters: { contentType: { $eq: 'article' }, targetDocumentId: { $eq: 'art-42' } },
+      'filters[contentType][$eq]': 'article',
+      'filters[targetDocumentId][$eq]': 'art-42',
     })
+    expect(calls[0]!.query!.filters).toBeUndefined()
     expect(list.map((a) => a.id)).toEqual(['ra-1', 'ra-2'])
     expect(list[1]!.anchor.exact).toBe('lazy dog')
   })

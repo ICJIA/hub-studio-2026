@@ -34,7 +34,7 @@
     "@vscode/markdown-it-katex": "^1.1.2",
     "dompurify": "^3.4.12",
     "markdown-it": "^14.3.0",
-    "markdown-it-attrs": "4.5.0",
+    "markdown-it-attrs": "5.0.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-multimd-table": "^4.2.3",
     "nuxt": "^4.4.8",
